@@ -150,15 +150,15 @@ function MobilePoster() {
             <div className="m-loop-title">THE LOOP</div>
             <div className="m-matchup">
               <div className="m-matchup-title">CHAMPIONSHIP GAME</div>
-              <div className="m-matchup-team">{mainChampsPairA.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{mainChampsPairA}</div>
               <div className="m-vs">VS</div>
-              <div className="m-matchup-team">{mainChampsPairB.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{mainChampsPairB}</div>
             </div>
             <div className="m-matchup">
               <div className="m-matchup-title">3RD PLACE GAME</div>
-              <div className="m-matchup-team">{mainLoserA.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{mainLoserA}</div>
               <div className="m-vs">VS</div>
-              <div className="m-matchup-team">{mainLoserB.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{mainLoserB}</div>
             </div>
             <FinalRankingM first={mainChampion} second={mainRunnerUp} third={mainThird} fourth={mainFourth} />
           </div>
@@ -179,18 +179,18 @@ function MobilePoster() {
           ))}
 
           <div className="m-loop-card m-loop-card-bus" id="consol-results">
-            <div className="m-loop-title">1ST PLACE</div>
+            <div className="m-loop-title">CONSOLATION FINALS</div>
             <div className="m-matchup">
               <div className="m-matchup-title">CHAMPIONSHIP GAME</div>
-              <div className="m-matchup-team">{cChampsPairA.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{cChampsPairA}</div>
               <div className="m-vs">VS</div>
-              <div className="m-matchup-team">{cChampsPairB.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{cChampsPairB}</div>
             </div>
             <div className="m-matchup">
               <div className="m-matchup-title">3RD PLACE GAME</div>
-              <div className="m-matchup-team">{cLoserA.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{cLoserA}</div>
               <div className="m-vs">VS</div>
-              <div className="m-matchup-team">{cLoserB.split(' / ')[0]}</div>
+              <div className="m-matchup-team">{cLoserB}</div>
             </div>
             <FinalRankingM first={cChampion} second={cRunnerUp} third={cThird} fourth={cFourth} />
           </div>
