@@ -63,12 +63,38 @@ size>-<number>`.
 
 ## Local development
 
-No build step. Serve the directory statically and open a page:
+No build step — it's plain HTML/JS/JSX loaded via CDN with in-browser
+Babel, so any static file server works.
+
+### Option A: static server (fastest, no live data)
 
 ```bash
 python3 -m http.server 8000
 open http://localhost:8000/index.html
 ```
+
+`index.html` auto-redirects to the mobile or web layout based on window
+width — add `?choose` to the URL to see the manual picker instead. Since
+there's no backend here, the pages fall back to the built-in demo bracket
+(mock teams, simulated winners) automatically. That's expected — no errors,
+no live data.
+
+### Option B: Netlify CLI (matches production, includes live data)
+
+Use this if you need to test the Google Sheets integration itself.
+
+```bash
+npm install -g netlify-cli
+netlify login
+netlify link          # connect this folder to the Netlify site
+netlify env:pull      # pulls GOOGLE_*/SHEETS_* env vars into .env
+netlify dev
+```
+
+`netlify dev` serves the static files *and* runs the results function
+locally at `/.netlify/functions/results`, so the bracket pages show real
+data exactly like the deployed site. `.env` is git-ignored — never commit
+it.
 
 ## Deployment (Netlify)
 
