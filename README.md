@@ -31,6 +31,21 @@ winner as JSON.
   guessed winner.
 - v1 shows winners only — no live score, court, or in-progress badge.
 
+### Cost and Sheets API quota
+
+There's no scheduled/cron trigger — the function only runs in response to
+page polls, and each open tab polls every 45 seconds.
+
+- **Sheets reads**: the function caches its Sheets API response in memory
+  for 10 seconds per warm container (`CACHE_MS` in `results.js`), so
+  concurrent requests within that window share one Sheets call instead of
+  hitting the API each time. This stays far under Google's default quota
+  (60 read requests/min per user) even with many simultaneous viewers.
+- **Netlify invocations**: one tab polling every 45s is ~1,920 calls/day.
+  Netlify's free tier includes 125k invocations/month, so normal tournament
+  viewership (dozens of concurrent viewers over a weekend) stays well within
+  the free tier.
+
 ### Match ID scheme
 
 The Google Sheet's `ID` column drives everything. Format: `<prefix><round
