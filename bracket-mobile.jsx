@@ -7,6 +7,14 @@ function pickWinner(a, b) {
 }
 window.pickWinnerM = pickWinner;
 
+// Real team names run longer than the mock "TEAM 01" placeholders these
+// vertical labels were tuned for. Truncate defensively instead of letting
+// the SVG hard-clip long names at the top of the region card.
+function truncateLabel(s, max = 16) {
+  if (!s) return s;
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s;
+}
+
 function bendPathV(x1, y1, x2, y2, radius = 10) {
   if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`;
   const dx = Math.sign(x2 - x1);
@@ -70,9 +78,9 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
             <text x={x - 11} y={y0 + 3} textAnchor="end" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="900" fontSize="9" fill={color}>{slotNumbers[i]}</text>
           )}
           {showLabels && (
-            <text transform={`translate(${x}, ${y0 - 12}) rotate(-90)`} textAnchor="start"
-              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="8" fill="var(--ink)">
-              {teams[i].split(' / ')[0]}
+            <text transform={`translate(${x}, ${y0 - 14}) rotate(-90)`} textAnchor="start"
+              fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" fill="var(--ink)">
+              {truncateLabel(teams[i].split(' / ')[0], 16)}
             </text>
           )}
         </g>

@@ -55,15 +55,16 @@ function MobilePoster() {
   window.QUARTERS.forEach((q) => { quarterConsolTeams[q.id] = consolResolved[q.id].leafNames; });
 
   const W = 760; // internal SVG coordinate width per region card
+  const LEAF_Y0 = 150; // headroom above the leaf row for rotated team-name labels
   const GAPS4 = [70, 62, 54, 46];
   const GAPS3 = [70, 62, 54];
 
   const regions = window.QUARTERS.map((q, qi) => {
-    const r = window.buildRegionV({ quarter: q, teams: quarterTeams[q.id], y0: 120, gaps: GAPS4, x0: 30, x1: W - 30, style: 'train', showLabels: t.showTeamNames, slotNumbers: Array.from({length:16},(_,i)=>qi*16+i+1), roundWinners: mainResolved[q.id].roundWinners });
+    const r = window.buildRegionV({ quarter: q, teams: quarterTeams[q.id], y0: LEAF_Y0, gaps: GAPS4, x0: 30, x1: W - 30, style: 'train', showLabels: t.showTeamNames, slotNumbers: Array.from({length:16},(_,i)=>qi*16+i+1), roundWinners: mainResolved[q.id].roundWinners });
     return { q, r };
   });
   const consolRegions = window.QUARTERS.map((q) => {
-    const r = window.buildRegionV({ quarter: q, teams: quarterConsolTeams[q.id], y0: 120, gaps: GAPS3, x0: 30, x1: W - 30, style: 'bus', showLabels: t.showTeamNames, roundWinners: consolResolved[q.id].roundWinners });
+    const r = window.buildRegionV({ quarter: q, teams: quarterConsolTeams[q.id], y0: LEAF_Y0, gaps: GAPS3, x0: 30, x1: W - 30, style: 'bus', showLabels: t.showTeamNames, roundWinners: consolResolved[q.id].roundWinners });
     return { q, r };
   });
 
@@ -95,8 +96,8 @@ function MobilePoster() {
   const cThird = isLive ? (cThirdMatch.winner || 'TBD') : window.pickWinnerM(cLoserA, cLoserB);
   const cFourth = isLive ? (cThirdMatch.loser || 'TBD') : (cThird === cLoserA ? cLoserB : cLoserA);
 
-  const regionH = 120 + GAPS4.reduce((a, b) => a + b, 0) + 20;
-  const consolRegionH = 120 + GAPS3.reduce((a, b) => a + b, 0) + 20;
+  const regionH = LEAF_Y0 + GAPS4.reduce((a, b) => a + b, 0) + 20;
+  const consolRegionH = LEAF_Y0 + GAPS3.reduce((a, b) => a + b, 0) + 20;
 
   return (
     <div className="m-stage">
@@ -107,7 +108,19 @@ function MobilePoster() {
       </window.TweaksPanel>
 
       <div className="m-poster" style={themeStyle} data-screen-label="Mobile Bracket">
-        <header className="m-header">
+        <nav className="m-quicknav" aria-label="Jump to region">
+          <a href="#m-top">TOP</a>
+          {window.QUARTERS.map((q) => (
+            <a key={`nav-main-${q.id}`} href={`#main-${q.id}`} style={{ borderColor: q.color }}>{q.name.split(' ')[0]}</a>
+          ))}
+          <a href="#main-results">RESULTS</a>
+          {window.QUARTERS.map((q) => (
+            <a key={`nav-consol-${q.id}`} href={`#consol-${q.id}`} style={{ borderColor: q.color }}>BUS {q.busNum}</a>
+          ))}
+          <a href="#consol-results">CONSOL</a>
+        </nav>
+        <a className="m-back-to-top" href="#m-top" aria-label="Back to top">↑</a>
+        <header className="m-header" id="m-top">
           <div className="m-logos">
             <img className="m-logo" src={window.__resources?.logoChicago || 'assets/logo-chicago.png'} />
             <img className="m-logo" src={window.__resources?.logoIlsa || 'assets/logo-ilsa.png'} />
@@ -124,7 +137,7 @@ function MobilePoster() {
         <section className="m-section">
           <div className="m-section-title">MAIN BRACKET · SUBWAY</div>
           {regions.map(({ q, r }) => (
-            <div className="m-region-card" key={q.id}>
+            <div className="m-region-card" id={`main-${q.id}`} key={q.id}>
               <div className="m-region-label" style={{ background: q.color }}>{q.name}</div>
               <svg viewBox={`0 0 ${W} ${regionH}`} className="m-region-svg">
                 <rect x="0" y="0" width={W} height={regionH} fill="var(--paper)" />
@@ -133,7 +146,7 @@ function MobilePoster() {
             </div>
           ))}
 
-          <div className="m-loop-card">
+          <div className="m-loop-card" id="main-results">
             <div className="m-loop-title">THE LOOP</div>
             <div className="m-matchup">
               <div className="m-matchup-title">CHAMPIONSHIP GAME</div>
@@ -156,7 +169,7 @@ function MobilePoster() {
         <section className="m-section">
           <div className="m-section-title">CONSOLATION BRACKET · BUS ROUTES</div>
           {consolRegions.map(({ q, r }) => (
-            <div className="m-region-card" key={q.id}>
+            <div className="m-region-card" id={`consol-${q.id}`} key={q.id}>
               <div className="m-region-label m-region-label-bus">{q.busNum} · {q.busName}</div>
               <svg viewBox={`0 0 ${W} ${consolRegionH}`} className="m-region-svg">
                 <rect x="0" y="0" width={W} height={consolRegionH} fill="var(--paper)" />
@@ -165,7 +178,7 @@ function MobilePoster() {
             </div>
           ))}
 
-          <div className="m-loop-card m-loop-card-bus">
+          <div className="m-loop-card m-loop-card-bus" id="consol-results">
             <div className="m-loop-title">1ST PLACE</div>
             <div className="m-matchup">
               <div className="m-matchup-title">CHAMPIONSHIP GAME</div>
