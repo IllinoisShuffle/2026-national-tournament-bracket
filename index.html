@@ -4,6 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>2026 Chicago National · Tournament Bracket</title>
+<script>
+  // Send phones straight to the mobile layout and everything else to the
+  // desktop poster, so the same URL "just works" on any device. Visit with
+  // ?choose on the end (e.g. from a QR code at the venue) to see this picker
+  // instead — that's also how to reach the print poster.
+  (function () {
+    if (/[?&]choose\b/.test(location.search)) return;
+    var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+    location.replace(isNarrow ? 'mobile-bracket.html' : 'web-bracket.html');
+  })();
+</script>
 <style>
   :root { --paper: #F4EEDF; --ink: #15151A; --ink-dim: rgba(21,21,26,0.55); }
   * { box-sizing: border-box; }

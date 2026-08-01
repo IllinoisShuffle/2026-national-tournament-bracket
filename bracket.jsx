@@ -11,7 +11,7 @@ function pickWinner(a, b) {
 }
 window.pickWinner = pickWinner;
 
-function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLabels, showResults, slotNumbers }) {
+function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLabels, showResults, slotNumbers, roundWinners }) {
   const { bendPath, nextRoundYs } = window.LayoutHelpers;
   const N = teams.length;
   const S = Math.log2(N);
@@ -21,12 +21,19 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
   const xs = [x0];
   for (let s = 1; s <= S; s++) xs.push(xs[s - 1] + dir * gaps[s - 1]);
 
-  // Simulate winners round by round
+  // Winners round by round. When `roundWinners` is supplied (live mode) each
+  // match uses the real recorded winner, or 'TBD' if not decided yet — never
+  // a simulated guess. Without it (demo mode, no backend configured) fall
+  // back to the deterministic mock pick so the poster still looks populated.
   const roundTeams = [teams];
   for (let s = 1; s <= S; s++) {
     const prev = roundTeams[s - 1];
+    const liveRound = roundWinners && roundWinners[s - 1];
     const cur = [];
-    for (let j = 0; j < prev.length; j += 2) cur.push(pickWinner(prev[j], prev[j + 1]));
+    for (let j = 0, k = 0; j < prev.length; j += 2, k++) {
+      const live = liveRound && liveRound[k];
+      cur.push(live || (roundWinners ? 'TBD' : pickWinner(prev[j], prev[j + 1])));
+    }
     roundTeams.push(cur);
   }
 

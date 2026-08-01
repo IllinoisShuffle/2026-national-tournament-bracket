@@ -15,7 +15,7 @@ function bendPathV(x1, y1, x2, y2, radius = 10) {
 }
 
 // Builds a vertical region: N leaves at top, converging to 1 champion at bottom.
-function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, showResults, slotNumbers }) {
+function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, showResults, slotNumbers, roundWinners }) {
   const N = teams.length;
   const S = Math.log2(N);
   const leafXs = teams.map((_, i) => x0 + (i + 0.5) * ((x1 - x0) / N));
@@ -25,11 +25,16 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
   const ys = [y0];
   for (let s = 1; s <= S; s++) ys.push(ys[s - 1] + gaps[s - 1]);
 
+  // See bracket.jsx buildRegion for the live-vs-demo winner logic this mirrors.
   const roundTeams = [teams];
   for (let s = 1; s <= S; s++) {
     const prev = roundTeams[s - 1];
+    const liveRound = roundWinners && roundWinners[s - 1];
     const cur = [];
-    for (let j = 0; j < prev.length; j += 2) cur.push(pickWinner(prev[j], prev[j + 1]));
+    for (let j = 0, k = 0; j < prev.length; j += 2, k++) {
+      const live = liveRound && liveRound[k];
+      cur.push(live || (roundWinners ? 'TBD' : pickWinner(prev[j], prev[j + 1])));
+    }
     roundTeams.push(cur);
   }
 

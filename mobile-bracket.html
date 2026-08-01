@@ -42,14 +42,17 @@ html,body{margin:0;padding:0;background:#1a1a1d;font-family:'Helvetica Neue',Hel
 .m-footer p{font-size:11px;font-weight:700;letter-spacing:1px;margin:4px 0}
 .m-footer-sub{color:var(--ink-dim);font-size:10px!important}
 a{color:var(--ink)}a:hover{color:var(--ink-dim)}
+.all-views-link{position:fixed;left:10px;top:10px;z-index:2147483000;font-size:10px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.65);text-decoration:none;background:rgba(255,255,255,0.12);padding:5px 8px;border-radius:7px}
 </style>
 </head>
 <body>
+<a class="all-views-link" href="index.html?choose">All views ↗</a>
 <div id="root"></div>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="data.js"></script>
+<script src="live-data.js"></script>
 <script type="text/babel" data-presets="react" src="tweaks-panel.jsx"></script>
 <script type="text/babel" data-presets="react" src="bracket-mobile.jsx"></script>
 <script type="text/babel" data-presets="react" src="app-mobile.jsx"></script>

@@ -84,6 +84,22 @@
       height: 100%;
       display: block;
     }
+    .all-views-link {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      z-index: 2147483000;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      background: rgba(255,255,255,0.08);
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+    .all-views-link:hover { color: #fff; }
+    @media print { .all-views-link { display: none; } }
     @media print {
       html, body { background: white; }
       .poster-stage { padding: 0; }
@@ -92,6 +108,7 @@
   </style>
 </head>
 <body>
+  <a class="all-views-link" href="index.html?choose">All views ↗</a>
   <div id="root"></div>
 
   <!-- React + Babel -->
@@ -102,6 +119,7 @@
   <!-- Data + layout helpers (plain JS — load before JSX scripts) -->
   <script src="data.js"></script>
   <script src="layout.js"></script>
+  <script src="live-data.js"></script>
 
   <!-- Tweaks panel + sub components -->
   <script type="text/babel" data-presets="react" src="tweaks-panel.jsx"></script>

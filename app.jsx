@@ -11,6 +11,22 @@ function Poster() {
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const dragRef = React.useRef(null);
 
+  // Live results (from the Netlify Function / Google Sheet). Falls back to
+  // the mock demo bracket below whenever this is null — no backend deployed,
+  // offline, fetch error, etc.
+  const [liveData, setLiveData] = React.useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const data = await window.LiveData.fetchLiveData();
+      if (!cancelled) setLiveData(data);
+    }
+    load();
+    const interval = setInterval(load, window.LiveData.LIVE_POLL_MS);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+  const isLive = !!liveData;
+
   const clampZoom = (z) => Math.max(1, Math.min(6, z));
   const onWheel = (e) => {
     if (!e.ctrlKey && !e.metaKey) return; // let normal page scroll/trackpad pass through
@@ -43,23 +59,37 @@ function Poster() {
     ? { '--paper': '#0E0E10', '--ink': '#F4EEDF', '--ink-dim': 'rgba(244,238,223,0.55)' }
     : { '--paper': '#F4EEDF', '--ink': '#15151A', '--ink-dim': 'rgba(21,21,26,0.55)' };
 
-  // Assign teams to quarters (16 each), in leaf order
-  const quarterTeams = {};
+  // Assign teams to quarters (16 each), in leaf order. In live mode these
+  // come straight from the M64 match rows (Yellow/Black); in demo mode they
+  // come from the mock TEAM_POOL.
+  const mainResolved = {};
   window.QUARTERS.forEach((q, idx) => {
-    quarterTeams[q.id] = window.TEAM_POOL.slice(idx * 16, idx * 16 + 16);
+    mainResolved[q.id] = isLive
+      ? window.LiveData.resolveRegion(liveData, 'M', [64, 32, 16, 8], idx)
+      : { leafNames: window.TEAM_POOL.slice(idx * 16, idx * 16 + 16), roundWinners: null };
   });
-  // Consolation leaves = the actual round-1 losers of the main bracket simulation,
-  // so no team can appear advancing in both brackets past round 1.
+  const quarterTeams = {};
+  window.QUARTERS.forEach((q) => { quarterTeams[q.id] = mainResolved[q.id].leafNames; });
+
+  // Consolation leaves: in live mode these come straight from the C32 match
+  // rows (the sheet is the source of truth for who dropped into consolation).
+  // In demo mode, simulate them as the round-1 losers of the mock main bracket.
+  const consolResolved = {};
+  window.QUARTERS.forEach((q, idx) => {
+    consolResolved[q.id] = isLive
+      ? window.LiveData.resolveRegion(liveData, 'C', [32, 16, 8], idx)
+      : (() => {
+          const lt = quarterTeams[q.id];
+          const losers = [];
+          for (let i = 0; i < lt.length; i += 2) {
+            const w = window.pickWinner(lt[i], lt[i + 1]);
+            losers.push(w === lt[i] ? lt[i + 1] : lt[i]);
+          }
+          return { leafNames: losers, roundWinners: null };
+        })();
+  });
   const quarterConsolTeams = {};
-  window.QUARTERS.forEach((q) => {
-    const lt = quarterTeams[q.id];
-    const losers = [];
-    for (let i = 0; i < lt.length; i += 2) {
-      const w = window.pickWinner(lt[i], lt[i + 1]);
-      losers.push(w === lt[i] ? lt[i + 1] : lt[i]);
-    }
-    quarterConsolTeams[q.id] = losers;
-  });
+  window.QUARTERS.forEach((q) => { quarterConsolTeams[q.id] = consolResolved[q.id].leafNames; });
 
   const byPos = (side, pos) => window.QUARTERS.find(q => q.side === side && q.pos === pos);
   const qLT = byPos('L', 'top'), qLB = byPos('L', 'bottom'), qRT = byPos('R', 'top'), qRB = byPos('R', 'bottom');
@@ -68,10 +98,10 @@ function Poster() {
   const mainMidY = (MAIN_Y0 + MAIN_Y1) / 2;
   const MAIN_GAPS = [305, 295, 285, 255];
   const MAIN_HALF_GAP = 260;
-  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1) });
-  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17) });
-  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33) });
-  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49) });
+  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1), roundWinners: mainResolved[qLT.id].roundWinners });
+  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17), roundWinners: mainResolved[qLB.id].roundWinners });
+  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33), roundWinners: mainResolved[qRT.id].roundWinners });
+  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49), roundWinners: mainResolved[qRB.id].roundWinners });
 
   const mainGapSum = MAIN_GAPS.reduce((a, b) => a + b, 0);
   const leftHalfX = 100 + mainGapSum + MAIN_HALF_GAP;
@@ -88,14 +118,21 @@ function Poster() {
     mergeConnector('m5', leftHalfX, leftHalfY, CHAMPION_X, champY, 'var(--ink)', 'train'),
     mergeConnector('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, 'var(--ink)', 'train'),
   ];
-  const leftHalfWinner = window.pickWinner(regLT.champTeam, regLB.champTeam);
-  const rightHalfWinner = window.pickWinner(regRT.champTeam, regRB.champTeam);
-  const mainChampion = window.pickWinner(leftHalfWinner, rightHalfWinner);
-  const runnerUp = mainChampion === leftHalfWinner ? rightHalfWinner : leftHalfWinner;
-  const leftHalfLoser = leftHalfWinner === regLT.champTeam ? regLB.champTeam : regLT.champTeam;
-  const rightHalfLoser = rightHalfWinner === regRT.champTeam ? regRB.champTeam : regRT.champTeam;
-  const thirdPlace = window.pickWinner(leftHalfLoser, rightHalfLoser);
-  const fourthPlace = thirdPlace === leftHalfLoser ? rightHalfLoser : leftHalfLoser;
+  // M4-01/M4-02 = the two semifinal games (Left half: Red+Blue champs, Right
+  // half: Green+Orange champs). M2-01 = final, M2-02 = 3rd place game.
+  const finalA = isLive ? (liveData.matches['M4-01'] || {}) : null;
+  const finalB = isLive ? (liveData.matches['M4-02'] || {}) : null;
+  const champMatch = isLive ? (liveData.matches['M2-01'] || {}) : null;
+  const thirdMatch = isLive ? (liveData.matches['M2-02'] || {}) : null;
+
+  const leftHalfWinner = isLive ? (finalA.winner || 'TBD') : window.pickWinner(regLT.champTeam, regLB.champTeam);
+  const rightHalfWinner = isLive ? (finalB.winner || 'TBD') : window.pickWinner(regRT.champTeam, regRB.champTeam);
+  const leftHalfLoser = isLive ? (finalA.loser || 'TBD') : (leftHalfWinner === regLT.champTeam ? regLB.champTeam : regLT.champTeam);
+  const rightHalfLoser = isLive ? (finalB.loser || 'TBD') : (rightHalfWinner === regRT.champTeam ? regRB.champTeam : regRT.champTeam);
+  const mainChampion = isLive ? (champMatch.winner || 'TBD') : window.pickWinner(leftHalfWinner, rightHalfWinner);
+  const runnerUp = isLive ? (champMatch.loser || 'TBD') : (mainChampion === leftHalfWinner ? rightHalfWinner : leftHalfWinner);
+  const thirdPlace = isLive ? (thirdMatch.winner || 'TBD') : window.pickWinner(leftHalfLoser, rightHalfLoser);
+  const fourthPlace = isLive ? (thirdMatch.loser || 'TBD') : (thirdPlace === leftHalfLoser ? rightHalfLoser : leftHalfLoser);
   const thirdY = champY + 210;
   function dropPath(x1, y1, x2, y2, r = 16) {
     const dx = Math.sign(x2 - x1) || 1;
@@ -114,10 +151,10 @@ function Poster() {
   const consolMidY = (CONSOL_Y0 + CONSOL_Y1) / 2;
   const CONSOL_GAPS = [420, 400, 300];
   const CONSOL_HALF_GAP = 230;
-  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults });
-  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults });
-  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults });
-  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults });
+  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLT.id].roundWinners });
+  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLB.id].roundWinners });
+  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRT.id].roundWinners });
+  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRB.id].roundWinners });
 
   const consolGapSum = CONSOL_GAPS.reduce((a, b) => a + b, 0);
   const cLeftHalfX = 100 + consolGapSum + CONSOL_HALF_GAP;
@@ -134,14 +171,19 @@ function Poster() {
     mergeConnector('c5', cLeftHalfX, cLeftHalfY, CHAMPION_X, cChampY, 'var(--ink)', 'bus'),
     mergeConnector('c6', cRightHalfX, cRightHalfY, CHAMPION_X, cChampY, 'var(--ink)', 'bus'),
   ];
-  const cLeftHalfWinner = window.pickWinner(cLT.champTeam, cLB.champTeam);
-  const cRightHalfWinner = window.pickWinner(cRT.champTeam, cRB.champTeam);
-  const consolChampion = window.pickWinner(cLeftHalfWinner, cRightHalfWinner);
-  const consolRunnerUp = consolChampion === cLeftHalfWinner ? cRightHalfWinner : cLeftHalfWinner;
-  const cLeftHalfLoser = cLeftHalfWinner === cLT.champTeam ? cLB.champTeam : cLT.champTeam;
-  const cRightHalfLoser = cRightHalfWinner === cRT.champTeam ? cRB.champTeam : cRT.champTeam;
-  const consolThird = window.pickWinner(cLeftHalfLoser, cRightHalfLoser);
-  const consolFourth = consolThird === cLeftHalfLoser ? cRightHalfLoser : cLeftHalfLoser;
+  const cFinalA = isLive ? (liveData.matches['C4-01'] || {}) : null;
+  const cFinalB = isLive ? (liveData.matches['C4-02'] || {}) : null;
+  const cChampMatch = isLive ? (liveData.matches['C2-01'] || {}) : null;
+  const cThirdMatch = isLive ? (liveData.matches['C2-02'] || {}) : null;
+
+  const cLeftHalfWinner = isLive ? (cFinalA.winner || 'TBD') : window.pickWinner(cLT.champTeam, cLB.champTeam);
+  const cRightHalfWinner = isLive ? (cFinalB.winner || 'TBD') : window.pickWinner(cRT.champTeam, cRB.champTeam);
+  const cLeftHalfLoser = isLive ? (cFinalA.loser || 'TBD') : (cLeftHalfWinner === cLT.champTeam ? cLB.champTeam : cLT.champTeam);
+  const cRightHalfLoser = isLive ? (cFinalB.loser || 'TBD') : (cRightHalfWinner === cRT.champTeam ? cRB.champTeam : cRT.champTeam);
+  const consolChampion = isLive ? (cChampMatch.winner || 'TBD') : window.pickWinner(cLeftHalfWinner, cRightHalfWinner);
+  const consolRunnerUp = isLive ? (cChampMatch.loser || 'TBD') : (consolChampion === cLeftHalfWinner ? cRightHalfWinner : cLeftHalfWinner);
+  const consolThird = isLive ? (cThirdMatch.winner || 'TBD') : window.pickWinner(cLeftHalfLoser, cRightHalfLoser);
+  const consolFourth = isLive ? (cThirdMatch.loser || 'TBD') : (consolThird === cLeftHalfLoser ? cRightHalfLoser : cLeftHalfLoser);
   const cThirdY = cChampY + 150;
   const consolThirdPlaceMerges = [
     <path key="ctp1" d={dropPath(cLeftHalfX, cLeftHalfY, CHAMPION_X, cThirdY, 12)} stroke="var(--ink)" strokeWidth="3" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
