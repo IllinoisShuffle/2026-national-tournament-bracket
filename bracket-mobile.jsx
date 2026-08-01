@@ -80,7 +80,7 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
           {showLabels && (
             <text transform={`translate(${x}, ${y0 - 14}) rotate(-90)`} textAnchor="start"
               fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" fill="var(--ink)">
-              {truncateLabel(teams[i].split(' / ')[0], 16)}
+              {truncateLabel(teams[i], 25)}
             </text>
           )}
         </g>
