@@ -10,6 +10,13 @@ function Poster() {
   const [zoom, setZoom] = React.useState(1);
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const dragRef = React.useRef(null);
+  const posterRef = React.useRef(null);
+
+  // Kiosk/TV mode (?kiosk): no pointer input to drive pan/zoom on a TV, so
+  // instead we auto-cycle the camera through fixed regions of the poster.
+  const isKiosk = React.useMemo(() => /[?&]kiosk\b/.test(location.search), []);
+  const [kioskIndex, setKioskIndex] = React.useState(0);
+  const [kioskCam, setKioskCam] = React.useState({ zoom: 1, x: 0, y: 0 });
 
   // Live results (from the Netlify Function / Google Sheet). Falls back to
   // the mock demo bracket below whenever this is null — no backend deployed,
@@ -29,16 +36,17 @@ function Poster() {
 
   const clampZoom = (z) => Math.max(1, Math.min(6, z));
   const onWheel = (e) => {
+    if (isKiosk) return;
     if (!e.ctrlKey && !e.metaKey) return; // let normal page scroll/trackpad pass through
     e.preventDefault();
     setZoom((z) => clampZoom(z - e.deltaY * 0.01));
   };
   const onPointerDown = (e) => {
-    if (zoom <= 1) return;
+    if (isKiosk || zoom <= 1) return;
     dragRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
   };
   const onPointerMove = (e) => {
-    if (!dragRef.current) return;
+    if (isKiosk || !dragRef.current) return;
     const dx = e.clientX - dragRef.current.x;
     const dy = e.clientY - dragRef.current.y;
     setPan({ x: dragRef.current.panX + dx, y: dragRef.current.panY + dy });
@@ -190,23 +198,86 @@ function Poster() {
     <path key="ctp2" d={dropPath(cRightHalfX, cRightHalfY, CHAMPION_X, cThirdY, 12)} stroke="var(--ink)" strokeWidth="3" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
   ];
 
+  // ---------- KIOSK / TV MODE ----------
+  // Fixed regions (in poster coordinates) to auto-pan/zoom through when no
+  // pointer is available to drive the view manually. Sized generously so
+  // labels near the edges don't get clipped.
+  const KIOSK_HOLD_MS = 9000;
+  const busPairLabel = (a, b) => `${a.busNum} ${a.busName} & ${b.busNum} ${b.busName}`;
+  // Skip a bracket's "finals" stop until it actually has a decided regional
+  // champion — before that the crop is just empty TBD placeholders. Demo
+  // mode (no live backend) has no TBD state, so it's always ready.
+  const mainFinalsReady = !isLive || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
+  const consolFinalsReady = !isLive || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
+  const kioskViews = [
+    { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
+    { label: 'MAIN · RED & BLUE', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
+    { label: 'MAIN · GREEN & ORANGE', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
+    ...(mainFinalsReady ? [{ label: 'MAIN BRACKET FINALS', x0: CHAMPION_X - 430, y0: Math.min(loopBounds.y0, champY - 100), x1: CHAMPION_X + 430, y1: loopBounds.y1 + 370 }] : []),
+    { label: `CONSOLATION · ${busPairLabel(qLT, qLB)}`, x0: 20, y0: CONSOL_Y0 - 40, x1: cLeftHalfX + 150, y1: CONSOL_Y1 + 20 },
+    { label: `CONSOLATION · ${busPairLabel(qRT, qRB)}`, x0: cRightHalfX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
+    ...(consolFinalsReady ? [{ label: 'CONSOLATION FINALS', x0: CHAMPION_X - 340, y0: cChampY - 100, x1: CHAMPION_X + 340, y1: cThirdY + 320 }] : []),
+  ];
+
+  React.useEffect(() => {
+    if (!isKiosk) return;
+    const id = setInterval(() => {
+      setKioskIndex((i) => (i + 1) % kioskViews.length);
+    }, KIOSK_HOLD_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKiosk]);
+
+  React.useEffect(() => {
+    if (!isKiosk) return;
+    function applyCamera() {
+      const el = posterRef.current;
+      if (!el || !el.offsetWidth) return;
+      const view = kioskViews[kioskIndex % kioskViews.length];
+      const w = view.x1 - view.x0, h = view.y1 - view.y0;
+      const z = clampZoom(Math.max(POSTER_W / w, POSTER_H / h) * 0.96);
+      const k = el.offsetWidth / POSTER_W;
+      const cx = (view.x0 + view.x1) / 2, cy = (view.y0 + view.y1) / 2;
+      setKioskCam({ zoom: z, x: -z * k * (cx - POSTER_W / 2), y: -z * k * (cy - POSTER_H / 2) });
+    }
+    applyCamera();
+    window.addEventListener('resize', applyCamera);
+    return () => window.removeEventListener('resize', applyCamera);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isKiosk, kioskIndex]);
+
+  const posterTransform = isKiosk
+    ? `translate(${kioskCam.x}px, ${kioskCam.y}px) scale(${kioskCam.zoom})`
+    : `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
+
   return (
     <div className="poster-stage" onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
-      <window.TweaksPanel>
-        <window.TweakRadio label="Background" value={t.theme} options={['paper', 'ink']} onChange={(v) => setTweak('theme', v)} />
-        <window.TweakToggle label="Team names" value={t.showTeamNames} onChange={(v) => setTweak('showTeamNames', v)} />
-        <window.TweakToggle label="Sample results" value={t.showResults} onChange={(v) => setTweak('showResults', v)} />
-        <window.TweakText label="Tagline" value={t.tagline} onChange={(v) => setTweak('tagline', v)} />
-      </window.TweaksPanel>
+      {!isKiosk && (
+        <window.TweaksPanel>
+          <window.TweakRadio label="Background" value={t.theme} options={['paper', 'ink']} onChange={(v) => setTweak('theme', v)} />
+          <window.TweakToggle label="Team names" value={t.showTeamNames} onChange={(v) => setTweak('showTeamNames', v)} />
+          <window.TweakToggle label="Sample results" value={t.showResults} onChange={(v) => setTweak('showResults', v)} />
+          <window.TweakText label="Tagline" value={t.tagline} onChange={(v) => setTweak('tagline', v)} />
+        </window.TweaksPanel>
+      )}
 
-      <div className="zoom-toolbar">
-        <button onClick={() => zoomBy(-0.4)}>−</button>
-        <span>{Math.round(zoom * 100)}%</span>
-        <button onClick={() => zoomBy(0.4)}>+</button>
-        <button onClick={resetView} className="zoom-reset">Reset</button>
-      </div>
+      {!isKiosk && (
+        <div className="zoom-toolbar">
+          <button onClick={() => zoomBy(-0.4)}>−</button>
+          <span>{Math.round(zoom * 100)}%</span>
+          <button onClick={() => zoomBy(0.4)}>+</button>
+          <button onClick={resetView} className="zoom-reset">Reset</button>
+        </div>
+      )}
 
-      <div className="poster" style={{ ...themeStyle, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, cursor: zoom > 1 ? 'grab' : 'default' }} data-screen-label="Tournament Poster">
+      {isKiosk && (
+        <div className="kiosk-caption">
+          <span className="kiosk-dot" />
+          {kioskViews[kioskIndex % kioskViews.length].label}
+        </div>
+      )}
+
+      <div ref={posterRef} className="poster" style={{ ...themeStyle, transform: posterTransform, transition: isKiosk ? 'transform 1.6s cubic-bezier(0.65,0,0.35,1)' : 'none', cursor: !isKiosk && zoom > 1 ? 'grab' : 'default' }} data-screen-label="Tournament Poster">
         <svg viewBox={`0 0 ${POSTER_W} ${POSTER_H}`} xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" className="poster-svg">
           <rect x="0" y="0" width={POSTER_W} height={POSTER_H} fill="var(--paper)" />
           <Header tagline={t.tagline} />

@@ -10,11 +10,40 @@ no bundler, no `npm run build`.
 |---|---|---|
 | Auto-redirect | `index.html` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
 | Web Bracket | `web-bracket.html` | Full 64-team zoomable/pannable poster. |
+| TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
 | Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
 | Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
 
 Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
 an "All views" link in the corner.
+
+`web-bracket.html` also redirects narrow viewports (≤700px) straight to the
+mobile layout, the same way `index.html` does — so a direct link, bookmark,
+or QR code that happens to land there from a phone still gets the readable
+layout instead of a shrunk-down poster. Add `?full` to force the desktop
+poster on a small screen anyway.
+
+### TV / kiosk mode
+
+Add `?kiosk` to `web-bracket.html` (e.g.
+`web-bracket.html?kiosk`) for unattended displays — a lobby TV, a monitor at
+the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
+
+- Hides the tweaks panel, zoom toolbar, and "All views" link.
+- Auto-cycles the camera every 9 seconds through the full bracket, each
+  main-bracket half, the main bracket finals, each consolation half, and
+  the consolation finals — zooming in on each so text stays legible at TV
+  viewing distance — with a caption at the bottom naming the current
+  section (consolation stops use the actual bus route names, e.g.
+  "50 DAMEN & 49 WESTERN").
+- The two "finals" stops (main and consolation) only appear once that
+  bracket actually has a decided regional champion — in live mode, with
+  matches still in round 1, those stops are skipped rather than looping on
+  an empty crop full of TBD placeholders. They start appearing automatically
+  as results come in. (Demo mode with no backend configured always shows
+  them, since the mock bracket has no TBD state.)
+- Combine with `?full` if the display itself reports a narrow viewport
+  width (e.g. a portrait-mounted screen) to skip the mobile redirect.
 
 ## Live results
 
