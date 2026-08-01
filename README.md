@@ -10,6 +10,7 @@ no bundler, no `npm run build`.
 |---|---|---|
 | Auto-redirect | `index.html` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
 | Web Bracket | `web-bracket.html` | Full 64-team zoomable/pannable poster. |
+| TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
 | Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
 | Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
 
