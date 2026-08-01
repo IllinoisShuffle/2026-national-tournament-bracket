@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2026 Chicago National · Tournament Bracket</title>
+<style>
+  :root { --paper: #F4EEDF; --ink: #15151A; --ink-dim: rgba(21,21,26,0.55); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--ink); color: var(--paper); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 64px 24px 48px; text-align: center; }
+  .lines { display: flex; justify-content: center; gap: 4px; margin-bottom: 24px; }
+  .lines span { width: 28px; height: 8px; display: block; border-radius: 2px; }
+  h1 { font-size: 15px; font-weight: 800; letter-spacing: 3px; color: var(--ink-dim); margin: 0 0 6px; text-transform: uppercase; }
+  h2 { font-size: clamp(28px, 6vw, 46px); font-weight: 900; letter-spacing: 1.5px; margin: 0 0 8px; }
+  .venue { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--ink-dim); margin: 0 0 48px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; text-align: left; }
+  .card { display: block; background: var(--paper); color: var(--ink); border-radius: 14px; padding: 22px 20px; text-decoration: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform .15s ease; }
+  .card:hover { transform: translateY(-3px); }
+  .card .kicker { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px; }
+  .card .title { font-size: 19px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 8px; }
+  .card .desc { font-size: 13px; line-height: 1.5; color: rgba(21,21,26,0.65); }
+  footer { margin-top: 56px; font-size: 11px; letter-spacing: 1.5px; color: var(--ink-dim); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="lines">
+      <span style="background:#D63A3A"></span>
+      <span style="background:#1E7FB8"></span>
+      <span style="background:#2D8C4C"></span>
+      <span style="background:#E7741A"></span>
+    </div>
+    <h1>2026 Chicago National</h1>
+    <h2>Shuffleboard Tournament Bracket</h2>
+    <p class="venue">ROYAL PALMS · CHICAGO IL · AUGUST 8&ndash;9 2026</p>
+
+    <div class="cards">
+      <a class="card" href="web-bracket.html">
+        <div class="kicker">Desktop / Zoomable</div>
+        <div class="title">Web Bracket</div>
+        <div class="desc">Full 64-team subway &amp; bus-route bracket poster. Pinch/scroll to zoom, pan around the board.</div>
+      </a>
+      <a class="card" href="mobile-bracket.html">
+        <div class="kicker">Phone-friendly</div>
+        <div class="title">Mobile Bracket</div>
+        <div class="desc">Vertical, single-column layout for checking results on the go at the venue.</div>
+      </a>
+      <a class="card" href="print-poster.html">
+        <div class="kicker">Fill-in-by-hand</div>
+        <div class="title">Print Poster</div>
+        <div class="desc">Blank bracket sized for a large-format print &mdash; write in results as matches finish.</div>
+      </a>
+    </div>
+
+    <footer>ROYAL PALMS SHUFFLEBOARD CLUB · 1750 N. MILWAUKEE AVE · CHICAGO IL</footer>
+  </div>
+</body>
+</html>
