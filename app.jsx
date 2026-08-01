@@ -204,19 +204,36 @@ function Poster() {
   // labels near the edges don't get clipped.
   const KIOSK_HOLD_MS = 9000;
   const busPairLabel = (a, b) => `${a.busNum} ${a.busName} & ${b.busNum} ${b.busName}`;
-  // Skip a bracket's "finals" stop until it actually has a decided regional
-  // champion — before that the crop is just empty TBD placeholders. Demo
-  // mode (no live backend) has no TBD state, so it's always ready.
-  const mainFinalsReady = !isLive || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
-  const consolFinalsReady = !isLive || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
+
+  // Same boundary math as the (drawn) main-bracket `loopBounds`, but for the
+  // consolation bracket, which has no visible loop rect of its own.
+  const consolLoopBounds = {
+    x0: Math.min(cLT.champX, cLB.champX) - 45, x1: Math.max(cRT.champX, cRB.champX) + 45,
+    y0: Math.min(cLT.champY, cRT.champY) - 55, y1: Math.max(cLB.champY, cRB.champY, cThirdY) + 70,
+  };
+
+  // Gate each "results" stop on how far the tournament has actually
+  // progressed, so kiosk mode never dwells on an empty crop full of TBD
+  // placeholders. Demo mode (no live backend) has no TBD state, so
+  // everything is always ready there.
+  const mainLoopReady = !isLive || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
+  const mainRankingsReady = !isLive || [mainChampion, runnerUp, thirdPlace, fourthPlace].every((t) => t !== 'TBD');
+  const consolFinalFourReady = !isLive || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
+  const consolRankingsReady = !isLive || [consolChampion, consolRunnerUp, consolThird, consolFourth].every((t) => t !== 'TBD');
+
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
     { label: 'MAIN · RED & BLUE', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
     { label: 'MAIN · GREEN & ORANGE', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
-    ...(mainFinalsReady ? [{ label: 'MAIN BRACKET FINALS', x0: CHAMPION_X - 430, y0: Math.min(loopBounds.y0, champY - 100), x1: CHAMPION_X + 430, y1: loopBounds.y1 + 370 }] : []),
+    // Semifinals + final + 3rd place game, matching the drawn "loop" rect
+    // plus room above for the championship matchup label, which sits above it.
+    ...(mainLoopReady ? [{ label: 'MAIN · THE LOOP', x0: loopBounds.x0, y0: Math.min(loopBounds.y0, champY - 150), x1: loopBounds.x1, y1: loopBounds.y1 }] : []),
+    // The FinalRanking block sits just below the loop, centered on CHAMPION_X.
+    ...(mainRankingsReady ? [{ label: 'MAIN · FINAL RANKINGS', x0: CHAMPION_X - 380, y0: loopBounds.y1 - 20, x1: CHAMPION_X + 380, y1: loopBounds.y1 + 380 }] : []),
     { label: `CONSOLATION · ${busPairLabel(qLT, qLB)}`, x0: 20, y0: CONSOL_Y0 - 40, x1: cLeftHalfX + 150, y1: CONSOL_Y1 + 20 },
     { label: `CONSOLATION · ${busPairLabel(qRT, qRB)}`, x0: cRightHalfX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
-    ...(consolFinalsReady ? [{ label: 'CONSOLATION FINALS', x0: CHAMPION_X - 340, y0: cChampY - 100, x1: CHAMPION_X + 340, y1: cThirdY + 320 }] : []),
+    ...(consolFinalFourReady ? [{ label: 'CONSOLATION · FINAL FOUR', x0: consolLoopBounds.x0, y0: Math.min(consolLoopBounds.y0, cChampY - 120), x1: consolLoopBounds.x1, y1: consolLoopBounds.y1 }] : []),
+    ...(consolRankingsReady ? [{ label: 'CONSOLATION · FINAL RANKINGS', x0: CHAMPION_X - 320, y0: cThirdY + 20, x1: CHAMPION_X + 320, y1: cThirdY + 340 }] : []),
   ];
 
   React.useEffect(() => {
@@ -235,7 +252,12 @@ function Poster() {
       if (!el || !el.offsetWidth) return;
       const view = kioskViews[kioskIndex % kioskViews.length];
       const w = view.x1 - view.x0, h = view.y1 - view.y0;
-      const z = clampZoom(Math.max(POSTER_W / w, POSTER_H / h) * 0.96);
+      // Math.min ("contain") guarantees the whole region is visible, even if
+      // it leaves a bit of margin on one axis. Math.max ("cover") would zoom
+      // to fill both axes and crop whichever axis needed less zoom — which
+      // is exactly what was clipping the top/bottom of the old combined
+      // finals view.
+      const z = clampZoom(Math.min(POSTER_W / w, POSTER_H / h) * 0.94);
       const k = el.offsetWidth / POSTER_W;
       const cx = (view.x0 + view.x1) / 2, cy = (view.y0 + view.y1) / 2;
       setKioskCam({ zoom: z, x: -z * k * (cx - POSTER_W / 2), y: -z * k * (cy - POSTER_H / 2) });

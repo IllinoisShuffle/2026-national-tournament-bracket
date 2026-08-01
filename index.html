@@ -25,12 +25,18 @@
   h1 { font-size: 15px; font-weight: 800; letter-spacing: 3px; color: var(--ink-dim); margin: 0 0 6px; text-transform: uppercase; }
   h2 { font-size: clamp(28px, 6vw, 46px); font-weight: 900; letter-spacing: 1.5px; margin: 0 0 8px; }
   .venue { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--ink-dim); margin: 0 0 48px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; text-align: left; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); justify-content: center; gap: 16px; text-align: left; }
   .card { display: block; background: var(--paper); color: var(--ink); border-radius: 14px; padding: 22px 20px; text-decoration: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform .15s ease; }
   .card:hover { transform: translateY(-3px); }
   .card .kicker { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px; }
   .card .title { font-size: 19px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 8px; }
   .card .desc { font-size: 13px; line-height: 1.5; color: rgba(21,21,26,0.65); }
+  /* Web + Mobile fill the top row; Kiosk drops to its own centered row. */
+  .card-kiosk { grid-column: 1 / -1; justify-self: center; width: 100%; }
+  @media (max-width: 560px) {
+    .cards { grid-template-columns: minmax(0, 300px); }
+    .card-kiosk { grid-column: auto; }
+  }
   footer { margin-top: 56px; font-size: 11px; letter-spacing: 1.5px; color: var(--ink-dim); }
 </style>
 </head>
@@ -57,7 +63,7 @@
         <div class="title">Mobile Bracket</div>
         <div class="desc">Vertical, single-column layout for checking results on the go at the venue.</div>
       </a>
-      <a class="card" href="web-bracket.html?kiosk&full">
+      <a class="card card-kiosk" href="web-bracket.html?kiosk&full">
         <div class="kicker">Unattended Display</div>
         <div class="title">TV / Kiosk Mode</div>
         <div class="desc">No mouse needed &mdash; auto-cycles through the bracket on a timer. Built for a lobby TV or venue monitor.</div>
