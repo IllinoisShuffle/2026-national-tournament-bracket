@@ -30,18 +30,25 @@ Add `?kiosk` to `web-bracket.html` (e.g.
 the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
 
 - Hides the tweaks panel, zoom toolbar, and "All views" link.
-- Auto-cycles the camera every 9 seconds through the full bracket, each
-  main-bracket half, the main bracket finals, each consolation half, and
-  the consolation finals — zooming in on each so text stays legible at TV
-  viewing distance — with a caption at the bottom naming the current
-  section (consolation stops use the actual bus route names, e.g.
-  "50 DAMEN & 49 WESTERN").
-- The two "finals" stops (main and consolation) only appear once that
-  bracket actually has a decided regional champion — in live mode, with
-  matches still in round 1, those stops are skipped rather than looping on
-  an empty crop full of TBD placeholders. They start appearing automatically
-  as results come in. (Demo mode with no backend configured always shows
-  them, since the mock bracket has no TBD state.)
+- Auto-cycles the camera every 9 seconds through up to 9 stops, zooming in
+  on each so text stays legible at TV viewing distance, with a caption at
+  the bottom naming the current one:
+  1. Full bracket
+  2. Main · Red & Blue
+  3. Main · Green & Orange
+  4. Main · The Loop (semifinals, final, 3rd place game)
+  5. Main · Final Rankings
+  6. Consolation · &lt;bus route pair&gt; (e.g. "50 DAMEN & 49 WESTERN")
+  7. Consolation · &lt;bus route pair&gt;
+  8. Consolation · Final Four
+  9. Consolation · Final Rankings
+- Stops 4/5 and 8/9 are gated on tournament progress, so kiosk mode never
+  dwells on an empty crop full of TBD placeholders: the "Loop"/"Final Four"
+  stop appears once at least one region has crowned a champion, and the
+  "Final Rankings" stop only once all four placements (1st–4th) are decided.
+  They fade in automatically as live results come in — no restart needed.
+  (Demo mode with no backend configured always shows all 9, since the mock
+  bracket has no TBD state.)
 - Combine with `?full` if the display itself reports a narrow viewport
   width (e.g. a portrait-mounted screen) to skip the mobile redirect.
 
