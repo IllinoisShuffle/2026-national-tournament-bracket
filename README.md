@@ -16,6 +16,27 @@ no bundler, no `npm run build`.
 Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
 an "All views" link in the corner.
 
+`web-bracket.html` also redirects narrow viewports (≤700px) straight to the
+mobile layout, the same way `index.html` does — so a direct link, bookmark,
+or QR code that happens to land there from a phone still gets the readable
+layout instead of a shrunk-down poster. Add `?full` to force the desktop
+poster on a small screen anyway.
+
+### TV / kiosk mode
+
+Add `?kiosk` to `web-bracket.html` (e.g.
+`web-bracket.html?kiosk`) for unattended displays — a lobby TV, a monitor at
+the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
+
+- Hides the tweaks panel, zoom toolbar, and "All views" link.
+- Auto-cycles the camera every 9 seconds through the full bracket, each
+  main-bracket half, the main bracket finals, each consolation half, and
+  the consolation finals — zooming in on each so text stays legible at TV
+  viewing distance — with a caption at the bottom naming the current
+  section.
+- Combine with `?full` if the display itself reports a narrow viewport
+  width (e.g. a portrait-mounted screen) to skip the mobile redirect.
+
 ## Live results
 
 `web-bracket.html` and `mobile-bracket.html` poll a Netlify Function

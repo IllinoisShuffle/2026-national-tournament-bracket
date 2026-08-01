@@ -4,6 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=6" />
   <title>2026 Chicago National · Tournament Bracket</title>
+  <script>
+    // A direct link/QR code/bookmark can land here on a phone even though
+    // index.html would normally have routed it to the mobile layout. Bounce
+    // narrow viewports over there too, unless explicitly overridden.
+    (function () {
+      if (/[?&]kiosk\b/.test(location.search)) {
+        document.documentElement.classList.add('kiosk-mode');
+      }
+      if (/[?&](full|choose)\b/.test(location.search)) return;
+      var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+      if (isNarrow) location.replace('mobile-bracket.html');
+    })();
+  </script>
   <style>
     :root {
       --paper: #F4EEDF;
@@ -100,6 +113,42 @@
     }
     .all-views-link:hover { color: #fff; }
     @media print { .all-views-link { display: none; } }
+
+    /* Kiosk / TV mode: no pointer, no chrome, just an auto-panning poster
+       plus a caption telling a passerby what section is on screen. */
+    .kiosk-mode .all-views-link { display: none; }
+    .kiosk-mode .poster-stage { padding: 10px; }
+    .kiosk-mode .poster { width: min(99vw, calc((100vh - 20px) * (3300 / 3000))); }
+    .kiosk-caption {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%);
+      z-index: 2147483000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      padding: 11px 24px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    .kiosk-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2ECC71;
+      animation: kiosk-pulse 1.8s infinite;
+    }
+    @keyframes kiosk-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(46,204,113,0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(46,204,113,0); }
+      100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+    }
     @media print {
       html, body { background: white; }
       .poster-stage { padding: 0; }
