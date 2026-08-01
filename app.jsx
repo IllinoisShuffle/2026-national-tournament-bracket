@@ -203,14 +203,20 @@ function Poster() {
   // pointer is available to drive the view manually. Sized generously so
   // labels near the edges don't get clipped.
   const KIOSK_HOLD_MS = 9000;
+  const busPairLabel = (a, b) => `${a.busNum} ${a.busName} & ${b.busNum} ${b.busName}`;
+  // Skip a bracket's "finals" stop until it actually has a decided regional
+  // champion — before that the crop is just empty TBD placeholders. Demo
+  // mode (no live backend) has no TBD state, so it's always ready.
+  const mainFinalsReady = !isLive || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
+  const consolFinalsReady = !isLive || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
     { label: 'MAIN · RED & BLUE', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
     { label: 'MAIN · GREEN & ORANGE', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
-    { label: 'MAIN BRACKET FINALS', x0: CHAMPION_X - 430, y0: Math.min(loopBounds.y0, champY - 100), x1: CHAMPION_X + 430, y1: loopBounds.y1 + 370 },
-    { label: 'CONSOLATION · RED & BLUE', x0: 20, y0: CONSOL_Y0 - 40, x1: cLeftHalfX + 150, y1: CONSOL_Y1 + 20 },
-    { label: 'CONSOLATION · GREEN & ORANGE', x0: cRightHalfX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
-    { label: 'CONSOLATION FINALS', x0: CHAMPION_X - 340, y0: cChampY - 100, x1: CHAMPION_X + 340, y1: cThirdY + 320 },
+    ...(mainFinalsReady ? [{ label: 'MAIN BRACKET FINALS', x0: CHAMPION_X - 430, y0: Math.min(loopBounds.y0, champY - 100), x1: CHAMPION_X + 430, y1: loopBounds.y1 + 370 }] : []),
+    { label: `CONSOLATION · ${busPairLabel(qLT, qLB)}`, x0: 20, y0: CONSOL_Y0 - 40, x1: cLeftHalfX + 150, y1: CONSOL_Y1 + 20 },
+    { label: `CONSOLATION · ${busPairLabel(qRT, qRB)}`, x0: cRightHalfX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
+    ...(consolFinalsReady ? [{ label: 'CONSOLATION FINALS', x0: CHAMPION_X - 340, y0: cChampY - 100, x1: CHAMPION_X + 340, y1: cThirdY + 320 }] : []),
   ];
 
   React.useEffect(() => {

@@ -33,7 +33,14 @@ the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
   main-bracket half, the main bracket finals, each consolation half, and
   the consolation finals — zooming in on each so text stays legible at TV
   viewing distance — with a caption at the bottom naming the current
-  section.
+  section (consolation stops use the actual bus route names, e.g.
+  "50 DAMEN & 49 WESTERN").
+- The two "finals" stops (main and consolation) only appear once that
+  bracket actually has a decided regional champion — in live mode, with
+  matches still in round 1, those stops are skipped rather than looping on
+  an empty crop full of TBD placeholders. They start appearing automatically
+  as results come in. (Demo mode with no backend configured always shows
+  them, since the mock bracket has no TBD state.)
 - Combine with `?full` if the display itself reports a narrow viewport
   width (e.g. a portrait-mounted screen) to skip the mobile redirect.
 
