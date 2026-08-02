@@ -6,6 +6,7 @@
 <title>2026 Chicago National · Mobile Bracket</title>
 <style>
 :root{--paper:#F4EEDF;--ink:#15151A;--ink-dim:rgba(21,21,26,0.55)}
+html{scroll-padding-top:78px}
 html,body{margin:0;padding:0;background:#1a1a1d;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
 .m-stage{width:100%;min-height:100vh;display:flex;justify-content:center}
 .m-poster{width:100%;max-width:520px;background:var(--paper);color:var(--ink);min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,0.4)}
@@ -43,8 +44,10 @@ html,body{margin:0;padding:0;background:#1a1a1d;font-family:'Helvetica Neue',Hel
 .m-footer-sub{color:var(--ink-dim);font-size:10px!important}
 a{color:var(--ink)}a:hover{color:var(--ink-dim)}
 .all-views-link{position:fixed;left:10px;top:10px;z-index:2147483000;font-size:10px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.65);text-decoration:none;background:rgba(255,255,255,0.12);padding:5px 8px;border-radius:7px}
-.m-quicknav{position:sticky;top:0;z-index:40;display:flex;gap:6px;overflow-x:auto;padding:34px 12px 10px;background:var(--ink);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.m-quicknav-wrap{position:sticky;top:0;z-index:40}
+.m-quicknav{display:flex;gap:6px;overflow-x:auto;padding:34px 12px 10px;background:var(--ink);-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .m-quicknav::-webkit-scrollbar{display:none}
+.m-quicknav-fade{position:absolute;top:0;right:0;bottom:0;width:32px;background:linear-gradient(to right, transparent, var(--ink) 70%);pointer-events:none}
 .m-quicknav a{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:0.5px;color:var(--paper)!important;text-decoration:none;background:rgba(244,238,223,0.12);padding:6px 10px;border-radius:999px;white-space:nowrap;border:1.5px solid transparent}
 .m-quicknav a:active{background:rgba(244,238,223,0.26)}
 .m-back-to-top{position:fixed;right:14px;bottom:18px;z-index:2147483000;width:42px;height:42px;border-radius:50%;background:var(--ink);color:var(--paper)!important;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,0.4);border:2px solid var(--paper)}

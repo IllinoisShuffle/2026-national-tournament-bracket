@@ -23,6 +23,21 @@ function MobilePoster() {
   }, []);
   const isLive = !!liveData;
 
+  // The quick-nav row holds more shortcut pills than fit on a phone screen at
+  // once, so it scrolls horizontally — show a fade on the right edge as a
+  // hint, and hide it once scrolled all the way to the last pill.
+  const navRef = React.useRef(null);
+  const [navHasMore, setNavHasMore] = React.useState(true);
+  React.useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const check = () => setNavHasMore(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => { el.removeEventListener('scroll', check); window.removeEventListener('resize', check); };
+  }, []);
+
   const dark = t.theme === 'ink';
   const themeStyle = dark
     ? { '--paper': '#0E0E10', '--ink': '#F4EEDF', '--ink-dim': 'rgba(244,238,223,0.55)' }
@@ -108,17 +123,20 @@ function MobilePoster() {
       </window.TweaksPanel>
 
       <div className="m-poster" style={themeStyle} data-screen-label="Mobile Bracket">
-        <nav className="m-quicknav" aria-label="Jump to region">
-          <a href="#m-top">TOP</a>
-          {window.QUARTERS.map((q) => (
-            <a key={`nav-main-${q.id}`} href={`#main-${q.id}`} style={{ borderColor: q.color }}>{q.name.split(' ')[0]}</a>
-          ))}
-          <a href="#main-results">RESULTS</a>
-          {window.QUARTERS.map((q) => (
-            <a key={`nav-consol-${q.id}`} href={`#consol-${q.id}`} style={{ borderColor: q.color }}>BUS {q.busNum}</a>
-          ))}
-          <a href="#consol-results">CONSOL</a>
-        </nav>
+        <div className="m-quicknav-wrap">
+          <nav className="m-quicknav" aria-label="Jump to region" ref={navRef}>
+            <a href="#m-top">TOP</a>
+            {window.QUARTERS.map((q) => (
+              <a key={`nav-main-${q.id}`} href={`#main-${q.id}`} style={{ borderColor: q.color }}>{q.name.split(' ')[0]}</a>
+            ))}
+            <a href="#main-results">RESULTS</a>
+            {window.QUARTERS.map((q) => (
+              <a key={`nav-consol-${q.id}`} href={`#consol-${q.id}`} style={{ borderColor: q.color }}>BUS {q.busNum}</a>
+            ))}
+            <a href="#consol-results">CONSOL</a>
+          </nav>
+          {navHasMore && <div className="m-quicknav-fade" aria-hidden="true" />}
+        </div>
         <a className="m-back-to-top" href="#m-top" aria-label="Back to top">↑</a>
         <header className="m-header" id="m-top">
           <div className="m-logos">
