@@ -13,6 +13,7 @@ no bundler, no `npm run build`.
 | TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
 | Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
 | Live Scoreboard | `scoreboard.html` | Matches currently on the court — scores, court number, and what's up next. |
+| Court Scorekeeping | `score.html?court=N` | Court host tool for entering an in-progress match's score. One static link per court — see "In-progress court scores" below. |
 | Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
 
 Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
@@ -67,12 +68,12 @@ match's teams, scores, court, and winner as JSON.
   demo matches instead, since it has no bracket to derive results from.
 - Once live, matches without a result yet render as `TBD` rather than a
   guessed winner.
-- The bracket views (`web-bracket.html`, `mobile-bracket.html`) show
-  winners only — no live score, court, or in-progress badge. That detail
-  lives in `scoreboard.html`, which reads the sheet's `Score` and `LIVE`
-  columns directly: any row with `LIVE` checked shows up as an active match
-  with its current score and court; rows with a court/time assigned but not
-  yet live show up under "Up Next".
+- Winners always come from the Matches sheet. In-progress scores are a
+  separate, supplementary feed — see "In-progress court scores" below — so
+  the bracket views (`web-bracket.html`, `mobile-bracket.html`) can now show
+  a small live-score badge next to an undecided match, and `scoreboard.html`
+  lists actively-scored matches under "On the Courts" with their running
+  score, and everything else with a court/time assigned under "Up Next".
 
 ### Cost and Sheets API quota
 
@@ -88,6 +89,47 @@ page polls, and each open tab polls every 45 seconds.
   Netlify's free tier includes 125k invocations/month, so normal tournament
   viewership (dozens of concurrent viewers over a weekend) stays well within
   the free tier.
+
+### In-progress court scores
+
+The Matches sheet is edited by the TD/ATD only, and — by design — a row's
+score/winner only gets filled in once a match is fully over. That means the
+sheet alone can never represent "in progress": there's no way to show a live
+score without either waiting until a match ends, or having court hosts edit
+the shared Matches tab themselves (which the TD and ATD have decided against,
+for both data-integrity and concurrent-editing reasons).
+
+Instead, in-progress scores are tracked in **Netlify Blobs** — a separate,
+low-stakes store, keyed by match ID (e.g. `M32-07`), written by court hosts
+via `score.html?court=N` and the `live-score` function:
+
+- **`score.html?court=N`** — one static, bookmarkable link per court for the
+  whole tournament. It reads the same match feed as everything else
+  (`/.netlify/functions/results`), filters to that court's matches with no
+  winner yet, and lets the host tap into one to start scoring. `court` is a
+  convenience filter against the sheet's `Court` column — not a login or an
+  identity check.
+- **`netlify/functions/live-score.js`** — the write endpoint `score.html`
+  POSTs to. Validates the match ID and score values, then stores
+  `{ matchId, court, yellowScore, blackScore, status, updatedAt }` in the
+  `live-scores` Blobs store, one entry per match ID, full overwrite each
+  call. It never touches the Google Sheets credentials — this endpoint can
+  only ever affect the supplementary live feed, never the Matches tab
+  itself.
+- **`results.js`** merges this in: a match's `liveScore` field is attached
+  only when that match's Matches-tab row has no `winner` yet. The instant
+  the TD/ATD transcribes a final result into the sheet, `liveScore` stops
+  being surfaced for that match — **the Matches tab always wins**. There's
+  no expiry job for old Blobs entries; once a match is finalized its live
+  entry is simply inert (small volume, no cost to leaving it).
+- This write endpoint is intentionally **unauthenticated** — no login/PIN.
+  Its blast radius is limited to a wrong-looking in-progress score, which
+  the TD's manual transcription supersedes regardless, so this was judged
+  not worth the friction of adding auth for an internal, venue-only tool.
+
+`score.html` is deliberately **not** linked from the public `index.html?choose`
+picker — distribute each court's link directly (text message, printed QR
+code) rather than publishing it.
 
 ### Match ID scheme
 
@@ -163,7 +205,12 @@ it.
   logic for each layout.
 - `app.jsx` / `app-mobile.jsx` / `app-print.jsx` / `app-scoreboard.jsx` —
   top-level page components.
+- `score.jsx` — court host scorekeeping UI (paired with `score.html`).
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
-- `netlify/functions/results.js` — reads the Matches sheet, returns
-  normalized JSON.
+- `netlify/functions/results.js` — reads the Matches sheet, merges in
+  live scores from Blobs, returns normalized JSON.
+- `netlify/functions/live-score.js` — write endpoint for in-progress court
+  scores (Netlify Blobs), used by `score.html`.
+- `netlify/functions/_shared/matchId.js` — shared match ID format/regex used
+  by both functions.
 - `assets/` — tournament and venue logos.

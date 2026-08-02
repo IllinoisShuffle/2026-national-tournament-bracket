@@ -9,3 +9,8 @@
   for = "/.netlify/functions/results"
   [headers.values]
     Cache-Control = "no-store"
+
+[[headers]]
+  for = "/.netlify/functions/live-score"
+  [headers.values]
+    Cache-Control = "no-store"

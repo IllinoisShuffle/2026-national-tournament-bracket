@@ -83,11 +83,11 @@ function MobilePoster() {
   const GAPS3 = [70, 62, 54];
 
   const regions = window.QUARTERS.map((q, qi) => {
-    const r = window.buildRegionV({ quarter: q, teams: quarterTeams[q.id], y0: LEAF_Y0, gaps: GAPS4, x0: 30, x1: W - 30, style: 'train', showLabels: t.showTeamNames, slotNumbers: Array.from({length:16},(_,i)=>qi*16+i+1), roundWinners: mainResolved[q.id].roundWinners });
+    const r = window.buildRegionV({ quarter: q, teams: quarterTeams[q.id], y0: LEAF_Y0, gaps: GAPS4, x0: 30, x1: W - 30, style: 'train', showLabels: t.showTeamNames, slotNumbers: Array.from({length:16},(_,i)=>qi*16+i+1), roundWinners: mainResolved[q.id].roundWinners, roundLive: mainResolved[q.id].roundLive });
     return { q, r };
   });
   const consolRegions = window.QUARTERS.map((q) => {
-    const r = window.buildRegionV({ quarter: q, teams: quarterConsolTeams[q.id], y0: LEAF_Y0, gaps: GAPS3, x0: 30, x1: W - 30, style: 'bus', showLabels: t.showTeamNames, roundWinners: consolResolved[q.id].roundWinners });
+    const r = window.buildRegionV({ quarter: q, teams: quarterConsolTeams[q.id], y0: LEAF_Y0, gaps: GAPS3, x0: 30, x1: W - 30, style: 'bus', showLabels: t.showTeamNames, roundWinners: consolResolved[q.id].roundWinners, roundLive: consolResolved[q.id].roundLive });
     return { q, r };
   });
 
@@ -179,12 +179,14 @@ function MobilePoster() {
               <div className="m-matchup-team">{mainChampsPairA}</div>
               <div className="m-vs">VS</div>
               <div className="m-matchup-team">{mainChampsPairB}</div>
+              <LiveBadgeM match={champMatch} />
             </div>
             <div className="m-matchup">
               <div className="m-matchup-title">3RD PLACE GAME</div>
               <div className="m-matchup-team">{mainLoserA}</div>
               <div className="m-vs">VS</div>
               <div className="m-matchup-team">{mainLoserB}</div>
+              <LiveBadgeM match={thirdMatch} />
             </div>
             <FinalRankingM first={mainChampion} second={mainRunnerUp} third={mainThird} fourth={mainFourth} />
           </div>
@@ -211,12 +213,14 @@ function MobilePoster() {
               <div className="m-matchup-team">{cChampsPairA}</div>
               <div className="m-vs">VS</div>
               <div className="m-matchup-team">{cChampsPairB}</div>
+              <LiveBadgeM match={cChampMatch} />
             </div>
             <div className="m-matchup">
               <div className="m-matchup-title">3RD PLACE GAME</div>
               <div className="m-matchup-team">{cLoserA}</div>
               <div className="m-vs">VS</div>
               <div className="m-matchup-team">{cLoserB}</div>
+              <LiveBadgeM match={cThirdMatch} />
             </div>
             <FinalRankingM first={cChampion} second={cRunnerUp} third={cThird} fourth={cFourth} />
           </div>
@@ -230,6 +234,14 @@ function MobilePoster() {
       </div>
     </div>
   );
+}
+
+// Small in-progress score indicator shown next to a matchup once a court
+// host has started entering live scores for it (see live-score.js) but the
+// TD/ATD hasn't transcribed a final winner into the Matches tab yet.
+function LiveBadgeM({ match }) {
+  if (!match || match.winner || !match.liveScore) return null;
+  return <div className="m-live-badge">{match.liveScore.yellowScore}–{match.liveScore.blackScore} ● LIVE</div>;
 }
 
 function FinalRankingM({ first, second, third, fourth }) {

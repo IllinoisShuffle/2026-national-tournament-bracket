@@ -11,7 +11,7 @@ function pickWinner(a, b) {
 }
 window.pickWinner = pickWinner;
 
-function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLabels, showResults, slotNumbers, roundWinners }) {
+function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLabels, showResults, slotNumbers, roundWinners, roundLive }) {
   const { bendPath, nextRoundYs } = window.LayoutHelpers;
   const N = teams.length;
   const S = Math.log2(N);
@@ -91,6 +91,7 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
           const isChamp = s === S;
           const r = isChamp ? 15 : (isTrain ? 8 : 6);
           const winnerName = roundTeams[s][j];
+          const live = !roundWinners?.[s - 1]?.[j] && roundLive && roundLive[s - 1] && roundLive[s - 1][j];
           return (
             <g key={`s${s}-${j}`}>
               <circle cx={xs[s]} cy={y} r={r + 4} fill="var(--paper)" />
@@ -105,6 +106,13 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
                   fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800"
                   fontSize={isChamp ? 13 : (isTrain ? 12 : 10.5)} letterSpacing="0.2" fill="var(--ink)">
                   {winnerName}
+                </text>
+              )}
+              {showResults && showLabels && live && (
+                <text x={xs[s] + labelDx} y={y - (isChamp ? 20 : 12) + 13} textAnchor={labelAnchor}
+                  fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700"
+                  fontSize={isTrain ? 10.5 : 9.5} letterSpacing="0.2" fill={color}>
+                  {`${live.yellowScore}–${live.blackScore} ● LIVE`}
                 </text>
               )}
             </g>

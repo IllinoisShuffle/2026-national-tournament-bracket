@@ -18,9 +18,11 @@
 //   SHEETS_MATCHES_RANGE           defaults to "Matches!A:L"
 
 const { JWT } = require('google-auth-library');
+const { getStore } = require('@netlify/blobs');
+const { MATCH_ID_RE } = require('./_shared/matchId');
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const MATCH_ID_RE = /^[MC](64|32|16|8|4|2)-\d+$/i;
+const LIVE_SCORES_STORE = 'live-scores';
 
 // Reused across warm invocations of the same function container to avoid
 // re-authenticating (and hitting the Sheets API) on every single poll.
@@ -68,6 +70,29 @@ function rowToMatch(row) {
   };
 }
 
+// Merges in-progress court scores (from the "live-score" write function)
+// onto matches that don't have an authoritative winner yet. The Matches
+// sheet always wins once the TD/ATD fills in a winner — a live entry never
+// overrides or contests a finalized result, it just stops being surfaced.
+// Failures here (Blobs outage, etc.) degrade to Sheets-only data rather than
+// breaking the whole response.
+async function attachLiveScores(matches) {
+  try {
+    const store = getStore(LIVE_SCORES_STORE);
+    const { blobs } = await store.list();
+    await Promise.all(
+      blobs.map(async ({ key }) => {
+        const match = matches[key];
+        if (!match || match.winner) return;
+        const entry = await store.get(key, { type: 'json' });
+        if (entry) match.liveScore = entry;
+      })
+    );
+  } catch (err) {
+    // Blobs unavailable — leave matches as Sheets-only.
+  }
+}
+
 exports.handler = async function () {
   if (cachedResult && Date.now() - cachedAt < CACHE_MS) {
     return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(cachedResult) };
@@ -84,6 +109,8 @@ exports.handler = async function () {
       const m = rowToMatch(row);
       matches[m.id.toUpperCase()] = m;
     }
+
+    await attachLiveScores(matches);
 
     const result = { matches, updatedAt: Date.now() };
     cachedResult = result;

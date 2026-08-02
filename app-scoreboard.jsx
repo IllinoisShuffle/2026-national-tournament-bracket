@@ -46,12 +46,12 @@ function describeMatch(m) {
 // but flagged explicitly here since scores are the whole point of this view.
 function buildDemoData() {
   const rows = [
-    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true },
-    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
-    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
-    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], yellowScore: '', black: window.TEAM_POOL[2], blackScore: '', live: true },
-    { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false },
-    { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false },
+    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], black: window.TEAM_POOL[5], liveScore: { yellowScore: 6, blackScore: 4, status: 'in_progress' } },
+    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], black: window.TEAM_POOL[21], liveScore: { yellowScore: 3, blackScore: 3, status: 'in_progress' } },
+    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], black: window.TEAM_POOL[9], liveScore: { yellowScore: 5, blackScore: 2, status: 'in_progress' } },
+    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress' } },
+    { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], black: window.TEAM_POOL[13] },
+    { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], black: window.TEAM_POOL[29] },
   ];
   const matches = {};
   rows.forEach((r) => { matches[r.id] = r; });
@@ -83,12 +83,18 @@ function Scoreboard() {
 
   const courtNum = (m) => { const n = parseInt(m.court, 10); return Number.isFinite(n) ? n : 999; };
 
+  // "On the courts" is driven entirely by live-score.js's Blobs data (via
+  // results.js's liveScore merge) — a court host actively scoring the match
+  // — not the Matches sheet's own LIVE/Score columns. Those columns reflect
+  // the TD/ATD's manual, post-match transcription, so a match only ever
+  // shows a score there once it's already over; there's no way for the sheet
+  // alone to represent "in progress."
   const activeMatches = allMatches
-    .filter((m) => m.live)
+    .filter((m) => m.liveScore && m.liveScore.status === 'in_progress' && !m.winner)
     .sort((a, b) => courtNum(a) - courtNum(b) || a.id.localeCompare(b.id));
 
   const upNext = allMatches
-    .filter((m) => !m.live && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
+    .filter((m) => !(m.liveScore && m.liveScore.status === 'in_progress') && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
     .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
 
   const dark = t.theme === 'ink';
@@ -186,8 +192,8 @@ function MatchCard({ m }) {
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}</div>
-      <TeamRow puck="yellow" name={m.yellow} score={m.yellowScore} />
-      <TeamRow puck="black" name={m.black} score={m.blackScore} />
+      <TeamRow puck="yellow" name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
+      <TeamRow puck="black" name={m.black} score={m.liveScore && m.liveScore.blackScore} />
       {(m.time || m.approxEnd) && (
         <div className="sb-card-foot">
           {m.time && <>Started {m.time}</>}
@@ -206,7 +212,7 @@ function TeamRow({ puck, name, score }) {
         <span className={`sb-puck sb-puck-${puck}`} />
         <span className="name">{name || 'TBD'}</span>
       </span>
-      {/* <span className="sb-score">{score !== '' && score != null ? score : '–'}</span>  */}
+      <span className="sb-score">{score != null ? score : '–'}</span>
     </div>
   );
 }
