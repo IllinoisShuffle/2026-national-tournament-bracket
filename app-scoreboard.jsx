@@ -62,11 +62,12 @@ function Scoreboard() {
   const [t, setTweak] = window.useTweaks(SCOREBOARD_TWEAK_DEFAULTS);
 
   const [liveData, setLiveData] = React.useState(null);
+  const [liveChecked, setLiveChecked] = React.useState(false);
   React.useEffect(() => {
     let cancelled = false;
     async function load() {
       const data = await window.LiveData.fetchLiveData();
-      if (!cancelled) setLiveData(data);
+      if (!cancelled) { setLiveData(data); setLiveChecked(true); }
     }
     load();
     const interval = setInterval(load, window.LiveData.LIVE_POLL_MS);
@@ -74,7 +75,13 @@ function Scoreboard() {
   }, []);
 
   const isLive = !!liveData;
-  const data = liveData || buildDemoData();
+  // Before the first fetch resolves, render an empty real shape instead of
+  // the demo matches, so a connected backend's real state (however sparse)
+  // never gets visibly overwritten by fake sample cards on every reload.
+  // Only fall back to demo data once we've confirmed there's genuinely no
+  // backend to talk to — same pattern as app.jsx/app-mobile.jsx.
+  const useLiveShape = isLive || !liveChecked;
+  const data = useLiveShape ? (liveData || { matches: {} }) : buildDemoData();
 
   const allMatches = React.useMemo(
     () => Object.values(data.matches).map(describeMatch).filter(Boolean),
@@ -135,7 +142,7 @@ function Scoreboard() {
           </div>
         </div>
 
-        {!isLive && (
+        {!isLive && liveChecked && (
           <div className="sb-demo-banner">Live results aren't connected yet — showing sample demo matches.</div>
         )}
 

@@ -3,3 +3,4 @@
 .env.*
 .netlify
 node_modules
+deno.lock
