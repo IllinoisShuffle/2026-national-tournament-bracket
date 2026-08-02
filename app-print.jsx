@@ -9,7 +9,7 @@ function PrintPoster() {
     POSTER_W, POSTER_H, HEADER_H, MAIN_Y0, MAIN_Y1, DIVIDER_Y0, DIVIDER_Y1,
     CONSOL_Y0, CONSOL_Y1, FOOTER_Y0, CHAMPION_X,
   } = window.LayoutConsts;
-  const { mergeConnector } = window;
+  const { bendPath } = window.LayoutHelpers;
 
   const dark = t.theme === 'ink';
   const themeStyle = dark
@@ -18,11 +18,6 @@ function PrintPoster() {
 
   const byPos = (side, pos) => window.QUARTERS.find(q => q.side === side && q.pos === pos);
   const qLT = byPos('L', 'top'), qLB = byPos('L', 'bottom'), qRT = byPos('R', 'top'), qRB = byPos('R', 'bottom');
-
-  function dropPath(x1, y1, x2, y2, r = 16) {
-    const dx = Math.sign(x2 - x1) || 1;
-    return `M ${x1} ${y1} L ${x1} ${y2 - r} Q ${x1} ${y2} ${x1 + dx * r} ${y2} L ${x2} ${y2}`;
-  }
 
   // ---------- MAIN BRACKET ----------
   const mainMidY = (MAIN_Y0 + MAIN_Y1) / 2;
@@ -41,17 +36,17 @@ function PrintPoster() {
   const champY = (leftHalfY + rightHalfY) / 2;
 
   const mainMerges = [
-    mergeConnector('m1', regLT.champX, regLT.champY, leftHalfX, leftHalfY, 'var(--ink)', 'train'),
-    mergeConnector('m2', regLB.champX, regLB.champY, leftHalfX, leftHalfY, 'var(--ink)', 'train'),
-    mergeConnector('m3', regRT.champX, regRT.champY, rightHalfX, rightHalfY, 'var(--ink)', 'train'),
-    mergeConnector('m4', regRB.champX, regRB.champY, rightHalfX, rightHalfY, 'var(--ink)', 'train'),
-    mergeConnector('m5', leftHalfX, leftHalfY, CHAMPION_X, champY, 'var(--ink)', 'train'),
-    mergeConnector('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, 'var(--ink)', 'train'),
+    <path key="m1" d={bendPath(regLT.champX, regLT.champY, leftHalfX, leftHalfY, 20)} stroke={qLT.color} strokeWidth="9" strokeLinecap="round" fill="none" />,
+    <path key="m2" d={bendPath(regLB.champX, regLB.champY, leftHalfX, leftHalfY, 20)} stroke={qLB.color} strokeWidth="9" strokeLinecap="round" fill="none" />,
+    <path key="m3" d={bendPath(regRT.champX, regRT.champY, rightHalfX, rightHalfY, 20)} stroke={qRT.color} strokeWidth="9" strokeLinecap="round" fill="none" />,
+    <path key="m4" d={bendPath(regRB.champX, regRB.champY, rightHalfX, rightHalfY, 20)} stroke={qRB.color} strokeWidth="9" strokeLinecap="round" fill="none" />,
+    ...window.twinBend('m5', leftHalfX, leftHalfY, CHAMPION_X, champY, qLT.color, qLB.color, 4.5),
+    ...window.twinBend('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, qRT.color, qRB.color, 4.5),
   ];
   const thirdY = champY + 210;
   const thirdPlaceMerges = [
-    <path key="tp1" d={dropPath(leftHalfX, leftHalfY, CHAMPION_X, thirdY)} stroke="var(--ink)" strokeWidth="4.5" strokeDasharray="9,7" strokeLinecap="round" fill="none" />,
-    <path key="tp2" d={dropPath(rightHalfX, rightHalfY, CHAMPION_X, thirdY)} stroke="var(--ink)" strokeWidth="4.5" strokeDasharray="9,7" strokeLinecap="round" fill="none" />,
+    ...window.twinDrop('tp1', leftHalfX + 15, leftHalfY, CHAMPION_X, thirdY, qLT.color, qLB.color, 4.5, '9,7'),
+    ...window.twinDrop('tp2', rightHalfX - 15, rightHalfY, CHAMPION_X, thirdY, qRT.color, qRB.color, 4.5, '9,7'),
   ];
   const loopBounds = {
     x0: Math.min(regLT.champX, regLB.champX) - 45, x1: Math.max(regRT.champX, regRB.champX) + 45,
@@ -75,17 +70,17 @@ function PrintPoster() {
   const cChampY = (cLeftHalfY + cRightHalfY) / 2;
 
   const consolMerges = [
-    mergeConnector('c1', cLT.champX, cLT.champY, cLeftHalfX, cLeftHalfY, 'var(--ink)', 'bus'),
-    mergeConnector('c2', cLB.champX, cLB.champY, cLeftHalfX, cLeftHalfY, 'var(--ink)', 'bus'),
-    mergeConnector('c3', cRT.champX, cRT.champY, cRightHalfX, cRightHalfY, 'var(--ink)', 'bus'),
-    mergeConnector('c4', cRB.champX, cRB.champY, cRightHalfX, cRightHalfY, 'var(--ink)', 'bus'),
-    mergeConnector('c5', cLeftHalfX, cLeftHalfY, CHAMPION_X, cChampY, 'var(--ink)', 'bus'),
-    mergeConnector('c6', cRightHalfX, cRightHalfY, CHAMPION_X, cChampY, 'var(--ink)', 'bus'),
+    <path key="c1" d={bendPath(cLT.champX, cLT.champY, cLeftHalfX, cLeftHalfY, 20)} stroke={qLT.color} strokeWidth="4.5" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
+    <path key="c2" d={bendPath(cLB.champX, cLB.champY, cLeftHalfX, cLeftHalfY, 20)} stroke={qLB.color} strokeWidth="4.5" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
+    <path key="c3" d={bendPath(cRT.champX, cRT.champY, cRightHalfX, cRightHalfY, 20)} stroke={qRT.color} strokeWidth="4.5" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
+    <path key="c4" d={bendPath(cRB.champX, cRB.champY, cRightHalfX, cRightHalfY, 20)} stroke={qRB.color} strokeWidth="4.5" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
+    ...window.twinBend('c5', cLeftHalfX, cLeftHalfY, CHAMPION_X, cChampY, qLT.color, qLB.color, 2.25, '7,6'),
+    ...window.twinBend('c6', cRightHalfX, cRightHalfY, CHAMPION_X, cChampY, qRT.color, qRB.color, 2.25, '7,6'),
   ];
   const cThirdY = cChampY + 150;
   const consolThirdPlaceMerges = [
-    <path key="ctp1" d={dropPath(cLeftHalfX, cLeftHalfY, CHAMPION_X, cThirdY, 12)} stroke="var(--ink)" strokeWidth="3" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
-    <path key="ctp2" d={dropPath(cRightHalfX, cRightHalfY, CHAMPION_X, cThirdY, 12)} stroke="var(--ink)" strokeWidth="3" strokeDasharray="7,6" strokeLinecap="round" fill="none" />,
+    ...window.twinDrop('ctp1', cLeftHalfX + 10, cLeftHalfY, CHAMPION_X, cThirdY, qLT.color, qLB.color, 2, '7,6', 12),
+    ...window.twinDrop('ctp2', cRightHalfX - 10, cRightHalfY, CHAMPION_X, cThirdY, qRT.color, qRB.color, 2, '7,6', 12),
   ];
 
   return (
@@ -199,9 +194,15 @@ function QuarterLabel({ quarter, x, y, anchor, kind }) {
 
 function LoopBoundary({ x0, x1, y0, y1 }) {
   const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  const r = 56;
+  const [qTL, qBL, qTR, qBR] = window.QUARTERS;
   return (
-    <g>
-      <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} rx="56" fill="none" stroke="var(--ink)" strokeWidth="2" strokeDasharray="3,11" opacity="0.55" />
+    <g opacity="0.85">
+      <path d={`M ${cx} ${y0} L ${x0 + r} ${y0} A ${r} ${r} 0 0 0 ${x0} ${y0 + r} L ${x0} ${cy}`} fill="none" stroke={qTL.color} strokeWidth="2.5" strokeDasharray="3,11" strokeLinecap="round" />
+      <path d={`M ${cx} ${y0} L ${x1 - r} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y0 + r} L ${x1} ${cy}`} fill="none" stroke={qTR.color} strokeWidth="2.5" strokeDasharray="3,11" strokeLinecap="round" />
+      <path d={`M ${x1} ${cy} L ${x1} ${y1 - r} A ${r} ${r} 0 0 1 ${x1 - r} ${y1} L ${cx} ${y1}`} fill="none" stroke={qBR.color} strokeWidth="2.5" strokeDasharray="3,11" strokeLinecap="round" />
+      <path d={`M ${x0} ${cy} L ${x0} ${y1 - r} A ${r} ${r} 0 0 0 ${x0 + r} ${y1} L ${cx} ${y1}`} fill="none" stroke={qBL.color} strokeWidth="2.5" strokeDasharray="3,11" strokeLinecap="round" />
       <rect x={cx - 90} y={y0 - 16} width="180" height="32" rx="16" fill="var(--paper)" stroke="var(--ink)" strokeWidth="1.5" />
       <text x={cx} y={y0 + 6} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="900" fontSize="14" fill="var(--ink)" letterSpacing="2.5">THE LOOP</text>
     </g>
