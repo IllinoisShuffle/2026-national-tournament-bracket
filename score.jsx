@@ -1,8 +1,9 @@
-// Court host scorekeeping page. One static, bookmarkable URL per court for
-// the whole tournament (score.html?court=3) — no login. The court number is
-// only a convenience filter against the existing results feed (which court
-// each match is assigned to already lives on the Matches sheet), not an
-// identity or auth mechanism.
+// Court host scorekeeping page. One single URL for everyone (score.html) —
+// no per-court links to distribute, no login. A host can just scan the full
+// match list for theirs, or set an on-page "my court" toggle (remembered in
+// localStorage on that device) to narrow the list down. Court is always a
+// convenience filter against the existing results feed, never an identity
+// or auth mechanism.
 //
 // This page never writes to the Matches Google Sheet. It POSTs to
 // netlify/functions/live-score.js, which stores in-progress scores in
@@ -13,21 +14,25 @@
 const SCORE_ENDPOINT = '/.netlify/functions/live-score';
 const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 45s — a host
 // needs to notice a new match land on their court promptly.
+const COURT_FILTER_KEY = 'scoreCourtFilter';
 
 // The sheet's Court column format isn't guaranteed to be a bare number (it
-// might read "3" or "Court 3"), so compare on the digits only rather than
-// requiring an exact string match.
+// might read "3" or "Court 3"), so compare/display on the digits only rather
+// than requiring an exact string match.
 function normalizeCourt(v) {
   const m = String(v || '').match(/\d+/);
-  return m ? m[0].replace(/^0+(?=\d)/, '') : String(v || '').trim().toLowerCase();
+  return m ? m[0].replace(/^0+(?=\d)/, '') : '';
+}
+
+function readStoredCourtFilter() {
+  try {
+    return localStorage.getItem(COURT_FILTER_KEY) || '';
+  } catch (e) {
+    return '';
+  }
 }
 
 function ScoreApp() {
-  const court = React.useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return (params.get('court') || '').trim();
-  }, []);
-
   const [liveData, setLiveData] = React.useState(null);
   React.useEffect(() => {
     let cancelled = false;
@@ -41,46 +46,58 @@ function ScoreApp() {
   }, []);
 
   const [selectedId, setSelectedId] = React.useState(null);
+  const [courtFilter, setCourtFilter] = React.useState(readStoredCourtFilter);
+
+  function updateCourtFilter(next) {
+    setCourtFilter(next);
+    try {
+      if (next) localStorage.setItem(COURT_FILTER_KEY, next);
+      else localStorage.removeItem(COURT_FILTER_KEY);
+    } catch (e) {
+      // Storage unavailable (private browsing, etc.) — the toggle still
+      // works for the current session, it just won't stick on reload.
+    }
+  }
 
   const matches = (liveData && liveData.matches) || {};
-  const courtMatches = Object.values(matches)
-    .filter((m) => !m.winner && normalizeCourt(m.court) === normalizeCourt(court))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const unfinished = Object.values(matches).filter((m) => !m.winner);
+
+  const availableCourts = Array.from(new Set(unfinished.map((m) => normalizeCourt(m.court)).filter(Boolean)))
+    .sort((a, b) => Number(a) - Number(b));
+
+  const visibleMatches = (courtFilter ? unfinished.filter((m) => normalizeCourt(m.court) === courtFilter) : unfinished)
+    .sort((a, b) => {
+      const ca = Number(normalizeCourt(a.court)) || 999;
+      const cb = Number(normalizeCourt(b.court)) || 999;
+      return ca - cb || a.id.localeCompare(b.id);
+    });
 
   const selected = selectedId ? matches[selectedId] : null;
 
-  if (!court) {
-    return (
-      <div className="s-wrap">
-        <p className="s-empty">No court specified. Use a URL like <code>score.html?court=3</code>.</p>
-      </div>
-    );
-  }
-
   if (selected) {
-    return (
-      <ScoreKeeper
-        match={selected}
-        court={court}
-        onBack={() => setSelectedId(null)}
-      />
-    );
+    return <ScoreKeeper match={selected} onBack={() => setSelectedId(null)} />;
   }
 
   return (
     <div className="s-wrap">
       <header className="s-header">
-        <div className="s-court-label">COURT {court}</div>
         <h1>Pick your match</h1>
       </header>
+
+      <CourtToggle courts={availableCourts} value={courtFilter} onChange={updateCourtFilter} />
+
       {!liveData && <p className="s-empty">Loading matches…</p>}
-      {liveData && courtMatches.length === 0 && (
-        <p className="s-empty">No unfinished matches assigned to this court right now.</p>
+      {liveData && visibleMatches.length === 0 && (
+        <p className="s-empty">No unfinished matches{courtFilter ? ` at Court ${courtFilter}` : ''} right now.</p>
       )}
       <div className="s-list">
-        {courtMatches.map((m) => (
+        {visibleMatches.map((m) => (
           <button key={m.id} className="s-match-card" onClick={() => setSelectedId(m.id)}>
-            <div className="s-match-id">{m.id}{m.time ? ` · ${m.time}` : ''}</div>
+            <div className="s-match-id">
+              {m.id}
+              {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
+              {m.time ? ` · ${m.time}` : ''}
+            </div>
             <div className="s-match-teams">{m.yellow || 'TBD'}</div>
             <div className="s-match-vs">vs</div>
             <div className="s-match-teams">{m.black || 'TBD'}</div>
@@ -91,7 +108,22 @@ function ScoreApp() {
   );
 }
 
-function ScoreKeeper({ match, court, onBack }) {
+function CourtToggle({ courts, value, onChange }) {
+  return (
+    <div className="s-court-toggle" role="group" aria-label="Filter by court">
+      <button className={`s-court-chip${value === '' ? ' s-court-chip-active' : ''}`} onClick={() => onChange('')}>
+        All
+      </button>
+      {courts.map((c) => (
+        <button key={c} className={`s-court-chip${value === c ? ' s-court-chip-active' : ''}`} onClick={() => onChange(c)}>
+          Court {c}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ScoreKeeper({ match, onBack }) {
   const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'in_progress' };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
@@ -106,7 +138,7 @@ function ScoreKeeper({ match, court, onBack }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           matchId: match.id,
-          court,
+          court: match.court || '',
           yellowScore: nextYellow,
           blackScore: nextBlack,
           status: nextStatus,
@@ -145,7 +177,10 @@ function ScoreKeeper({ match, court, onBack }) {
     <div className="s-wrap">
       <button className="s-back" onClick={onBack}>&larr; Back to matches</button>
       <header className="s-header">
-        <div className="s-court-label">COURT {court} · {match.id}</div>
+        <div className="s-court-label">
+          {match.court ? `Court ${normalizeCourt(match.court) || match.court} · ` : ''}
+          {match.id}
+        </div>
       </header>
 
       {status === 'complete' ? (

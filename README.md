@@ -13,7 +13,7 @@ no bundler, no `npm run build`.
 | TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
 | Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
 | Live Scoreboard | `scoreboard.html` | Matches currently on the court — scores, court number, and what's up next. |
-| Court Scorekeeping | `score.html?court=N` | Court host tool for entering an in-progress match's score. One static link per court — see "In-progress court scores" below. |
+| Court Scorekeeping | `score.html` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. |
 | Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
 
 Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
@@ -103,12 +103,13 @@ Instead, in-progress scores are tracked in **Netlify Blobs** — a separate,
 low-stakes store, keyed by match ID (e.g. `M32-07`), written by court hosts
 via `score.html?court=N` and the `live-score` function:
 
-- **`score.html?court=N`** — one static, bookmarkable link per court for the
-  whole tournament. It reads the same match feed as everything else
-  (`/.netlify/functions/results`), filters to that court's matches with no
-  winner yet, and lets the host tap into one to start scoring. `court` is a
-  convenience filter against the sheet's `Court` column — not a login or an
-  identity check.
+- **`score.html`** — a single URL for every court host, nothing to
+  distribute per-court. It reads the same match feed as everything else
+  (`/.netlify/functions/results`), lists every unfinished match, and lets a
+  host tap into one to start scoring. An "All / Court 1 / Court 2 / …"
+  toggle on the page narrows the list — it's a convenience filter against
+  the sheet's `Court` column, remembered per-device via `localStorage` so a
+  host only sets it once, not a login or an identity check.
 - **`netlify/functions/live-score.js`** — the write endpoint `score.html`
   POSTs to. Validates the match ID and score values, then stores
   `{ matchId, court, yellowScore, blackScore, status, updatedAt }` in the
@@ -128,8 +129,8 @@ via `score.html?court=N` and the `live-score` function:
   not worth the friction of adding auth for an internal, venue-only tool.
 
 `score.html` is deliberately **not** linked from the public `index.html?choose`
-picker — distribute each court's link directly (text message, printed QR
-code) rather than publishing it.
+picker — share the single link directly (text message, printed QR code)
+rather than publishing it.
 
 ### Match ID scheme
 
