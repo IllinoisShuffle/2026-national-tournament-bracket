@@ -12,6 +12,7 @@ no bundler, no `npm run build`.
 | Web Bracket | `web-bracket.html` | Full 64-team zoomable/pannable poster. |
 | TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
 | Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
+| Live Scoreboard | `scoreboard.html` | Matches currently on the court — scores, court number, and what's up next. |
 | Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
 
 Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
@@ -54,18 +55,24 @@ the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
 
 ## Live results
 
-`web-bracket.html` and `mobile-bracket.html` poll a Netlify Function
-(`netlify/functions/results.js`) every 45 seconds, which reads the "Matches"
-tab of the tournament Google Sheet and returns each match's teams and
-winner as JSON.
+`web-bracket.html`, `mobile-bracket.html`, and `scoreboard.html` poll a
+Netlify Function (`netlify/functions/results.js`) every 45 seconds, which
+reads the "Matches" tab of the tournament Google Sheet and returns each
+match's teams, scores, court, and winner as JSON.
 
 - If the function is unreachable (not deployed yet, offline, etc.), the
-  pages fall back to the original demo behavior — mock teams with a
+  bracket pages fall back to the original demo behavior — mock teams with a
   deterministic simulated winner — so the site still works without any
-  backend configured.
+  backend configured. `scoreboard.html` falls back to a small labeled set of
+  demo matches instead, since it has no bracket to derive results from.
 - Once live, matches without a result yet render as `TBD` rather than a
   guessed winner.
-- v1 shows winners only — no live score, court, or in-progress badge.
+- The bracket views (`web-bracket.html`, `mobile-bracket.html`) show
+  winners only — no live score, court, or in-progress badge. That detail
+  lives in `scoreboard.html`, which reads the sheet's `Score` and `LIVE`
+  columns directly: any row with `LIVE` checked shows up as an active match
+  with its current score and court; rows with a court/time assigned but not
+  yet live show up under "Up Next".
 
 ### Cost and Sheets API quota
 
@@ -154,7 +161,8 @@ it.
   bracket regions.
 - `bracket.jsx` / `bracket-mobile.jsx` / `bracket-print.jsx` — region-building
   logic for each layout.
-- `app.jsx` / `app-mobile.jsx` / `app-print.jsx` — top-level page components.
+- `app.jsx` / `app-mobile.jsx` / `app-print.jsx` / `app-scoreboard.jsx` —
+  top-level page components.
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
 - `netlify/functions/results.js` — reads the Matches sheet, returns
   normalized JSON.
