@@ -20,8 +20,10 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--ink); color: var(--paper); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; min-height: 100vh; }
   .wrap { max-width: 720px; margin: 0 auto; padding: 64px 24px 48px; text-align: center; }
-  .logo-strip { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px; background: var(--paper); border-radius: 14px; padding: 16px 24px; margin: 0 auto 28px; max-width: 440px; }
-  .logo-strip img { height: 56px; width: auto; object-fit: contain; }
+  .logo-strip { display: flex; flex-direction: column; align-items: center; gap: 12px; background: var(--paper); border-radius: 18px; padding: 24px 28px 20px; margin: 0 auto 28px; max-width: 320px; }
+  .logo-strip img { width: auto; object-fit: contain; }
+  .logo-strip .logo-chicago { height: 140px; }
+  .logo-strip .logo-ilsa { height: 40px; }
   .lines { display: flex; justify-content: center; gap: 4px; margin-bottom: 24px; }
   .lines span { width: 28px; height: 8px; display: block; border-radius: 2px; }
   h1 { font-size: 15px; font-weight: 800; letter-spacing: 3px; color: var(--ink-dim); margin: 0 0 6px; text-transform: uppercase; }
@@ -45,8 +47,8 @@
 <body>
   <div class="wrap">
     <div class="logo-strip">
-      <img src="assets/logo-chicago.png" alt="Chicago" />
-      <img src="assets/logo-ilsa.png" alt="ILSA" />
+      <img class="logo-chicago" src="assets/logo-chicago.png" alt="Chicago" />
+      <img class="logo-ilsa" src="assets/logo-ilsa.png" alt="ILSA" />
     </div>
     <div class="lines">
       <span style="background:#D63A3A"></span>
