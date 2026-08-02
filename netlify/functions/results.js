@@ -22,6 +22,16 @@ const { JWT } = require('google-auth-library');
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 const MATCH_ID_RE = /^[MC](64|32|16|8|4|2)-\d+$/i;
 
+// Cache-Control (no-store) keeps browsers from serving a poll out of their own
+// local cache; Netlify-CDN-Cache-Control lets Netlify's edge collapse many
+// concurrent spectators' polls into a single function invocation for a few
+// seconds, which is what actually saves compute credits under load.
+const SUCCESS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store',
+  'Netlify-CDN-Cache-Control': 'public, max-age=5, durable',
+};
+
 // Reused across warm invocations of the same function container to avoid
 // re-authenticating (and hitting the Sheets API) on every single poll.
 let cachedClient = null;
@@ -70,7 +80,7 @@ function rowToMatch(row) {
 
 exports.handler = async function () {
   if (cachedResult && Date.now() - cachedAt < CACHE_MS) {
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(cachedResult) };
+    return { statusCode: 200, headers: SUCCESS_HEADERS, body: JSON.stringify(cachedResult) };
   }
 
   try {
@@ -91,7 +101,7 @@ exports.handler = async function () {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      headers: SUCCESS_HEADERS,
       body: JSON.stringify(result),
     };
   } catch (err) {
