@@ -46,12 +46,12 @@ function describeMatch(m) {
 // but flagged explicitly here since scores are the whole point of this view.
 function buildDemoData() {
   const rows = [
-    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true },
-    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
-    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
-    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], yellowScore: '', black: window.TEAM_POOL[2], blackScore: '', live: true },
-    { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false },
-    { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false },
+    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true, approxEnd: '3:15 PM' },
+    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true, approxEnd: '3:15 PM'  },
+    { id: 'C16-02', time: '2:15 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true, approxEnd: '3:15 PM'  },
+    { id: 'C16-01', time: '2:15 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], yellowScore: '', black: window.TEAM_POOL[2], blackScore: '', live: true, approxEnd: '3:15 PM'  },
+    { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false, approxEnd: '3:15 PM'  },
+    { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false, approxEnd: '3:15 PM'  },
   ];
   const matches = {};
   rows.forEach((r) => { matches[r.id] = r; });
@@ -81,11 +81,11 @@ function Scoreboard() {
     [data]
   );
 
-  const courtNum = (m) => { const n = parseInt(m.court, 10); return Number.isFinite(n) ? n : 999; };
+  const courtNum = (m) => { const n = parseInt(m.court.replace("Court ",""), 10); return Number.isFinite(n) ? n : 999; };
 
   const activeMatches = allMatches
     .filter((m) => m.live)
-    .sort((a, b) => courtNum(a) - courtNum(b) || a.id.localeCompare(b.id));
+    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
 
   const upNext = allMatches
     .filter((m) => !m.live && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
@@ -192,7 +192,7 @@ function MatchCard({ m }) {
         <div className="sb-card-foot">
           {m.time && <>Started {m.time}</>}
           {m.time && m.approxEnd && ' · '}
-          {m.approxEnd && <>Est. finish {m.approxEnd}</>}
+          {m.approxEnd && <>Est. Finish {m.approxEnd}</>}
         </div>
       )}
     </div>
