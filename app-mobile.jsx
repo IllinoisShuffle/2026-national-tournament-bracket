@@ -8,20 +8,28 @@ function MobilePoster() {
   const [t, setTweak] = window.useTweaks(MOBILE_TWEAK_DEFAULTS);
 
   // Live results (from the Netlify Function / Google Sheet). Falls back to
-  // the mock demo bracket below whenever this is null — no backend deployed,
-  // offline, fetch error, etc.
+  // the mock demo bracket below once the first fetch has confirmed there's
+  // genuinely no backend — no backend deployed, offline, fetch error, etc.
   const [liveData, setLiveData] = React.useState(null);
+  const [liveChecked, setLiveChecked] = React.useState(false);
   React.useEffect(() => {
     let cancelled = false;
     async function load() {
       const data = await window.LiveData.fetchLiveData();
-      if (!cancelled) setLiveData(data);
+      if (!cancelled) { setLiveData(data); setLiveChecked(true); }
     }
     load();
     const interval = setInterval(load, window.LiveData.LIVE_POLL_MS);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
   const isLive = !!liveData;
+  const liveMatches = liveData ? liveData.matches : {};
+  // Before the first fetch resolves, render the bracket as "live with no
+  // results yet" (all TBD) instead of the mock demo teams, so a connected
+  // backend's real data pops into an empty bracket rather than visibly
+  // overwriting fake sample names. Only show the demo/mock bracket once
+  // we've confirmed there's genuinely no backend to talk to.
+  const useLiveShape = isLive || !liveChecked;
 
   const dark = t.theme === 'ink';
   const themeStyle = dark
@@ -30,8 +38,8 @@ function MobilePoster() {
 
   const mainResolved = {};
   window.QUARTERS.forEach((q, idx) => {
-    mainResolved[q.id] = isLive
-      ? window.LiveData.resolveRegion(liveData, 'M', [64, 32, 16, 8], idx)
+    mainResolved[q.id] = useLiveShape
+      ? window.LiveData.resolveRegion({ matches: liveMatches }, 'M', [64, 32, 16, 8], idx)
       : { leafNames: window.TEAM_POOL.slice(idx * 16, idx * 16 + 16), roundWinners: null };
   });
   const quarterTeams = {};
@@ -39,8 +47,8 @@ function MobilePoster() {
 
   const consolResolved = {};
   window.QUARTERS.forEach((q, idx) => {
-    consolResolved[q.id] = isLive
-      ? window.LiveData.resolveRegion(liveData, 'C', [32, 16, 8], idx)
+    consolResolved[q.id] = useLiveShape
+      ? window.LiveData.resolveRegion({ matches: liveMatches }, 'C', [32, 16, 8], idx)
       : (() => {
           const lt = quarterTeams[q.id];
           const losers = [];
@@ -68,33 +76,33 @@ function MobilePoster() {
     return { q, r };
   });
 
-  const finalA = isLive ? (liveData.matches['M4-01'] || {}) : null;
-  const finalB = isLive ? (liveData.matches['M4-02'] || {}) : null;
-  const champMatch = isLive ? (liveData.matches['M2-01'] || {}) : null;
-  const thirdMatch = isLive ? (liveData.matches['M2-02'] || {}) : null;
+  const finalA = useLiveShape ? (liveMatches['M4-01'] || {}) : null;
+  const finalB = useLiveShape ? (liveMatches['M4-02'] || {}) : null;
+  const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
+  const thirdMatch = useLiveShape ? (liveMatches['M2-02'] || {}) : null;
 
-  const mainChampsPairA = isLive ? (finalA.winner || 'TBD') : window.pickWinnerM(regions[0].r.champTeam, regions[1].r.champTeam);
-  const mainChampsPairB = isLive ? (finalB.winner || 'TBD') : window.pickWinnerM(regions[2].r.champTeam, regions[3].r.champTeam);
-  const mainLoserA = isLive ? (finalA.loser || 'TBD') : (mainChampsPairA === regions[0].r.champTeam ? regions[1].r.champTeam : regions[0].r.champTeam);
-  const mainLoserB = isLive ? (finalB.loser || 'TBD') : (mainChampsPairB === regions[2].r.champTeam ? regions[3].r.champTeam : regions[2].r.champTeam);
-  const mainChampion = isLive ? (champMatch.winner || 'TBD') : window.pickWinnerM(mainChampsPairA, mainChampsPairB);
-  const mainRunnerUp = isLive ? (champMatch.loser || 'TBD') : (mainChampion === mainChampsPairA ? mainChampsPairB : mainChampsPairA);
-  const mainThird = isLive ? (thirdMatch.winner || 'TBD') : window.pickWinnerM(mainLoserA, mainLoserB);
-  const mainFourth = isLive ? (thirdMatch.loser || 'TBD') : (mainThird === mainLoserA ? mainLoserB : mainLoserA);
+  const mainChampsPairA = useLiveShape ? (finalA.winner || 'TBD') : window.pickWinnerM(regions[0].r.champTeam, regions[1].r.champTeam);
+  const mainChampsPairB = useLiveShape ? (finalB.winner || 'TBD') : window.pickWinnerM(regions[2].r.champTeam, regions[3].r.champTeam);
+  const mainLoserA = useLiveShape ? (finalA.loser || 'TBD') : (mainChampsPairA === regions[0].r.champTeam ? regions[1].r.champTeam : regions[0].r.champTeam);
+  const mainLoserB = useLiveShape ? (finalB.loser || 'TBD') : (mainChampsPairB === regions[2].r.champTeam ? regions[3].r.champTeam : regions[2].r.champTeam);
+  const mainChampion = useLiveShape ? (champMatch.winner || 'TBD') : window.pickWinnerM(mainChampsPairA, mainChampsPairB);
+  const mainRunnerUp = useLiveShape ? (champMatch.loser || 'TBD') : (mainChampion === mainChampsPairA ? mainChampsPairB : mainChampsPairA);
+  const mainThird = useLiveShape ? (thirdMatch.winner || 'TBD') : window.pickWinnerM(mainLoserA, mainLoserB);
+  const mainFourth = useLiveShape ? (thirdMatch.loser || 'TBD') : (mainThird === mainLoserA ? mainLoserB : mainLoserA);
 
-  const cFinalA = isLive ? (liveData.matches['C4-01'] || {}) : null;
-  const cFinalB = isLive ? (liveData.matches['C4-02'] || {}) : null;
-  const cChampMatch = isLive ? (liveData.matches['C2-01'] || {}) : null;
-  const cThirdMatch = isLive ? (liveData.matches['C2-02'] || {}) : null;
+  const cFinalA = useLiveShape ? (liveMatches['C4-01'] || {}) : null;
+  const cFinalB = useLiveShape ? (liveMatches['C4-02'] || {}) : null;
+  const cChampMatch = useLiveShape ? (liveMatches['C2-01'] || {}) : null;
+  const cThirdMatch = useLiveShape ? (liveMatches['C2-02'] || {}) : null;
 
-  const cChampsPairA = isLive ? (cFinalA.winner || 'TBD') : window.pickWinnerM(consolRegions[0].r.champTeam, consolRegions[1].r.champTeam);
-  const cChampsPairB = isLive ? (cFinalB.winner || 'TBD') : window.pickWinnerM(consolRegions[2].r.champTeam, consolRegions[3].r.champTeam);
-  const cLoserA = isLive ? (cFinalA.loser || 'TBD') : (cChampsPairA === consolRegions[0].r.champTeam ? consolRegions[1].r.champTeam : consolRegions[0].r.champTeam);
-  const cLoserB = isLive ? (cFinalB.loser || 'TBD') : (cChampsPairB === consolRegions[2].r.champTeam ? consolRegions[3].r.champTeam : consolRegions[2].r.champTeam);
-  const cChampion = isLive ? (cChampMatch.winner || 'TBD') : window.pickWinnerM(cChampsPairA, cChampsPairB);
-  const cRunnerUp = isLive ? (cChampMatch.loser || 'TBD') : (cChampion === cChampsPairA ? cChampsPairB : cChampsPairA);
-  const cThird = isLive ? (cThirdMatch.winner || 'TBD') : window.pickWinnerM(cLoserA, cLoserB);
-  const cFourth = isLive ? (cThirdMatch.loser || 'TBD') : (cThird === cLoserA ? cLoserB : cLoserA);
+  const cChampsPairA = useLiveShape ? (cFinalA.winner || 'TBD') : window.pickWinnerM(consolRegions[0].r.champTeam, consolRegions[1].r.champTeam);
+  const cChampsPairB = useLiveShape ? (cFinalB.winner || 'TBD') : window.pickWinnerM(consolRegions[2].r.champTeam, consolRegions[3].r.champTeam);
+  const cLoserA = useLiveShape ? (cFinalA.loser || 'TBD') : (cChampsPairA === consolRegions[0].r.champTeam ? consolRegions[1].r.champTeam : consolRegions[0].r.champTeam);
+  const cLoserB = useLiveShape ? (cFinalB.loser || 'TBD') : (cChampsPairB === consolRegions[2].r.champTeam ? consolRegions[3].r.champTeam : consolRegions[2].r.champTeam);
+  const cChampion = useLiveShape ? (cChampMatch.winner || 'TBD') : window.pickWinnerM(cChampsPairA, cChampsPairB);
+  const cRunnerUp = useLiveShape ? (cChampMatch.loser || 'TBD') : (cChampion === cChampsPairA ? cChampsPairB : cChampsPairA);
+  const cThird = useLiveShape ? (cThirdMatch.winner || 'TBD') : window.pickWinnerM(cLoserA, cLoserB);
+  const cFourth = useLiveShape ? (cThirdMatch.loser || 'TBD') : (cThird === cLoserA ? cLoserB : cLoserA);
 
   const regionH = LEAF_Y0 + GAPS4.reduce((a, b) => a + b, 0) + 20;
   const consolRegionH = LEAF_Y0 + GAPS3.reduce((a, b) => a + b, 0) + 20;
