@@ -46,11 +46,11 @@ function describeMatch(m) {
 // but flagged explicitly here since scores are the whole point of this view.
 function buildDemoData() {
   const rows = [
-    { id: 'M32-05', time: '2:10 PM', court: '3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true },
-    { id: 'M32-12', time: '2:05 PM', court: '7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
-    { id: 'C16-02', time: '2:20 PM', court: '1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
-    { id: 'M16-04', time: '2:35 PM', court: '5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false },
-    { id: 'C16-06', time: '2:40 PM', court: '2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false },
+    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true },
+    { id: 'M32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
+    { id: 'C16-02', time: '2:20 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
+    { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false },
+    { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false },
   ];
   const matches = {};
   rows.forEach((r) => { matches[r.id] = r; });
@@ -144,7 +144,7 @@ function Scoreboard() {
             <div className="sb-upnext">
               {upNext.map((m) => (
                 <div className="sb-upnext-row" key={m.id}>
-                  <span className="sb-un-when">{m.time || 'TBD'}{m.court ? ` · Court ${m.court}` : ''}</span>
+                  <span className="sb-un-when">{m.time || 'TBD'}{m.court ? ` · ${m.court}` : ''}</span>
                   <span className="sb-un-round">{m.bracketLabel} · {m.roundLabel}</span>
                   <span className="sb-un-teams">{m.yellow} vs {m.black}</span>
                 </div>
@@ -174,7 +174,7 @@ function MatchCard({ m }) {
         <span className="sb-region">{regionText}</span>
         <span className="sb-court">
           <span className="sb-pulse" />
-          {m.court ? `COURT ${m.court}` : 'LIVE'}
+          {m.court ? `${m.court}` : 'LIVE'}
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}</div>

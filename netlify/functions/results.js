@@ -63,7 +63,7 @@ function rowToMatch(row) {
     courtsUsed: courtsUsed || '',
     winner: (winner || '').trim(),
     loser: (loser || '').trim(),
-    live: /^(y|yes|true|1)$/i.test(String(live || '').trim()),
+    live: /^(y|yes|true|1|live|LIVE)$/i.test(String(live || '').trim()),
     approxEnd: approxEnd || '',
   };
 }
