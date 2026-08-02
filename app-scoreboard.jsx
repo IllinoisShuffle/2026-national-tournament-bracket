@@ -47,8 +47,9 @@ function describeMatch(m) {
 function buildDemoData() {
   const rows = [
     { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], yellowScore: '6', black: window.TEAM_POOL[5], blackScore: '4', live: true },
-    { id: 'M32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
-    { id: 'C16-02', time: '2:20 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
+    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], yellowScore: '3', black: window.TEAM_POOL[21], blackScore: '3', live: true },
+    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], yellowScore: '5', black: window.TEAM_POOL[9], blackScore: '2', live: true },
+    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], yellowScore: '', black: window.TEAM_POOL[2], blackScore: '', live: true },
     { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], yellowScore: '', black: window.TEAM_POOL[13], blackScore: '', live: false },
     { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], yellowScore: '', black: window.TEAM_POOL[29], blackScore: '', live: false },
   ];
@@ -88,8 +89,7 @@ function Scoreboard() {
 
   const upNext = allMatches
     .filter((m) => !m.live && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
-    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b))
-    .slice(0, 6);
+    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
 
   const dark = t.theme === 'ink';
   const themeStyle = dark
@@ -161,6 +161,7 @@ function Scoreboard() {
 
 function MatchCard({ m }) {
   const regionColor = m.quarters && m.quarters.length === 1 ? m.quarters[0].color : 'var(--ink-dim)';
+  const bracketLabel = m.bracketLabel || '?';
   const regionText = !m.quarters
     ? m.bracketLabel
     : m.quarters.length === 1
@@ -171,7 +172,7 @@ function MatchCard({ m }) {
     <div className="sb-card">
       <div className="sb-card-bar" style={{ background: regionColor }} />
       <div className="sb-card-top">
-        <span className="sb-region">{regionText}</span>
+        <span className="sb-region">{bracketLabel}</span>
         <span className="sb-court">
           <span className="sb-pulse" />
           {m.court ? `${m.court}` : 'LIVE'}
@@ -198,7 +199,7 @@ function TeamRow({ puck, name, score }) {
         <span className={`sb-puck sb-puck-${puck}`} />
         <span className="name">{name || 'TBD'}</span>
       </span>
-      <span className="sb-score">{score !== '' && score != null ? score : '–'}</span>
+      {/* <span className="sb-score">{score !== '' && score != null ? score : '–'}</span>  */}
     </div>
   );
 }
