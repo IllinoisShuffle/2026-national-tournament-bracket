@@ -84,10 +84,15 @@ page polls, and each open tab polls every 45 seconds.
   concurrent requests within that window share one Sheets call instead of
   hitting the API each time. This stays far under Google's default quota
   (60 read requests/min per user) even with many simultaneous viewers.
-- **Netlify invocations**: one tab polling every 45s is ~1,920 calls/day.
-  Netlify's free tier includes 125k invocations/month, so normal tournament
-  viewership (dozens of concurrent viewers over a weekend) stays well within
-  the free tier.
+- **Netlify credits**: Netlify's current free tier is a shared 300-credit/
+  month budget (not the old per-resource invocation limits), and production
+  deploys (15 credits each) count against the same pool as live traffic, so
+  don't assume headroom without checking Site settings → Usage & billing.
+  `results.js` sets `Netlify-CDN-Cache-Control: public, max-age=5, durable`
+  on successful responses so Netlify's edge can serve one cached response to
+  many concurrently-polling tabs instead of invoking the function per poll;
+  `Cache-Control: no-store` still forces each browser to make a real
+  network request rather than reusing its own local cache.
 
 ### Match ID scheme
 
