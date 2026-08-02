@@ -18,7 +18,7 @@
 //   SHEETS_MATCHES_RANGE           defaults to "Matches!A:L"
 
 const { JWT } = require('google-auth-library');
-const { getStore } = require('@netlify/blobs');
+const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
@@ -93,7 +93,12 @@ async function attachLiveScores(matches) {
   }
 }
 
-exports.handler = async function () {
+exports.handler = async function (event) {
+  // See live-score.js for why this is needed — classic Lambda-compatible
+  // functions must manually wire up the Blobs connection details carried on
+  // event.blobs before any getStore() call will work.
+  connectLambda(event);
+
   if (cachedResult && Date.now() - cachedAt < CACHE_MS) {
     return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(cachedResult) };
   }

@@ -14,7 +14,7 @@
 //   { matchId, court, yellowScore, blackScore, status }
 //   status is "in_progress" (default) or "complete".
 
-const { getStore } = require('@netlify/blobs');
+const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
 
 const LIVE_SCORES_STORE = 'live-scores';
@@ -37,6 +37,12 @@ function parseScore(value) {
 }
 
 exports.handler = async function (event) {
+  // Classic Lambda-compatible functions (this handler shape) don't get
+  // Netlify Blobs auto-configured the way newer-format functions do — the
+  // connection details arrive on event.blobs instead, and this call wires
+  // them up so the plain getStore(name) below can find them.
+  connectLambda(event);
+
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
