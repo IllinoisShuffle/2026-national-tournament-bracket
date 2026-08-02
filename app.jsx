@@ -358,6 +358,9 @@ function Poster() {
 
 function Header({ tagline }) {
   const { POSTER_W } = window.LayoutConsts;
+  const lineW = 70, lineH = 20, lineGap = 10, lineR = 5;
+  const linesTotalW = window.QUARTERS.length * lineW + (window.QUARTERS.length - 1) * lineGap;
+  const linesX0 = POSTER_W / 2 - linesTotalW / 2;
   return (
     <g>
       <foreignObject x={POSTER_W - 60 - 190} y="20" width="190" height="190">
@@ -366,6 +369,9 @@ function Header({ tagline }) {
       <foreignObject x="60" y="30" width="170" height="190">
         <img src={window.__resources?.logoChicago || 'assets/logo-chicago.png'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </foreignObject>
+      {window.QUARTERS.map((q, i) => (
+        <rect key={q.id} x={linesX0 + i * (lineW + lineGap)} y="46" width={lineW} height={lineH} rx={lineR} fill={q.color} />
+      ))}
       <text x={POSTER_W / 2} y="112" textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="900" fontSize="52" fill="var(--ink)" letterSpacing="2">2026 CHICAGO NATIONAL</text>
       <text x={POSTER_W / 2} y="182" textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="900" fontSize="70" fill="var(--ink)" letterSpacing="5">SHUFFLEBOARD TOURNAMENT</text>
       <text x={POSTER_W / 2} y="226" textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="19" fill="var(--ink-dim)" letterSpacing="5">{tagline} · ROYAL PALMS · CHICAGO IL · AUGUST 8–9 2026</text>
