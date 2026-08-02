@@ -127,5 +127,38 @@ function mergeConnector(key, x1, y1, x2, y2, color, style) {
   );
 }
 
+// Twin tandem lines: splits one merge line into two adjacent half-width colored strands.
+// "bend" = horizontal-first elbow (region -> half junction, half -> champion); offset applied vertically.
+function twinBend(key, x1, y1, x2, y2, colorA, colorB, width, dash, radius = 20) {
+  const { bendPath } = window.LayoutHelpers;
+  const d = bendPath(x1, y1, x2, y2, radius);
+  const off = width / 2 + 0.4;
+  return [
+    <path key={key + 'a'} d={d} stroke={colorA} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" transform={`translate(0,${-off})`} />,
+    <path key={key + 'b'} d={d} stroke={colorB} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" transform={`translate(0,${off})`} />,
+  ];
+}
+// "drop" = vertical-first elbow (used for 3rd-place lines). Offsets the vertical run
+// sideways and the final horizontal run up/down, so the two strands stay a consistent
+// parallel distance apart all the way around the corner instead of just shifting as a block.
+function twinDrop(key, x1, y1, x2, y2, colorA, colorB, width, dash, radius = 16) {
+  const dx = Math.sign(x2 - x1) || 1;
+  const off = width / 2 + 0.4;
+  // sign=-1/+1 = consistent left/right side of travel direction (not raw x/y sign),
+  // so the two strands stay parallel through the corner regardless of which way it bends.
+  const strand = (sign) => {
+    const xOff = sign * off;
+    const yOff = -dx * sign * off;
+    const sx = x1 + xOff, sy2 = y2 + yOff;
+    return `M ${sx} ${y1} L ${sx} ${sy2 - radius} Q ${sx} ${sy2} ${sx + dx * radius} ${sy2} L ${x2} ${sy2}`;
+  };
+  return [
+    <path key={key + 'a'} d={strand(-1)} stroke={colorA} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
+    <path key={key + 'b'} d={strand(1)} stroke={colorB} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
+  ];
+}
+
 window.buildRegion = buildRegion;
 window.mergeConnector = mergeConnector;
+window.twinBend = twinBend;
+window.twinDrop = twinDrop;
