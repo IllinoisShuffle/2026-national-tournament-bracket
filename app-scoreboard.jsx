@@ -109,6 +109,10 @@ function Scoreboard() {
       <div className="sb-wrap">
         <div className="sb-header">
           <div className="sb-title-block">
+            <div className="sb-logos">
+              <img className="sb-logo" src={window.__resources?.logoChicago || 'assets/logo-chicago.png'} alt="Chicago" />
+              <img className="sb-logo" src={window.__resources?.logoIlsa || 'assets/logo-ilsa.png'} alt="ILSA" />
+            </div>
             <p className="sb-kicker">2026 Chicago National · Royal Palms</p>
             <h1>Live Scoreboard</h1>
             <div className="sb-lines">
@@ -153,7 +157,10 @@ function Scoreboard() {
           </>
         )}
 
-        <div className="sb-footer">ROYAL PALMS SHUFFLEBOARD CLUB · 1750 N. MILWAUKEE AVE · CHICAGO IL</div>
+        <div className="sb-footer">
+          <img className="sb-logo-rp" src={window.__resources?.logoRoyalPalms || 'assets/logo-royal-palms.webp'} alt="Royal Palms" />
+          <div>ROYAL PALMS SHUFFLEBOARD CLUB · 1750 N. MILWAUKEE AVE · CHICAGO IL</div>
+        </div>
       </div>
     </div>
   );
