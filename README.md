@@ -189,13 +189,17 @@ the store directly (so even an entry for an already-decided match, which
 `results.js` stops surfacing, still shows up here), and `DELETE` removes
 either a single entry (`{ matchId }`) or every entry at once
 (`{ all: true }`, used by the page's confirm-guarded "Clear all" button).
-Unlike `live-score.js`, this endpoint is **not** gated by the court-host
-login — it's still unauthenticated, relying only on the URL being unlinked
-and unshared. It only ever touches the supplementary live feed, never the
-Matches sheet, but note that it can now read every match's `scorer` name and
-purge all live-score data with no login at all, which is a wider-open door
-than `live-score.js` used to be. Worth locking down with the same auth token
-if `admin.html`'s URL ever leaks beyond the TD/ATD.
+Gated by a single **admin PIN** (`ADMIN_PIN` env var) — a static secret known
+only to the TD/ATD, not a per-person login like court hosts get, since there's
+no need to know *who* purged an entry, only that it was authorized. The page
+asks for the PIN once and keeps it in `sessionStorage` (not `localStorage`),
+so it doesn't survive closing the tab — this tool can wipe every live score
+at once, so it's worth not leaving that access sitting around on a shared
+device. Every request to `live-score-admin.js` sends the PIN as an
+`X-Admin-Pin` header, checked server-side with a constant-time comparison
+(`netlify/functions/_shared/adminAuth.js`); a missing/wrong PIN gets a `401`
+and bounces the page back to the PIN prompt. Like the court-host PIN, there's
+no rate limiting on guesses — pick something non-trivial.
 
 ### Match ID scheme
 
@@ -265,6 +269,9 @@ it.
      like a password (don't commit it).
    - `SCORE_AUTH_TTL_HOURS` (optional) — defaults to `18`. How long a
      court-host login stays valid before they need to log in again.
+   - `ADMIN_PIN` — any PIN/passphrase known only to the TD/ATD, required for
+     `admin.html` to work at all. Unlike the court-host PINs, this isn't
+     stored in the spreadsheet — set it directly as a Netlify env var.
 3. Deploy. Verify live data by visiting
    `/.netlify/functions/results` directly — it should return
    `{"matches": {...}, "updatedAt": ...}`.
@@ -281,7 +288,8 @@ it.
   top-level page components.
 - `score.jsx` — court host scorekeeping UI (paired with `score.html`),
   including the login screen and takeover-conflict prompt.
-- `admin.jsx` — live-score store viewer/purge UI (paired with `admin.html`).
+- `admin.jsx` — live-score store viewer/purge UI (paired with `admin.html`),
+  gated by the shared admin PIN.
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
 - `netlify/functions/results.js` — reads the Matches sheet, merges in
   live scores from Blobs, returns normalized JSON.
@@ -289,7 +297,7 @@ it.
   scores (Netlify Blobs), used by `score.html`. Requires a court-host auth
   token and hard-blocks conflicting writes (see "Concurrency" above).
 - `netlify/functions/live-score-admin.js` — list/delete endpoint for the
-  `live-scores` Blobs store, used by `admin.html`.
+  `live-scores` Blobs store, used by `admin.html`. Requires the admin PIN.
 - `netlify/functions/score-auth.js` — verifies a court host's name/PIN
   against the Hosts sheet tab and issues their login token.
 - `netlify/functions/_shared/matchId.js` — shared match ID format/regex used
@@ -299,4 +307,6 @@ it.
   `score-auth.js`.
 - `netlify/functions/_shared/authToken.js` — signs/verifies the HMAC
   court-host login token.
+- `netlify/functions/_shared/adminAuth.js` — constant-time check of the
+  shared admin PIN, used by `live-score-admin.js`.
 - `assets/` — tournament and venue logos.

@@ -8,14 +8,15 @@
 // (which results.js stops surfacing once the sheet has a winner) still shows
 // up here and can be purged.
 //
-// Intentionally unauthenticated, same posture as live-score.js: this can
-// only ever affect the supplementary live-score display, never the Matches
-// Google Sheet of record, so a stray/abusive request just means a live entry
-// disappears a little early — not worth the friction of adding auth for an
-// internal, venue-only tool.
+// Requires the admin PIN (see _shared/adminAuth.js) on every request — this
+// tool can purge every in-progress score at once, so unlike live-score.js
+// (which can only ever affect one match's display), it's worth gating with
+// a shared secret known only to the TD/ATD rather than relying on the URL
+// staying unshared.
 
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
+const { verifyAdminPin } = require('./_shared/adminAuth');
 
 const LIVE_SCORES_STORE = 'live-scores';
 
@@ -43,6 +44,10 @@ exports.handler = async function (event) {
   // See live-score.js for why this is needed for classic Lambda-compatible
   // function handlers.
   connectLambda(event);
+
+  if (!verifyAdminPin(event)) {
+    return { statusCode: 401, headers: JSON_HEADERS, body: JSON.stringify({ error: 'Invalid or missing admin PIN' }) };
+  }
 
   const store = getStore(LIVE_SCORES_STORE);
 
