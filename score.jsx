@@ -42,6 +42,14 @@ const SCORE_INCREMENTS = [
   { delta: -10, label: '−10' },
 ];
 
+// The venue has 10 courts. The court toggle always shows all of them,
+// regardless of which courts currently have an unfinished match — a host
+// whose login pre-fills a court with no active match right now (or whose
+// court briefly has nothing on it) still sees their filter as a selected
+// pill instead of a silently-applied filter with no visible indication.
+const TOTAL_COURTS = 10;
+const ALL_COURTS = Array.from({ length: TOTAL_COURTS }, (_, i) => String(i + 1));
+
 // The sheet's Court column format isn't guaranteed to be a bare number (it
 // might read "3" or "Court 3"), so compare/display on the digits only rather
 // than requiring an exact string match.
@@ -153,9 +161,6 @@ function ScoreApp() {
   const matches = (liveData && liveData.matches) || {};
   const unfinished = Object.values(matches).filter((m) => !m.winner);
 
-  const availableCourts = Array.from(new Set(unfinished.map((m) => normalizeCourt(m.court)).filter(Boolean)))
-    .sort((a, b) => Number(a) - Number(b));
-
   const visibleMatches = (courtFilter ? unfinished.filter((m) => normalizeCourt(m.court) === courtFilter) : unfinished)
     .sort((a, b) => {
       const ca = Number(normalizeCourt(a.court)) || 999;
@@ -183,7 +188,7 @@ function ScoreApp() {
       </header>
 
       <AuthBar name={auth.name} onLogout={handleLogout} />
-      <CourtToggle courts={availableCourts} value={courtFilter} onChange={updateCourtFilter} />
+      <CourtToggle courts={ALL_COURTS} value={courtFilter} onChange={updateCourtFilter} />
 
       {!liveData && <p className="s-empty">Loading matches…</p>}
       {liveData && visibleMatches.length === 0 && (
