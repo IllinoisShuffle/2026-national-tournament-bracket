@@ -11,8 +11,11 @@
 // author the tournament's official bracket even though it's now gated.
 //
 // Expected JSON body:
-//   { matchId, court, yellowScore, blackScore, status, force }
+//   { matchId, court, yellowScore, blackScore, status, frame, force }
 //   status is "in_progress" (default) or "complete".
+//   frame is host-advanced (an "End Frame" +/- control on score.html), not
+//   derived from the score — there's no reliable way to infer a frame
+//   boundary from point taps alone. Defaults to 1.
 //   scorer is no longer taken from the request body — it's always the
 //   verified name embedded in the Authorization token, so it can't be
 //   spoofed and is trustworthy for "who is keeping score."
@@ -52,6 +55,10 @@ const MIN_SCORE = -999;
 const MAX_SCORE = 999;
 const MAX_COURT_LEN = 20;
 const VALID_STATUSES = new Set(['in_progress', 'complete']);
+// Regulation is 16 frames; a tie goes to extra frames in pairs with no fixed
+// cap, so this is a generous sanity bound rather than a real gameplay limit.
+const MIN_FRAME = 1;
+const MAX_FRAME = 60;
 
 // How recent an existing entry's update has to be before a *different*
 // verified scorer's write is treated as a live conflict rather than someone
@@ -77,6 +84,12 @@ function badRequest(message) {
 function parseScore(value) {
   const n = Number(value);
   if (!Number.isInteger(n) || n < MIN_SCORE || n > MAX_SCORE) return null;
+  return n;
+}
+
+function parseFrame(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < MIN_FRAME || n > MAX_FRAME) return null;
   return n;
 }
 
@@ -114,6 +127,9 @@ exports.handler = async function (event) {
   const status = body.status === undefined ? 'in_progress' : String(body.status).trim();
   if (!VALID_STATUSES.has(status)) return badRequest('Invalid status');
 
+  const frame = body.frame === undefined ? 1 : parseFrame(body.frame);
+  if (frame === null) return badRequest('Invalid frame');
+
   const court = String(body.court || '').trim().slice(0, MAX_COURT_LEN);
   const force = body.force === true;
   const scorer = auth.name;
@@ -137,11 +153,12 @@ exports.handler = async function (event) {
         updatedAt: existing.data.updatedAt,
         yellowScore: existing.data.yellowScore,
         blackScore: existing.data.blackScore,
+        frame: existing.data.frame,
       });
     }
 
     const updatedAt = Date.now();
-    const entry = { matchId, court, yellowScore, blackScore, status, scorer, updatedAt };
+    const entry = { matchId, court, yellowScore, blackScore, status, scorer, frame, updatedAt };
     const writeOptions = existing ? { onlyIfMatch: existing.etag } : { onlyIfNew: true };
     const result = await store.setJSON(matchId, entry, writeOptions);
 

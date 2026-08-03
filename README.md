@@ -117,13 +117,23 @@ via `score.html` and the `live-score` function:
   `Court` column, remembered per-device via `localStorage`, not an access
   restriction (a logged-in host can score any match, any court).
 - **`netlify/functions/live-score.js`** — the write endpoint `score.html`
-  POSTs to. Requires a valid auth token (see below), validates the match ID
-  and score values, then stores
-  `{ matchId, court, yellowScore, blackScore, status, scorer, updatedAt }`
+  POSTs to. Requires a valid auth token (see below), validates the match ID,
+  score values, and frame number, then stores
+  `{ matchId, court, yellowScore, blackScore, status, scorer, frame, updatedAt }`
   in the `live-scores` Blobs store, one entry per match ID. `scorer` always
   comes from the verified token, never from the request body. It never
   touches the Google Sheets credentials — this endpoint can only ever affect
-  the supplementary live feed, never the Matches tab itself.
+  the supplementary live feed, never the Matches tab itself. `frame` is
+  host-advanced (an "End Frame" +/- control on `score.html`), not derived
+  from the score — there's no reliable way to infer a frame boundary from
+  point taps alone. Matches play 16 regulation frames; a tie after 16 goes
+  to extra frames in pairs with no fixed cap, so the scoreboard shows
+  "Frame N of 16" or "Frame N · Overtime" past that. Teams play frames 1-8 on
+  the color the sheet lists them under, then swap physical puck color for
+  frame 9 onward (staying swapped through overtime); the scoreboard's
+  `MatchCard` flips which puck color renders next to each team once the
+  frame passes 8 — the sheet's yellow/black columns still identify the same
+  two teams the whole match, only the drawn dot color changes.
 - **`results.js`** merges this in: a match's `liveScore` field is attached
   only when that match's Matches-tab row has no `winner` yet. The instant
   the TD/ATD transcribes a final result into the sheet, `liveScore` stops
