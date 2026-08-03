@@ -15,6 +15,13 @@ const SCORE_ENDPOINT = '/.netlify/functions/live-score';
 const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 45s — a host
 // needs to notice a new match land on their court promptly.
 const COURT_FILTER_KEY = 'scoreCourtFilter';
+const SCORER_NAME_KEY = 'scoreKeeperName';
+
+// How recent a liveScore update has to be before we treat it as "someone's
+// actively on this right now" for the sake of a heads-up — not a lock, just
+// a threshold past which we assume the previous scorekeeper has moved on
+// (or it's stale test data) and stop nagging about it.
+const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
 // The sheet's Court column format isn't guaranteed to be a bare number (it
 // might read "3" or "Court 3"), so compare/display on the digits only rather
@@ -32,6 +39,24 @@ function readStoredCourtFilter() {
   }
 }
 
+function readStoredScorerName() {
+  try {
+    return localStorage.getItem(SCORER_NAME_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function isRecentlyActive(liveScore) {
+  return !!liveScore && liveScore.status === 'in_progress' && Date.now() - liveScore.updatedAt < ACTIVE_THRESHOLD_MS;
+}
+
+function formatAgo(ts) {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s`;
+  return `${Math.round(s / 60)}m`;
+}
+
 function ScoreApp() {
   const [liveData, setLiveData] = React.useState(null);
   React.useEffect(() => {
@@ -47,6 +72,7 @@ function ScoreApp() {
 
   const [selectedId, setSelectedId] = React.useState(null);
   const [courtFilter, setCourtFilter] = React.useState(readStoredCourtFilter);
+  const [scorerName, setScorerName] = React.useState(readStoredScorerName);
 
   function updateCourtFilter(next) {
     setCourtFilter(next);
@@ -56,6 +82,16 @@ function ScoreApp() {
     } catch (e) {
       // Storage unavailable (private browsing, etc.) — the toggle still
       // works for the current session, it just won't stick on reload.
+    }
+  }
+
+  function updateScorerName(next) {
+    setScorerName(next);
+    try {
+      if (next) localStorage.setItem(SCORER_NAME_KEY, next);
+      else localStorage.removeItem(SCORER_NAME_KEY);
+    } catch (e) {
+      // Storage unavailable — name still works for the current session.
     }
   }
 
@@ -75,7 +111,7 @@ function ScoreApp() {
   const selected = selectedId ? matches[selectedId] : null;
 
   if (selected) {
-    return <ScoreKeeper match={selected} onBack={() => setSelectedId(null)} />;
+    return <ScoreKeeper match={selected} scorerName={scorerName} onBack={() => setSelectedId(null)} />;
   }
 
   return (
@@ -84,6 +120,7 @@ function ScoreApp() {
         <h1>Pick your match</h1>
       </header>
 
+      <ScorerNameBar name={scorerName} onChange={updateScorerName} />
       <CourtToggle courts={availableCourts} value={courtFilter} onChange={updateCourtFilter} />
 
       {!liveData && <p className="s-empty">Loading matches…</p>}
@@ -91,19 +128,62 @@ function ScoreApp() {
         <p className="s-empty">No unfinished matches{courtFilter ? ` at Court ${courtFilter}` : ''} right now.</p>
       )}
       <div className="s-list">
-        {visibleMatches.map((m) => (
-          <button key={m.id} className="s-match-card" onClick={() => setSelectedId(m.id)}>
-            <div className="s-match-id">
-              {m.id}
-              {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
-              {m.time ? ` · ${m.time}` : ''}
-            </div>
-            <div className="s-match-teams">{m.yellow || 'TBD'}</div>
-            <div className="s-match-vs">vs</div>
-            <div className="s-match-teams">{m.black || 'TBD'}</div>
-          </button>
-        ))}
+        {visibleMatches.map((m) => {
+          const beingScored = isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== scorerName;
+          return (
+            <button key={m.id} className="s-match-card" onClick={() => setSelectedId(m.id)}>
+              <div className="s-match-id">
+                {m.id}
+                {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
+                {m.time ? ` · ${m.time}` : ''}
+              </div>
+              <div className="s-match-teams">{m.yellow || 'TBD'}</div>
+              <div className="s-match-vs">vs</div>
+              <div className="s-match-teams">{m.black || 'TBD'}</div>
+              {beingScored && (
+                <div className="s-being-scored">Being scored by {m.liveScore.scorer} · {formatAgo(m.liveScore.updatedAt)} ago</div>
+              )}
+            </button>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+function ScorerNameBar({ name, onChange }) {
+  const [editing, setEditing] = React.useState(!name);
+  const [draft, setDraft] = React.useState(name);
+
+  function save() {
+    const trimmed = draft.trim();
+    onChange(trimmed);
+    setDraft(trimmed);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="s-name-bar">
+        <input
+          className="s-name-input"
+          type="text"
+          placeholder="Your name (so others know it's you)"
+          value={draft}
+          autoFocus
+          maxLength={40}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
+        />
+        <button className="s-name-save" onClick={save}>Save</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="s-name-bar s-name-bar-set">
+      <span>Scoring as <strong>{name}</strong></span>
+      <button className="s-name-edit" onClick={() => { setDraft(name); setEditing(true); }}>Change</button>
     </div>
   );
 }
@@ -123,12 +203,17 @@ function CourtToggle({ courts, value, onChange }) {
   );
 }
 
-function ScoreKeeper({ match, onBack }) {
+function ScoreKeeper({ match, scorerName, onBack }) {
   const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'in_progress' };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
+
+  // match.liveScore refreshes on every poll (see ScoreApp), so this stays
+  // live — if someone else posts an update while this device has the match
+  // open, the banner below appears without needing a reload.
+  const otherActive = isRecentlyActive(match.liveScore) && match.liveScore.scorer && match.liveScore.scorer !== scorerName;
 
   async function post(nextYellow, nextBlack, nextStatus) {
     setSaveState('saving');
@@ -142,6 +227,7 @@ function ScoreKeeper({ match, onBack }) {
           yellowScore: nextYellow,
           blackScore: nextBlack,
           status: nextStatus,
+          scorer: scorerName,
         }),
       });
       setSaveState(res.ok ? 'saved' : 'error');
@@ -182,6 +268,12 @@ function ScoreKeeper({ match, onBack }) {
           {match.id}
         </div>
       </header>
+
+      {otherActive && (
+        <div className="s-other-scorer-banner">
+          Heads up — {match.liveScore.scorer} updated this match {formatAgo(match.liveScore.updatedAt)} ago. Make sure you're not both scoring it.
+        </div>
+      )}
 
       {status === 'complete' ? (
         <div className="s-done">

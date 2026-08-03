@@ -117,10 +117,10 @@ via `score.html` and the `live-score` function:
   host only sets it once, not a login or an identity check.
 - **`netlify/functions/live-score.js`** — the write endpoint `score.html`
   POSTs to. Validates the match ID and score values, then stores
-  `{ matchId, court, yellowScore, blackScore, status, updatedAt }` in the
-  `live-scores` Blobs store, one entry per match ID, full overwrite each
-  call. It never touches the Google Sheets credentials — this endpoint can
-  only ever affect the supplementary live feed, never the Matches tab
+  `{ matchId, court, yellowScore, blackScore, status, scorer, updatedAt }`
+  in the `live-scores` Blobs store, one entry per match ID, full overwrite
+  each call. It never touches the Google Sheets credentials — this endpoint
+  can only ever affect the supplementary live feed, never the Matches tab
   itself.
 - **`results.js`** merges this in: a match's `liveScore` field is attached
   only when that match's Matches-tab row has no `winner` yet. The instant
@@ -132,6 +132,17 @@ via `score.html` and the `live-score` function:
   Its blast radius is limited to a wrong-looking in-progress score, which
   the TD's manual transcription supersedes regardless, so this was judged
   not worth the friction of adding auth for an internal, venue-only tool.
+- **No write lock.** Nothing stops two devices from opening the same match
+  and both posting scores — each POST is a full overwrite of that match's
+  entry, last write wins, with no conflict detection. To make that visible
+  rather than silent, `score.html` asks each host for their name once (kept
+  in `localStorage` on that device) and sends it along with every score
+  update. Anyone else looking at the match picker sees a "Being scored by
+  &lt;name&gt;" tag on a match someone updated in the last 5 minutes, and
+  opening a match someone else recently touched shows a heads-up banner.
+  It's advisory only — it doesn't block a second host from scoring, it just
+  makes it obvious when two people might collide so they can sort it out
+  between themselves.
 
 `score.html` is deliberately **not** linked from the public `index.html?choose`
 picker — share the single link directly (text message, printed QR code)

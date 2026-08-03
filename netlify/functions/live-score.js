@@ -11,8 +11,13 @@
 // live score that the TD's manual transcription supersedes regardless.
 //
 // Expected JSON body:
-//   { matchId, court, yellowScore, blackScore, status }
+//   { matchId, court, yellowScore, blackScore, status, scorer }
 //   status is "in_progress" (default) or "complete".
+//   scorer is a free-text display name (e.g. "Alex") the scorekeeper's device
+//   remembers locally — purely informational, so a second host opening the
+//   same match can see someone's already on it. There's no auth behind it and
+//   no write lock: this never blocks or rejects a write, it's just data for
+//   score.html to display a "being scored by" hint.
 
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
@@ -20,6 +25,7 @@ const { MATCH_ID_RE } = require('./_shared/matchId');
 const LIVE_SCORES_STORE = 'live-scores';
 const MAX_SCORE = 99;
 const MAX_COURT_LEN = 20;
+const MAX_SCORER_LEN = 40;
 const VALID_STATUSES = new Set(['in_progress', 'complete']);
 
 function badRequest(message) {
@@ -67,11 +73,12 @@ exports.handler = async function (event) {
   if (!VALID_STATUSES.has(status)) return badRequest('Invalid status');
 
   const court = String(body.court || '').trim().slice(0, MAX_COURT_LEN);
+  const scorer = String(body.scorer || '').trim().slice(0, MAX_SCORER_LEN);
 
   try {
     const store = getStore(LIVE_SCORES_STORE);
     const updatedAt = Date.now();
-    await store.setJSON(matchId, { matchId, court, yellowScore, blackScore, status, updatedAt });
+    await store.setJSON(matchId, { matchId, court, yellowScore, blackScore, status, scorer, updatedAt });
 
     return {
       statusCode: 200,
