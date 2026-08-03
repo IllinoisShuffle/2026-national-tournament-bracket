@@ -23,7 +23,11 @@ const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
 
 const LIVE_SCORES_STORE = 'live-scores';
-const MAX_SCORE = 99;
+// A "10 off" penalty can push a side negative before it's scored anything,
+// and a long 16-frame game can run well past 100 — these are generous
+// sanity bounds, not real gameplay limits.
+const MIN_SCORE = -999;
+const MAX_SCORE = 999;
 const MAX_COURT_LEN = 20;
 const MAX_SCORER_LEN = 40;
 const VALID_STATUSES = new Set(['in_progress', 'complete']);
@@ -38,7 +42,7 @@ function badRequest(message) {
 
 function parseScore(value) {
   const n = Number(value);
-  if (!Number.isInteger(n) || n < 0 || n > MAX_SCORE) return null;
+  if (!Number.isInteger(n) || n < MIN_SCORE || n > MAX_SCORE) return null;
   return n;
 }
 

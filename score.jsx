@@ -223,8 +223,7 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
   // Snapshots of {side, delta, prevYellow, prevBlack, nextYellow, nextBlack}
   // for the last few taps, most-recent last — lets "Undo" restore the exact
-  // prior stored value even across a Math.max(0, ...) floor, without having
-  // to reverse-engineer it from the delta.
+  // prior stored value without having to reverse-engineer it from the delta.
   const [undoStack, setUndoStack] = React.useState([]);
 
   // match.liveScore refreshes on every poll (see ScoreApp), so this stays
@@ -259,11 +258,13 @@ function ScoreKeeper({ match, scorerName, onBack }) {
     const prevBlack = blackScore;
     let nextYellow = yellowScore;
     let nextBlack = blackScore;
+    // No floor at 0 — a "10 off" penalty can legitimately push a side
+    // negative before it's put any points on the board.
     if (side === 'yellow') {
-      nextYellow = Math.max(0, yellowScore + delta);
+      nextYellow = yellowScore + delta;
       setYellowScore(nextYellow);
     } else {
-      nextBlack = Math.max(0, blackScore + delta);
+      nextBlack = blackScore + delta;
       setBlackScore(nextBlack);
     }
     setUndoStack([...undoStack, { side, delta, prevYellow, prevBlack, nextYellow, nextBlack }].slice(-MAX_UNDO));
