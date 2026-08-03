@@ -128,7 +128,11 @@ via `score.html` and the `live-score` function:
   from the score — there's no reliable way to infer a frame boundary from
   point taps alone. Matches play 16 regulation frames; a tie after 16 goes
   to extra frames in pairs with no fixed cap, so the scoreboard shows
-  "Frame N of 16" or "Frame N · Overtime" past that. Teams play frames 1-8 on
+  "Playing Frame N of 16" or "Playing Frame N · Overtime" past that — the
+  "Playing" makes clear frame N is in progress and the score reflects the
+  frames before it, not that frame N just finished. `score.html` shows the
+  same wording, plus a hint under the +/- control telling the host exactly
+  when to tap it ("Tap + once Frame N ends, to start Frame N+1"). Teams play frames 1-8 on
   the color the sheet lists them under, then swap physical puck color for
   frame 9 onward (staying swapped through overtime); the scoreboard's
   `MatchCard` flips which puck color renders next to each team once the
