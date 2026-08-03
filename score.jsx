@@ -117,8 +117,11 @@ function formatAgo(ts) {
   return `${Math.round(s / 60)}m`;
 }
 
+// "Playing" makes clear frame N is the one currently underway (score shown
+// reflects frames completed before it) rather than a frame that just
+// finished — court hosts and viewers were reading "Frame 8 of 16" both ways.
 function frameLabel(frame) {
-  return frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Overtime`;
+  return frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`;
 }
 
 function ScoreApp() {
@@ -489,6 +492,9 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           +
         </button>
       </div>
+      {status !== 'complete' && (
+        <div className="s-frame-hint">Tap + once Frame {frame} ends, to start Frame {frame + 1}</div>
+      )}
 
       {otherActive && saveState !== 'conflict' && (
         <div className="s-other-scorer-banner">

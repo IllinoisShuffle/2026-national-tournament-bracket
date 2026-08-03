@@ -199,8 +199,11 @@ function MatchCard({ m }) {
       : m.quarters.map((q) => q.name.split(' ')[0]).join(' + ');
 
   const frame = m.liveScore && m.liveScore.frame;
+  // "Playing" signals frame N is in progress (score reflects frames before
+  // it) rather than just-finished — mirrors the wording on score.jsx so
+  // hosts and viewers read the same number the same way.
   const frameLabel = frame
-    ? (frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Overtime`)
+    ? (frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`)
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
