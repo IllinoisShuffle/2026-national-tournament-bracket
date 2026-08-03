@@ -101,7 +101,7 @@ for both data-integrity and concurrent-editing reasons).
 
 Instead, in-progress scores are tracked in **Netlify Blobs** — a separate,
 low-stakes store, keyed by match ID (e.g. `M32-07`), written by court hosts
-via `score.html?court=N` and the `live-score` function:
+via `score.html` and the `live-score` function:
 
 - **`score.html`** — a single URL for every court host, nothing to
   distribute per-court. It reads the same match feed as everything else
