@@ -62,6 +62,9 @@ function buildDemoData() {
     { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress', frame: 1 }, approxEnd: '3:15 PM' },
     { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], black: window.TEAM_POOL[13] },
     { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], black: window.TEAM_POOL[29] },
+    { id: 'M32-13', time: '1:35 PM', court: 'Court 6', yellow: window.TEAM_POOL[22], yellowScore: '6', black: window.TEAM_POOL[23], blackScore: '2', winner: window.TEAM_POOL[22] },
+    { id: 'C32-04', time: '1:20 PM', court: 'Court 8', yellow: window.TEAM_POOL[6], yellowScore: '3', black: window.TEAM_POOL[7], blackScore: '6', winner: window.TEAM_POOL[7] },
+    { id: 'M64-09', time: '12:50 PM', court: 'Court 3', yellow: window.TEAM_POOL[10], yellowScore: '6', black: window.TEAM_POOL[11], blackScore: '1', winner: window.TEAM_POOL[10] },
   ];
   const matches = {};
   rows.forEach((r) => { matches[r.id] = r; });
@@ -113,6 +116,17 @@ function Scoreboard() {
   const upNext = allMatches
     .filter((m) => !(m.liveScore && m.liveScore.status === 'in_progress') && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
     .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
+
+  // Smaller round `size` = a later stage of the bracket, so it reads as more
+  // recently completed than a larger one; `time` (start time) breaks ties
+  // within the same round since the sheet has no separate finish timestamp.
+  const pastResults = allMatches
+    .filter((m) => m.winner && m.yellow && m.black)
+    .sort((a, b) => a.size - b.size || (b.time || '').localeCompare(a.time || '') || b.num - a.num);
+
+  const [showAllPast, setShowAllPast] = React.useState(false);
+  const PAST_RESULTS_LIMIT = 8;
+  const visiblePast = showAllPast ? pastResults : pastResults.slice(0, PAST_RESULTS_LIMIT);
 
   const dark = t.theme === 'ink';
   const themeStyle = dark
@@ -177,6 +191,34 @@ function Scoreboard() {
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {pastResults.length > 0 && (
+          <>
+            <div className="sb-section-title">Past Results</div>
+            <div className="sb-past">
+              {visiblePast.map((m) => (
+                <div className="sb-past-row" key={m.id}>
+                  <span className="sb-un-round">{m.bracketLabel} · {m.roundLabel}</span>
+                  <span className="sb-past-teams">
+                    <span className={m.winner === m.yellow ? 'sb-past-winner' : 'sb-past-loser'}>{m.yellow}</span>
+                    <span className="sb-past-vs">v</span>
+                    <span className={m.winner === m.black ? 'sb-past-winner' : 'sb-past-loser'}>{m.black}</span>
+                  </span>
+                  <span className="sb-past-score">
+                    {m.yellowScore !== '' && m.yellowScore != null ? m.yellowScore : '–'}
+                    {'–'}
+                    {m.blackScore !== '' && m.blackScore != null ? m.blackScore : '–'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {pastResults.length > PAST_RESULTS_LIMIT && (
+              <button type="button" className="sb-past-toggle" onClick={() => setShowAllPast((v) => !v)}>
+                {showAllPast ? 'Show fewer' : `Show all ${pastResults.length} past results`}
+              </button>
+            )}
           </>
         )}
 
