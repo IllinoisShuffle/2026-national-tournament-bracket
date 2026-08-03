@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Court Scorekeeping</title>
+<style>
+:root{--paper:#F4EEDF;--ink:#15151A;--ink-dim:rgba(21,21,26,0.55);--live:#c0392b}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+.s-wrap{max-width:420px;margin:0 auto;padding:20px 16px 48px;min-height:100vh;box-sizing:border-box}
+.s-header{text-align:center;margin-bottom:18px}
+.s-court-label{font-size:12px;font-weight:800;letter-spacing:2px;color:var(--ink-dim);margin-bottom:4px}
+.s-header h1{font-size:20px;font-weight:900;margin:0}
+.s-empty{text-align:center;color:var(--ink-dim);font-size:14px;padding:24px 8px}
+.s-name-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-size:13px}
+.s-name-bar-set{color:var(--ink-dim)}
+.s-name-bar-set strong{color:var(--ink)}
+.s-name-input{flex:1;max-width:220px;border:1.5px solid var(--ink);border-radius:8px;background:#fff;color:var(--ink);font-size:13px;padding:8px 10px;font-family:inherit}
+.s-name-save,.s-name-edit{appearance:none;border:1.5px solid var(--ink);border-radius:8px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:inherit}
+.s-being-scored{margin-top:8px;font-size:11px;font-weight:700;color:var(--live)}
+.s-other-scorer-banner{border:1.5px solid var(--live);color:var(--live);border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:16px;text-align:center}
+.s-court-toggle{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px}
+.s-court-chip{appearance:none;border:1.5px solid var(--ink);border-radius:999px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;font-family:inherit}
+.s-court-chip-active{background:var(--ink);color:var(--paper)}
+.s-list{display:flex;flex-direction:column;gap:12px}
+.s-match-card{appearance:none;border:2px solid var(--ink);border-radius:12px;background:#fff;padding:14px;text-align:center;font-family:inherit;cursor:pointer}
+.s-match-card:active{background:rgba(21,21,26,0.06)}
+.s-match-id{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--ink-dim);margin-bottom:6px}
+.s-match-teams{font-size:15px;font-weight:800}
+.s-match-vs{font-size:10px;font-weight:700;color:var(--ink-dim);margin:2px 0}
+.s-back{appearance:none;border:none;background:none;color:var(--ink);font-size:14px;font-weight:700;padding:0 0 16px;cursor:pointer;font-family:inherit}
+.s-score{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 24px}
+.s-side{flex:1;text-align:center;border:2px solid var(--ink);border-radius:14px;padding:16px 8px}
+.s-side-label{font-size:13px;font-weight:800;margin-bottom:8px;min-height:34px;display:flex;align-items:center;justify-content:center}
+.s-score-value{font-size:48px;font-weight:900;font-variant-numeric:tabular-nums;margin-bottom:10px}
+.s-steppers{display:flex;gap:8px;justify-content:center}
+.s-stepper{appearance:none;border:none;border-radius:10px;background:var(--ink);color:var(--paper);width:52px;height:52px;font-size:26px;font-weight:900;cursor:pointer}
+.s-stepper:active{opacity:0.7}
+.s-dash{font-size:28px;font-weight:900;color:var(--ink-dim)}
+.s-complete{display:block;width:100%;appearance:none;border:none;border-radius:12px;background:var(--live);color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;padding:16px;cursor:pointer;font-family:inherit}
+.s-complete:active{opacity:0.85}
+.s-status{text-align:center;font-size:12px;font-weight:700;color:var(--ink-dim);margin-top:14px;min-height:16px}
+.s-status-error{color:var(--live)}
+.s-done{text-align:center;border:2px solid var(--ink);border-radius:14px;padding:24px 16px;margin-bottom:20px}
+.s-done-title{font-size:18px;font-weight:900;margin:0 0 8px}
+.s-done-score{font-size:20px;font-weight:800;margin:0 0 12px}
+.s-done-note{font-size:13px;color:var(--ink-dim);margin:0 0 16px}
+.s-reopen{appearance:none;border:1.5px solid var(--ink);border-radius:8px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="live-data.js"></script>
+<script type="text/babel" data-presets="react" src="score.jsx"></script>
+</body>
+</html>

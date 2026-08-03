@@ -26,7 +26,7 @@ function bendPathV(x1, y1, x2, y2, radius = 10) {
 // Progress through the region is shown by filling in each line/node as the
 // round it represents gets an actual recorded result — everything ahead of
 // that point stays outlined until the bracket catches up.
-function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, showResults, slotNumbers, roundWinners }) {
+function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, showResults, slotNumbers, roundWinners, roundLive }) {
   const N = teams.length;
   const S = Math.log2(N);
   const leafXs = teams.map((_, i) => x0 + (i + 0.5) * ((x1 - x0) / N));
@@ -124,11 +124,19 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
           const strokeColor = decided ? 'var(--paper)' : color;
           const strokeW = decided ? 2 : 1.5;
           const strokeOp = decided ? 1 : 0.35;
+          const live = !decided && roundLive && roundLive[s - 1] && roundLive[s - 1][j];
+          const liveBadge = showLabels && live && (
+            <text x={x} y={ys[s] + r + 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+              fontWeight="700" fontSize="8" fill={color}>
+              {`${live.yellowScore}–${live.blackScore} ● LIVE`}
+            </text>
+          );
           if (isTrain) {
             return (
               <g key={`s${s}-${j}`}>
                 <circle cx={x} cy={ys[s]} r={r + 3} fill="var(--paper)" />
                 <circle cx={x} cy={ys[s]} r={r} fill={fillColor} stroke={strokeColor} strokeWidth={strokeW} strokeOpacity={strokeOp} />
+                {liveBadge}
               </g>
             );
           }
@@ -136,6 +144,7 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
             <g key={`s${s}-${j}`}>
               <rect x={x - r - 3} y={ys[s] - r - 3} width={(r + 3) * 2} height={(r + 3) * 2} fill="var(--paper)" />
               <rect x={x - r} y={ys[s] - r} width={r * 2} height={r * 2} fill={fillColor} stroke={strokeColor} strokeWidth={strokeW} strokeOpacity={strokeOp} />
+              {liveBadge}
             </g>
           );
         });

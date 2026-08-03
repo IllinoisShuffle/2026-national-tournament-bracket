@@ -13,7 +13,10 @@
 // network error, etc.) so callers fall back to demo/mock data.
 
 const LIVE_ENDPOINT = '/.netlify/functions/results';
-const LIVE_POLL_MS = 45000;
+// results.js sets Netlify-CDN-Cache-Control: max-age=5, so Netlify's edge
+// absorbs concurrent polls at this interval without extra Sheets/function
+// invocations — safe to poll faster than the old 45s without added cost.
+const LIVE_POLL_MS = 15000;
 
 async function fetchLiveData() {
   try {
@@ -62,7 +65,14 @@ function resolveRegion(liveData, prefix, sizes, quarterIndex) {
     return ids.map((id) => get(id).winner || null);
   });
 
-  return { leafNames, roundWinners };
+  // In-progress court scores (see netlify/functions/live-score.js), only
+  // ever present on matches that don't have a winner yet.
+  const roundLive = sizes.map((size) => {
+    const ids = regionMatchIds(prefix, size, quarterIndex);
+    return ids.map((id) => get(id).liveScore || null);
+  });
+
+  return { leafNames, roundWinners, roundLive };
 }
 
 window.LiveData = { fetchLiveData, regionMatchIds, resolveRegion, LIVE_POLL_MS };

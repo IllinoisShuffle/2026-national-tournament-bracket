@@ -8,3 +8,8 @@
 # Cache-Control/Netlify-CDN-Cache-Control for /.netlify/functions/results are
 # set per-response in results.js (success vs. error need different caching),
 # so no blanket header override here.
+
+[[headers]]
+  for = "/.netlify/functions/live-score"
+  [headers.values]
+    Cache-Control = "no-store"
