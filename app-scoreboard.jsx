@@ -10,8 +10,15 @@ const SCOREBOARD_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 const MATCH_ID_RE = /^([MC])(\d+)-(\d+)$/i;
 // Regulation is 16 frames; a tie goes to extra frames in pairs, so a frame
-// number past this just reads as "Tiebreak" rather than "of 16".
+// number past this just reads as "Overtime" rather than "of 16".
 const REGULATION_FRAMES = 16;
+// Teams play frames 1-8 on the color the sheet lists them under, then swap
+// to the other physical puck color for frame 9 onward — including overtime,
+// which stays on the post-swap color rather than flipping back. The sheet's
+// yellow/black columns always identify the same two teams throughout (that's
+// where names and scores come from); only which puck color is drawn next to
+// them changes.
+const COLOR_FLIP_FRAME = 8;
 
 // Parses a match ID into round/region metadata. Mirrors the block layout
 // documented in live-data.js: within a round, match numbers split into four
@@ -193,8 +200,9 @@ function MatchCard({ m }) {
 
   const frame = m.liveScore && m.liveScore.frame;
   const frameLabel = frame
-    ? (frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Tiebreak`)
+    ? (frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Overtime`)
     : null;
+  const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
   return (
     <div className="sb-card">
@@ -207,8 +215,8 @@ function MatchCard({ m }) {
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}{frameLabel ? ` · ${frameLabel}` : ''}</div>
-      <TeamRow puck="yellow" name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
-      <TeamRow puck="black" name={m.black} score={m.liveScore && m.liveScore.blackScore} />
+      <TeamRow puck={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
+      <TeamRow puck={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={m.liveScore && m.liveScore.blackScore} />
       {(m.time || m.approxEnd) && (
         <div className="sb-card-foot">
           {m.time && <>Started {m.time}</>}

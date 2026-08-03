@@ -111,7 +111,7 @@ function formatAgo(ts) {
 }
 
 function frameLabel(frame) {
-  return frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Tiebreak`;
+  return frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Overtime`;
 }
 
 function ScoreApp() {

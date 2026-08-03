@@ -128,7 +128,12 @@ via `score.html` and the `live-score` function:
   from the score — there's no reliable way to infer a frame boundary from
   point taps alone. Matches play 16 regulation frames; a tie after 16 goes
   to extra frames in pairs with no fixed cap, so the scoreboard shows
-  "Frame N of 16" or "Frame N · Tiebreak" past that.
+  "Frame N of 16" or "Frame N · Overtime" past that. Teams play frames 1-8 on
+  the color the sheet lists them under, then swap physical puck color for
+  frame 9 onward (staying swapped through overtime); the scoreboard's
+  `MatchCard` flips which puck color renders next to each team once the
+  frame passes 8 — the sheet's yellow/black columns still identify the same
+  two teams the whole match, only the drawn dot color changes.
 - **`results.js`** merges this in: a match's `liveScore` field is attached
   only when that match's Matches-tab row has no `winner` yet. The instant
   the TD/ATD transcribes a final result into the sheet, `liveScore` stops
