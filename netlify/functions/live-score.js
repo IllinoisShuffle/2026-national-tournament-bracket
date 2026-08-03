@@ -25,6 +25,19 @@
 // read-then-blind-write, so a race between two near-simultaneous writes is
 // also caught (the second write's onlyIfMatch fails and comes back as a
 // conflict) instead of silently overwriting.
+//
+// The read deliberately uses default ("eventual") consistency, not
+// "strong" — strong consistency requires Blobs' uncachedEdgeURL to be wired
+// up, which isn't available in every environment (confirmed: it 500s
+// against the local `netlify dev` Blobs emulator) and isn't actually needed
+// for correctness here. The real guarantee comes from the conditional
+// write, not the read: if the read is stale (missed a very recent write),
+// the following setJSON's onlyIfMatch/onlyIfNew is checked against the
+// store's true current state at write time and fails with `modified:
+// false` regardless, which we already treat as a 409
+// (`conflict_lost_race`). A stale read can only downgrade which 409
+// variant the client sees — it can never let two conflicting writes both
+// succeed.
 
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
@@ -107,7 +120,7 @@ exports.handler = async function (event) {
 
   try {
     const store = getStore(LIVE_SCORES_STORE);
-    const existing = await store.getWithMetadata(matchId, { type: 'json', consistency: 'strong' });
+    const existing = await store.getWithMetadata(matchId, { type: 'json' });
 
     if (
       !force &&
