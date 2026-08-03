@@ -23,6 +23,18 @@ const SCORER_NAME_KEY = 'scoreKeeperName';
 // (or it's stale test data) and stop nagging about it.
 const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
+// Shuffleboard doesn't score in single points — the triangle's zones are
+// worth 10, 8, 7, with "10 off" (a puck hanging past the line) costing the
+// shooting team 10. Order here is [8, 7, 10, -10] because it maps directly
+// onto a 2-column CSS grid as top row [8, 7], bottom row [10, -10].
+const MAX_UNDO = 5;
+const SCORE_INCREMENTS = [
+  { delta: 8, label: '+8' },
+  { delta: 7, label: '+7' },
+  { delta: 10, label: '+10' },
+  { delta: -10, label: '−10' },
+];
+
 // The sheet's Court column format isn't guaranteed to be a bare number (it
 // might read "3" or "Court 3"), so compare/display on the digits only rather
 // than requiring an exact string match.
@@ -209,6 +221,10 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
+  // Snapshots of {side, delta, prevYellow, prevBlack, nextYellow, nextBlack}
+  // for the last few taps, most-recent last — lets "Undo" restore the exact
+  // prior stored value without having to reverse-engineer it from the delta.
+  const [undoStack, setUndoStack] = React.useState([]);
 
   // match.liveScore refreshes on every poll (see ScoreApp), so this stays
   // live — if someone else posts an update while this device has the match
@@ -238,19 +254,35 @@ function ScoreKeeper({ match, scorerName, onBack }) {
 
   function adjust(side, delta) {
     if (status === 'complete') return;
+    const prevYellow = yellowScore;
+    const prevBlack = blackScore;
+    let nextYellow = yellowScore;
+    let nextBlack = blackScore;
+    // No floor at 0 — a "10 off" penalty can legitimately push a side
+    // negative before it's put any points on the board.
     if (side === 'yellow') {
-      const next = Math.max(0, yellowScore + delta);
-      setYellowScore(next);
-      post(next, blackScore, status);
+      nextYellow = yellowScore + delta;
+      setYellowScore(nextYellow);
     } else {
-      const next = Math.max(0, blackScore + delta);
-      setBlackScore(next);
-      post(yellowScore, next, status);
+      nextBlack = blackScore + delta;
+      setBlackScore(nextBlack);
     }
+    setUndoStack([...undoStack, { side, delta, prevYellow, prevBlack, nextYellow, nextBlack }].slice(-MAX_UNDO));
+    post(nextYellow, nextBlack, status);
+  }
+
+  function undoLast() {
+    if (undoStack.length === 0 || status === 'complete') return;
+    const last = undoStack[undoStack.length - 1];
+    setYellowScore(last.prevYellow);
+    setBlackScore(last.prevBlack);
+    setUndoStack(undoStack.slice(0, -1));
+    post(last.prevYellow, last.prevBlack, status);
   }
 
   function markComplete() {
     setStatus('complete');
+    setUndoStack([]);
     post(yellowScore, blackScore, 'complete');
   }
 
@@ -290,6 +322,17 @@ function ScoreKeeper({ match, scorerName, onBack }) {
         </div>
       )}
 
+      {status !== 'complete' && undoStack.length > 0 && (() => {
+        const last = undoStack[undoStack.length - 1];
+        const sideLabel = last.side === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black');
+        const deltaLabel = last.delta > 0 ? `+${last.delta}` : last.delta;
+        return (
+          <div className="s-undo-bar">
+            <button className="s-undo" onClick={undoLast}>Undo {deltaLabel} to {sideLabel}</button>
+          </div>
+        );
+      })()}
+
       {status !== 'complete' && (
         <button className="s-complete" onClick={markComplete}>Match complete</button>
       )}
@@ -308,9 +351,17 @@ function ScoreSide({ label, score, onAdjust }) {
     <div className="s-side">
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
-      <div className="s-steppers">
-        <button className="s-stepper" onClick={() => onAdjust(-1)} aria-label={`Decrease ${label} score`}>&minus;</button>
-        <button className="s-stepper s-stepper-plus" onClick={() => onAdjust(1)} aria-label={`Increase ${label} score`}>+</button>
+      <div className="s-stepper-grid">
+        {SCORE_INCREMENTS.map((inc) => (
+          <button
+            key={inc.delta}
+            className={inc.delta < 0 ? 's-stepper s-stepper-minus' : 's-stepper'}
+            onClick={() => onAdjust(inc.delta)}
+            aria-label={inc.delta < 0 ? `Subtract 10 from ${label} (10 off)` : `Add ${inc.delta} to ${label}`}
+          >
+            {inc.label}
+          </button>
+        ))}
       </div>
     </div>
   );
