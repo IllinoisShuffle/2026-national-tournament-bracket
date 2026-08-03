@@ -13,7 +13,10 @@
 // network error, etc.) so callers fall back to demo/mock data.
 
 const LIVE_ENDPOINT = '/.netlify/functions/results';
-const LIVE_POLL_MS = 45000;
+// results.js sets Netlify-CDN-Cache-Control: max-age=5, so Netlify's edge
+// absorbs concurrent polls at this interval without extra Sheets/function
+// invocations — safe to poll faster than the old 45s without added cost.
+const LIVE_POLL_MS = 15000;
 
 async function fetchLiveData() {
   try {

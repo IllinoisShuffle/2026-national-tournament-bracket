@@ -57,7 +57,7 @@ the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
 ## Live results
 
 `web-bracket.html`, `mobile-bracket.html`, and `scoreboard.html` poll a
-Netlify Function (`netlify/functions/results.js`) every 45 seconds, which
+Netlify Function (`netlify/functions/results.js`) every 15 seconds, which
 reads the "Matches" tab of the tournament Google Sheet and returns each
 match's teams, scores, court, and winner as JSON.
 
@@ -78,7 +78,7 @@ match's teams, scores, court, and winner as JSON.
 ### Cost and Sheets API quota
 
 There's no scheduled/cron trigger — the function only runs in response to
-page polls, and each open tab polls every 45 seconds.
+page polls, and each open tab polls every 15 seconds.
 
 - **Sheets reads**: the function caches its Sheets API response in memory
   for 10 seconds per warm container (`CACHE_MS` in `results.js`), so

@@ -12,7 +12,7 @@
 // complete" button just freezes the display and asks the host to tell them.
 
 const SCORE_ENDPOINT = '/.netlify/functions/live-score';
-const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 45s — a host
+const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 15s — a host
 // needs to notice a new match land on their court promptly.
 const COURT_FILTER_KEY = 'scoreCourtFilter';
 const SCORER_NAME_KEY = 'scoreKeeperName';
