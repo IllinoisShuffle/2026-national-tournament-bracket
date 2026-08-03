@@ -18,3 +18,13 @@
   for = "/.netlify/functions/live-score-admin"
   [headers.values]
     Cache-Control = "no-store"
+
+[[headers]]
+  for = "/.netlify/functions/score-auth"
+  [headers.values]
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/.netlify/functions/admin-auth"
+  [headers.values]
+    Cache-Control = "no-store"

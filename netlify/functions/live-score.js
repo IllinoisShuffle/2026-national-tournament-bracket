@@ -5,22 +5,44 @@
 // score/winner into the Matches tab; once that happens, results.js stops
 // surfacing the live entry for that match ID (see attachLiveScores there).
 //
-// Intentionally unauthenticated: this endpoint can never author the
-// tournament's official bracket, only a transient in-progress display, so
-// the blast radius of a stray/abusive POST is limited to a wrong-looking
-// live score that the TD's manual transcription supersedes regardless.
+// Requires a court-host auth token (see score-auth.js / _shared/authToken.js)
+// on every write — this endpoint verifies the token's signature only, it
+// never reads Sheets credentials itself, so it structurally still can't
+// author the tournament's official bracket even though it's now gated.
 //
 // Expected JSON body:
-//   { matchId, court, yellowScore, blackScore, status, scorer }
+//   { matchId, court, yellowScore, blackScore, status, force }
 //   status is "in_progress" (default) or "complete".
-//   scorer is a free-text display name (e.g. "Alex") the scorekeeper's device
-//   remembers locally — purely informational, so a second host opening the
-//   same match can see someone's already on it. There's no auth behind it and
-//   no write lock: this never blocks or rejects a write, it's just data for
-//   score.html to display a "being scored by" hint.
+//   scorer is no longer taken from the request body — it's always the
+//   verified name embedded in the Authorization token, so it can't be
+//   spoofed and is trustworthy for "who is keeping score."
+//
+// Concurrency: if another verified host recently posted an in-progress
+// update to the same match, a write is rejected with 409 unless `force:
+// true` is set (an explicit "take over" confirmation from score.jsx). The
+// conflict check + write use Netlify Blobs' conditional-write primitives
+// (getWithMetadata + setJSON's onlyIfMatch/onlyIfNew) rather than a
+// read-then-blind-write, so a race between two near-simultaneous writes is
+// also caught (the second write's onlyIfMatch fails and comes back as a
+// conflict) instead of silently overwriting.
+//
+// The read deliberately uses default ("eventual") consistency, not
+// "strong" — strong consistency requires Blobs' uncachedEdgeURL to be wired
+// up, which isn't available in every environment (confirmed: it 500s
+// against the local `netlify dev` Blobs emulator) and isn't actually needed
+// for correctness here. The real guarantee comes from the conditional
+// write, not the read: if the read is stale (missed a very recent write),
+// the following setJSON's onlyIfMatch/onlyIfNew is checked against the
+// store's true current state at write time and fails with `modified:
+// false` regardless, which we already treat as a 409
+// (`conflict_lost_race`). A stale read can only downgrade which 409
+// variant the client sees — it can never let two conflicting writes both
+// succeed.
 
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
+const { verifyToken } = require('./_shared/authToken');
+const { getBearerToken } = require('./_shared/bearerToken');
 
 const LIVE_SCORES_STORE = 'live-scores';
 // A "10 off" penalty can push a side negative before it's scored anything,
@@ -29,15 +51,27 @@ const LIVE_SCORES_STORE = 'live-scores';
 const MIN_SCORE = -999;
 const MAX_SCORE = 999;
 const MAX_COURT_LEN = 20;
-const MAX_SCORER_LEN = 40;
 const VALID_STATUSES = new Set(['in_progress', 'complete']);
 
-function badRequest(message) {
+// How recent an existing entry's update has to be before a *different*
+// verified scorer's write is treated as a live conflict rather than someone
+// picking up an abandoned match. Must match ACTIVE_THRESHOLD_MS in
+// score.jsx — that copy drives the informational "Being scored by X" UI at
+// browse time, this one enforces the same window at write time. Kept as two
+// separate literals (score.jsx is browser code loaded via in-page Babel and
+// can't require() this server module) — keep them in sync if changed.
+const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function jsonResponse(statusCode, body) {
   return {
-    statusCode: 400,
+    statusCode,
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-    body: JSON.stringify({ error: message }),
+    body: JSON.stringify(body),
   };
+}
+
+function badRequest(message) {
+  return jsonResponse(400, { error: message });
 }
 
 function parseScore(value) {
@@ -54,8 +88,12 @@ exports.handler = async function (event) {
   connectLambda(event);
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return jsonResponse(405, { error: 'Method not allowed' });
   }
+
+  const token = getBearerToken(event);
+  const auth = token && verifyToken(token);
+  if (!auth) return jsonResponse(401, { error: 'Missing or invalid auth token' });
 
   let body;
   try {
@@ -77,23 +115,45 @@ exports.handler = async function (event) {
   if (!VALID_STATUSES.has(status)) return badRequest('Invalid status');
 
   const court = String(body.court || '').trim().slice(0, MAX_COURT_LEN);
-  const scorer = String(body.scorer || '').trim().slice(0, MAX_SCORER_LEN);
+  const force = body.force === true;
+  const scorer = auth.name;
 
   try {
     const store = getStore(LIVE_SCORES_STORE);
-    const updatedAt = Date.now();
-    await store.setJSON(matchId, { matchId, court, yellowScore, blackScore, status, scorer, updatedAt });
+    const existing = await store.getWithMetadata(matchId, { type: 'json' });
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ ok: true, matchId, updatedAt }),
-    };
+    if (
+      !force &&
+      existing &&
+      existing.data &&
+      existing.data.status === 'in_progress' &&
+      existing.data.scorer &&
+      existing.data.scorer !== scorer &&
+      Date.now() - existing.data.updatedAt < ACTIVE_THRESHOLD_MS
+    ) {
+      return jsonResponse(409, {
+        error: 'in_progress_conflict',
+        scorer: existing.data.scorer,
+        updatedAt: existing.data.updatedAt,
+        yellowScore: existing.data.yellowScore,
+        blackScore: existing.data.blackScore,
+      });
+    }
+
+    const updatedAt = Date.now();
+    const entry = { matchId, court, yellowScore, blackScore, status, scorer, updatedAt };
+    const writeOptions = existing ? { onlyIfMatch: existing.etag } : { onlyIfNew: true };
+    const result = await store.setJSON(matchId, entry, writeOptions);
+
+    if (!result.modified) {
+      // Another write landed between our read and our write — a genuine
+      // race rather than a "someone else is on it" takeover case. Ask the
+      // client to reload the current value and retry.
+      return jsonResponse(409, { error: 'conflict_lost_race' });
+    }
+
+    return jsonResponse(200, { ok: true, matchId, updatedAt });
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ error: err.message || String(err) }),
-    };
+    return jsonResponse(500, { error: err.message || String(err) });
   }
 };

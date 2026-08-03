@@ -1,9 +1,10 @@
 // Court host scorekeeping page. One single URL for everyone (score.html) —
-// no per-court links to distribute, no login. A host can just scan the full
-// match list for theirs, or set an on-page "my court" toggle (remembered in
-// localStorage on that device) to narrow the list down. Court is always a
-// convenience filter against the existing results feed, never an identity
-// or auth mechanism.
+// no per-court links to distribute. A host logs in with their name + PIN
+// (checked against the tournament's "Hosts" sheet by score-auth.js), then can
+// scan the full match list for theirs, or set an on-page "my court" toggle
+// (remembered in localStorage on that device) to narrow the list down. Court
+// is always a convenience filter against the existing results feed, never an
+// access restriction — any verified host can score any match.
 //
 // This page never writes to the Matches Google Sheet. It POSTs to
 // netlify/functions/live-score.js, which stores in-progress scores in
@@ -11,16 +12,22 @@
 // the final score/winner into the Matches tab — this page's "Match
 // complete" button just freezes the display and asks the host to tell them.
 
+const AUTH_ENDPOINT = '/.netlify/functions/score-auth';
 const SCORE_ENDPOINT = '/.netlify/functions/live-score';
 const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 15s — a host
 // needs to notice a new match land on their court promptly.
 const COURT_FILTER_KEY = 'scoreCourtFilter';
-const SCORER_NAME_KEY = 'scoreKeeperName';
+const AUTH_KEY = 'scoreAuth';
 
 // How recent a liveScore update has to be before we treat it as "someone's
 // actively on this right now" for the sake of a heads-up — not a lock, just
 // a threshold past which we assume the previous scorekeeper has moved on
-// (or it's stale test data) and stop nagging about it.
+// (or it's stale test data) and stop nagging about it. Must match
+// ACTIVE_THRESHOLD_MS in netlify/functions/live-score.js — that copy
+// enforces the same window server-side when deciding whether a write is a
+// real conflict; this one only drives the informational banner/tag here.
+// Kept as two separate literals (this file is browser code loaded via
+// in-page Babel and can't require() the server module) — keep in sync.
 const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
 // Shuffleboard doesn't score in single points — the triangle's zones are
@@ -34,6 +41,14 @@ const SCORE_INCREMENTS = [
   { delta: 10, label: '+10' },
   { delta: -10, label: '−10' },
 ];
+
+// The venue has 10 courts. The court toggle always shows all of them,
+// regardless of which courts currently have an unfinished match — a host
+// whose login pre-fills a court with no active match right now (or whose
+// court briefly has nothing on it) still sees their filter as a selected
+// pill instead of a silently-applied filter with no visible indication.
+const TOTAL_COURTS = 10;
+const ALL_COURTS = Array.from({ length: TOTAL_COURTS }, (_, i) => String(i + 1));
 
 // The sheet's Court column format isn't guaranteed to be a bare number (it
 // might read "3" or "Court 3"), so compare/display on the digits only rather
@@ -51,11 +66,33 @@ function readStoredCourtFilter() {
   }
 }
 
-function readStoredScorerName() {
+function readStoredAuth() {
   try {
-    return localStorage.getItem(SCORER_NAME_KEY) || '';
+    const raw = localStorage.getItem(AUTH_KEY);
+    if (!raw) return null;
+    const auth = JSON.parse(raw);
+    if (!auth || !auth.token || !auth.name || !auth.exp) return null;
+    if (Date.now() >= auth.exp) return null; // expired — treat as logged out
+    return auth;
   } catch (e) {
-    return '';
+    return null;
+  }
+}
+
+function storeAuth(auth) {
+  try {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+  } catch (e) {
+    // Storage unavailable (private browsing, etc.) — login still works for
+    // the current session, it just won't stick on reload.
+  }
+}
+
+function clearAuth() {
+  try {
+    localStorage.removeItem(AUTH_KEY);
+  } catch (e) {
+    // Storage unavailable — nothing to clear.
   }
 }
 
@@ -70,6 +107,8 @@ function formatAgo(ts) {
 }
 
 function ScoreApp() {
+  const [auth, setAuth] = React.useState(readStoredAuth);
+
   const [liveData, setLiveData] = React.useState(null);
   React.useEffect(() => {
     let cancelled = false;
@@ -84,7 +123,6 @@ function ScoreApp() {
 
   const [selectedId, setSelectedId] = React.useState(null);
   const [courtFilter, setCourtFilter] = React.useState(readStoredCourtFilter);
-  const [scorerName, setScorerName] = React.useState(readStoredScorerName);
 
   function updateCourtFilter(next) {
     setCourtFilter(next);
@@ -97,21 +135,31 @@ function ScoreApp() {
     }
   }
 
-  function updateScorerName(next) {
-    setScorerName(next);
-    try {
-      if (next) localStorage.setItem(SCORER_NAME_KEY, next);
-      else localStorage.removeItem(SCORER_NAME_KEY);
-    } catch (e) {
-      // Storage unavailable — name still works for the current session.
-    }
+  function handleLogin(nextAuth) {
+    storeAuth(nextAuth);
+    setAuth(nextAuth);
+    const court = normalizeCourt(nextAuth.court);
+    if (court && !courtFilter) updateCourtFilter(court);
+  }
+
+  function handleLogout() {
+    clearAuth();
+    setAuth(null);
+    setSelectedId(null);
+  }
+
+  function handleAuthExpired() {
+    clearAuth();
+    setAuth(null);
+    setSelectedId(null);
+  }
+
+  if (!auth) {
+    return <Login onSuccess={handleLogin} />;
   }
 
   const matches = (liveData && liveData.matches) || {};
   const unfinished = Object.values(matches).filter((m) => !m.winner);
-
-  const availableCourts = Array.from(new Set(unfinished.map((m) => normalizeCourt(m.court)).filter(Boolean)))
-    .sort((a, b) => Number(a) - Number(b));
 
   const visibleMatches = (courtFilter ? unfinished.filter((m) => normalizeCourt(m.court) === courtFilter) : unfinished)
     .sort((a, b) => {
@@ -123,7 +171,14 @@ function ScoreApp() {
   const selected = selectedId ? matches[selectedId] : null;
 
   if (selected) {
-    return <ScoreKeeper match={selected} scorerName={scorerName} onBack={() => setSelectedId(null)} />;
+    return (
+      <ScoreKeeper
+        match={selected}
+        auth={auth}
+        onBack={() => setSelectedId(null)}
+        onAuthExpired={handleAuthExpired}
+      />
+    );
   }
 
   return (
@@ -132,8 +187,8 @@ function ScoreApp() {
         <h1>Pick your match</h1>
       </header>
 
-      <ScorerNameBar name={scorerName} onChange={updateScorerName} />
-      <CourtToggle courts={availableCourts} value={courtFilter} onChange={updateCourtFilter} />
+      <AuthBar name={auth.name} onLogout={handleLogout} />
+      <CourtToggle courts={ALL_COURTS} value={courtFilter} onChange={updateCourtFilter} />
 
       {!liveData && <p className="s-empty">Loading matches…</p>}
       {liveData && visibleMatches.length === 0 && (
@@ -141,7 +196,7 @@ function ScoreApp() {
       )}
       <div className="s-list">
         {visibleMatches.map((m) => {
-          const beingScored = isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== scorerName;
+          const beingScored = isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== auth.name;
           return (
             <button key={m.id} className="s-match-card" onClick={() => setSelectedId(m.id)}>
               <div className="s-match-id">
@@ -163,39 +218,81 @@ function ScoreApp() {
   );
 }
 
-function ScorerNameBar({ name, onChange }) {
-  const [editing, setEditing] = React.useState(!name);
-  const [draft, setDraft] = React.useState(name);
+function Login({ onSuccess }) {
+  const [name, setName] = React.useState('');
+  const [pin, setPin] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
 
-  function save() {
-    const trimmed = draft.trim();
-    onChange(trimmed);
-    setDraft(trimmed);
-    setEditing(false);
-  }
-
-  if (editing) {
-    return (
-      <div className="s-name-bar">
-        <input
-          className="s-name-input"
-          type="text"
-          placeholder="Your name (so others know it's you)"
-          value={draft}
-          autoFocus
-          maxLength={40}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
-        />
-        <button className="s-name-save" onClick={save}>Save</button>
-      </div>
-    );
+  async function submit(e) {
+    e.preventDefault();
+    if (!name.trim() || !pin.trim()) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(AUTH_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), pin: pin.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Invalid name or PIN');
+        setSubmitting(false);
+        return;
+      }
+      onSuccess(data);
+    } catch (e2) {
+      setError('Couldn’t reach the server — check connection and try again');
+      setSubmitting(false);
+    }
   }
 
   return (
-    <div className="s-name-bar s-name-bar-set">
+    <div className="s-wrap">
+      <div className="s-login-wrap">
+        <h1 className="s-login-title">Court Scorekeeping</h1>
+        <p className="s-login-sub">Log in with the name and PIN your TD gave you.</p>
+        <form onSubmit={submit}>
+          <div className="s-login-field">
+            <label htmlFor="s-login-name">Name</label>
+            <input
+              id="s-login-name"
+              className="s-login-input"
+              type="text"
+              autoFocus
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="s-login-field">
+            <label htmlFor="s-login-pin">PIN</label>
+            <input
+              id="s-login-pin"
+              className="s-login-input"
+              type="text"
+              inputMode="numeric"
+              maxLength={40}
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+            />
+          </div>
+          <button className="s-login-submit" type="submit" disabled={submitting}>
+            {submitting ? 'Logging in…' : 'Log in'}
+          </button>
+          {error && <p className="s-login-error">{error}</p>}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AuthBar({ name, onLogout }) {
+  return (
+    <div className="s-auth-bar">
       <span>Scoring as <strong>{name}</strong></span>
-      <button className="s-name-edit" onClick={() => { setDraft(name); setEditing(true); }}>Change</button>
+      <button className="s-auth-logout" onClick={onLogout}>Log out</button>
     </div>
   );
 }
@@ -215,12 +312,13 @@ function CourtToggle({ courts, value, onChange }) {
   );
 }
 
-function ScoreKeeper({ match, scorerName, onBack }) {
+function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'in_progress' };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
-  const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error
+  const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
+  const [conflict, setConflict] = React.useState(null);
   // Snapshots of {side, delta, prevYellow, prevBlack, nextYellow, nextBlack}
   // for the last few taps, most-recent last — lets "Undo" restore the exact
   // prior stored value without having to reverse-engineer it from the delta.
@@ -228,24 +326,48 @@ function ScoreKeeper({ match, scorerName, onBack }) {
 
   // match.liveScore refreshes on every poll (see ScoreApp), so this stays
   // live — if someone else posts an update while this device has the match
-  // open, the banner below appears without needing a reload.
-  const otherActive = isRecentlyActive(match.liveScore) && match.liveScore.scorer && match.liveScore.scorer !== scorerName;
+  // open, the banner below appears without needing a reload. This is purely
+  // informational (browse-time) — the actual write-time conflict check
+  // happens server-side in live-score.js and surfaces as `conflict` state.
+  const otherActive = isRecentlyActive(match.liveScore) && match.liveScore.scorer && match.liveScore.scorer !== auth.name;
 
-  async function post(nextYellow, nextBlack, nextStatus) {
+  const locked = saveState === 'saving' || saveState === 'conflict';
+
+  async function post(nextYellow, nextBlack, nextStatus, { force } = {}) {
     setSaveState('saving');
     try {
       const res = await fetch(SCORE_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
           matchId: match.id,
           court: match.court || '',
           yellowScore: nextYellow,
           blackScore: nextBlack,
           status: nextStatus,
-          scorer: scorerName,
+          force: !!force,
         }),
       });
+
+      if (res.status === 401) {
+        onAuthExpired();
+        return;
+      }
+
+      if (res.status === 409) {
+        const data = await res.json().catch(() => ({}));
+        setConflict({
+          scorer: data.scorer || null,
+          serverYellow: typeof data.yellowScore === 'number' ? data.yellowScore : null,
+          serverBlack: typeof data.blackScore === 'number' ? data.blackScore : null,
+          pendingYellow: nextYellow,
+          pendingBlack: nextBlack,
+          pendingStatus: nextStatus,
+        });
+        setSaveState('conflict');
+        return;
+      }
+
       setSaveState(res.ok ? 'saved' : 'error');
     } catch (e) {
       setSaveState('error');
@@ -253,7 +375,7 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   }
 
   function adjust(side, delta) {
-    if (status === 'complete') return;
+    if (locked || status === 'complete') return;
     const prevYellow = yellowScore;
     const prevBlack = blackScore;
     let nextYellow = yellowScore;
@@ -272,7 +394,7 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   }
 
   function undoLast() {
-    if (undoStack.length === 0 || status === 'complete') return;
+    if (locked || undoStack.length === 0 || status === 'complete') return;
     const last = undoStack[undoStack.length - 1];
     setYellowScore(last.prevYellow);
     setBlackScore(last.prevBlack);
@@ -281,14 +403,32 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   }
 
   function markComplete() {
+    if (locked) return;
     setStatus('complete');
     setUndoStack([]);
     post(yellowScore, blackScore, 'complete');
   }
 
   function reopen() {
+    if (locked) return;
     setStatus('in_progress');
     post(yellowScore, blackScore, 'in_progress');
+  }
+
+  function takeOver() {
+    if (!conflict) return;
+    const { pendingYellow, pendingBlack, pendingStatus } = conflict;
+    setConflict(null);
+    post(pendingYellow, pendingBlack, pendingStatus, { force: true });
+  }
+
+  function cancelConflict() {
+    if (conflict) {
+      if (conflict.serverYellow !== null) setYellowScore(conflict.serverYellow);
+      if (conflict.serverBlack !== null) setBlackScore(conflict.serverBlack);
+    }
+    setConflict(null);
+    setSaveState('idle');
   }
 
   return (
@@ -301,9 +441,23 @@ function ScoreKeeper({ match, scorerName, onBack }) {
         </div>
       </header>
 
-      {otherActive && (
+      {otherActive && saveState !== 'conflict' && (
         <div className="s-other-scorer-banner">
           Heads up — {match.liveScore.scorer} updated this match {formatAgo(match.liveScore.updatedAt)} ago. Make sure you're not both scoring it.
+        </div>
+      )}
+
+      {saveState === 'conflict' && conflict && (
+        <div className="s-conflict-banner">
+          <p className="s-conflict-text">
+            {conflict.scorer
+              ? `${conflict.scorer} is currently scoring this match. Take over?`
+              : 'Someone else just updated this match. Take over with your latest score?'}
+          </p>
+          <div className="s-conflict-actions">
+            <button className="s-conflict-btn s-conflict-btn-primary" onClick={takeOver}>Take over</button>
+            <button className="s-conflict-btn" onClick={cancelConflict}>Cancel</button>
+          </div>
         </div>
       )}
 
@@ -312,13 +466,13 @@ function ScoreKeeper({ match, scorerName, onBack }) {
           <p className="s-done-title">Marked complete</p>
           <p className="s-done-score">{match.yellow || 'Yellow'} {yellowScore} &ndash; {blackScore} {match.black || 'Black'}</p>
           <p className="s-done-note">Tell the TD/ATD so they can enter the final score into the Matches sheet.</p>
-          <button className="s-reopen" onClick={reopen}>Reopen (mis-tap)</button>
+          <button className="s-reopen" onClick={reopen} disabled={locked}>Reopen (mis-tap)</button>
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide label={match.yellow || 'Yellow'} score={yellowScore} onAdjust={(d) => adjust('yellow', d)} />
+          <ScoreSide label={match.yellow || 'Yellow'} score={yellowScore} onAdjust={(d) => adjust('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide label={match.black || 'Black'} score={blackScore} onAdjust={(d) => adjust('black', d)} />
+          <ScoreSide label={match.black || 'Black'} score={blackScore} onAdjust={(d) => adjust('black', d)} disabled={locked} />
         </div>
       )}
 
@@ -334,7 +488,7 @@ function ScoreKeeper({ match, scorerName, onBack }) {
       })()}
 
       {status !== 'complete' && (
-        <button className="s-complete" onClick={markComplete}>Match complete</button>
+        <button className="s-complete" onClick={markComplete} disabled={locked}>Match complete</button>
       )}
 
       <div className={`s-status s-status-${saveState}`}>
@@ -346,7 +500,7 @@ function ScoreKeeper({ match, scorerName, onBack }) {
   );
 }
 
-function ScoreSide({ label, score, onAdjust }) {
+function ScoreSide({ label, score, onAdjust, disabled }) {
   return (
     <div className="s-side">
       <div className="s-side-label">{label}</div>
@@ -357,6 +511,7 @@ function ScoreSide({ label, score, onAdjust }) {
             key={inc.delta}
             className={inc.delta < 0 ? 's-stepper s-stepper-minus' : 's-stepper'}
             onClick={() => onAdjust(inc.delta)}
+            disabled={disabled}
             aria-label={inc.delta < 0 ? `Subtract 10 from ${label} (10 off)` : `Add ${inc.delta} to ${label}`}
           >
             {inc.label}

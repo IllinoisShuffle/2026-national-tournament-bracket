@@ -17,11 +17,10 @@
 // Optional:
 //   SHEETS_MATCHES_RANGE           defaults to "Matches!A:L"
 
-const { JWT } = require('google-auth-library');
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
+const { fetchValues } = require('./_shared/sheetsClient');
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 const LIVE_SCORES_STORE = 'live-scores';
 
 // Cache-Control (no-store) keeps browsers from serving a poll out of their own
@@ -35,31 +34,10 @@ const SUCCESS_HEADERS = {
 };
 
 // Reused across warm invocations of the same function container to avoid
-// re-authenticating (and hitting the Sheets API) on every single poll.
-let cachedClient = null;
+// re-hitting the Sheets API on every single poll.
 let cachedResult = null;
 let cachedAt = 0;
 const CACHE_MS = 10000;
-
-function getClient() {
-  if (cachedClient) return cachedClient;
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const key = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  if (!email || !key) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY env vars');
-  }
-  cachedClient = new JWT({ email, key, scopes: SCOPES });
-  return cachedClient;
-}
-
-async function fetchValues(range) {
-  const spreadsheetId = process.env.SHEETS_SPREADSHEET_ID;
-  if (!spreadsheetId) throw new Error('Missing SHEETS_SPREADSHEET_ID env var');
-  const client = getClient();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
-  const res = await client.request({ url });
-  return (res.data && res.data.values) || [];
-}
 
 // Positional column parsing — see header comment for the exact expected order.
 function rowToMatch(row) {
