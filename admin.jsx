@@ -6,43 +6,53 @@
 // Gated by a single shared admin PIN (see netlify/functions/_shared/
 // adminAuth.js) — known only to the TD/ATD, not a per-person login like
 // score.jsx's, since there's no need to know who purged an entry. The PIN
-// is kept in sessionStorage (not localStorage) so it doesn't outlive the
-// browser tab — this page can wipe all live scores at once, so it's worth
-// not leaving that access sitting around on a shared device.
+// itself is only ever sent once, to admin-auth.js, which exchanges it for a
+// signed, short-lived token; every request after that sends the token, not
+// the PIN, so a leaked request exposes a time-boxed credential rather than
+// the permanent shared secret. The token is kept in sessionStorage (not
+// localStorage) so it doesn't outlive the browser tab — this page can wipe
+// all live scores at once, so it's worth not leaving that access sitting
+// around on a shared device.
 //
 // Deliberately not linked from index.html — reached by direct URL only,
 // same convention as score.html.
 
+const ADMIN_AUTH_ENDPOINT = '/.netlify/functions/admin-auth';
 const ADMIN_ENDPOINT = '/.netlify/functions/live-score-admin';
-const ADMIN_PIN_KEY = 'adminPin';
+const ADMIN_AUTH_KEY = 'adminAuth';
 
-function readStoredPin() {
+function readStoredAuth() {
   try {
-    return sessionStorage.getItem(ADMIN_PIN_KEY) || '';
+    const raw = sessionStorage.getItem(ADMIN_AUTH_KEY);
+    if (!raw) return null;
+    const auth = JSON.parse(raw);
+    if (!auth || !auth.token || !auth.exp) return null;
+    if (Date.now() >= auth.exp) return null; // expired — treat as logged out
+    return auth;
   } catch (e) {
-    return '';
+    return null;
   }
 }
 
-function storePin(pin) {
+function storeAuth(auth) {
   try {
-    sessionStorage.setItem(ADMIN_PIN_KEY, pin);
+    sessionStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(auth));
   } catch (e) {
-    // Storage unavailable (private browsing, etc.) — the PIN still works
-    // for the current session, it just won't stick on reload.
+    // Storage unavailable (private browsing, etc.) — login still works for
+    // the current session, it just won't stick on reload.
   }
 }
 
-function clearStoredPin() {
+function clearAuth() {
   try {
-    sessionStorage.removeItem(ADMIN_PIN_KEY);
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
   } catch (e) {
     // Storage unavailable — nothing to clear.
   }
 }
 
-function authHeaders(pin) {
-  return { 'X-Admin-Pin': pin };
+function authHeaders(token) {
+  return { Authorization: `Bearer ${token}` };
 }
 
 function formatAgo(ts) {
@@ -53,23 +63,21 @@ function formatAgo(ts) {
 }
 
 function AdminApp() {
-  const [pin, setPin] = React.useState(readStoredPin);
-  const [pinError, setPinError] = React.useState('');
+  const [auth, setAuth] = React.useState(readStoredAuth);
   const [entries, setEntries] = React.useState(null);
   const [error, setError] = React.useState(null);
   const [busyId, setBusyId] = React.useState(null);
 
   function handleUnauthorized() {
-    clearStoredPin();
-    setPin('');
+    clearAuth();
+    setAuth(null);
     setEntries(null);
-    setPinError('Incorrect PIN, or your session expired — enter it again.');
   }
 
-  async function load(currentPin) {
+  async function load(currentAuth) {
     setError(null);
     try {
-      const res = await fetch(ADMIN_ENDPOINT, { cache: 'no-store', headers: authHeaders(currentPin) });
+      const res = await fetch(ADMIN_ENDPOINT, { cache: 'no-store', headers: authHeaders(currentAuth.token) });
       if (res.status === 401) return handleUnauthorized();
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
       const data = await res.json();
@@ -80,18 +88,17 @@ function AdminApp() {
   }
 
   React.useEffect(() => {
-    if (pin) load(pin);
-  }, [pin]);
+    if (auth) load(auth);
+  }, [auth]);
 
-  function handlePinSubmit(nextPin) {
-    storePin(nextPin);
-    setPinError('');
-    setPin(nextPin);
+  function handleLoginSuccess(nextAuth) {
+    storeAuth(nextAuth);
+    setAuth(nextAuth);
   }
 
   function handleLogout() {
-    clearStoredPin();
-    setPin('');
+    clearAuth();
+    setAuth(null);
     setEntries(null);
   }
 
@@ -100,7 +107,7 @@ function AdminApp() {
     try {
       const res = await fetch(ADMIN_ENDPOINT, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...authHeaders(pin) },
+        headers: { 'Content-Type': 'application/json', ...authHeaders(auth.token) },
         body: JSON.stringify({ matchId }),
       });
       if (res.status === 401) return handleUnauthorized();
@@ -119,7 +126,7 @@ function AdminApp() {
     try {
       const res = await fetch(ADMIN_ENDPOINT, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...authHeaders(pin) },
+        headers: { 'Content-Type': 'application/json', ...authHeaders(auth.token) },
         body: JSON.stringify({ all: true }),
       });
       if (res.status === 401) return handleUnauthorized();
@@ -132,8 +139,8 @@ function AdminApp() {
     }
   }
 
-  if (!pin) {
-    return <PinGate onSubmit={handlePinSubmit} error={pinError} />;
+  if (!auth) {
+    return <PinGate onSuccess={handleLoginSuccess} />;
   }
 
   return (
@@ -141,7 +148,7 @@ function AdminApp() {
       <div className="a-header">
         <h1>Live Score Admin</h1>
         <div className="a-actions">
-          <button className="a-btn" onClick={() => load(pin)} disabled={busyId !== null}>Refresh</button>
+          <button className="a-btn" onClick={() => load(auth)} disabled={busyId !== null}>Refresh</button>
           <button
             className="a-btn a-btn-danger"
             onClick={clearAll}
@@ -190,13 +197,33 @@ function AdminApp() {
   );
 }
 
-function PinGate({ onSubmit, error }) {
-  const [draft, setDraft] = React.useState('');
+function PinGate({ onSuccess }) {
+  const [pin, setPin] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
-    if (!draft.trim()) return;
-    onSubmit(draft.trim());
+    if (!pin.trim()) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(ADMIN_AUTH_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Invalid PIN');
+        setSubmitting(false);
+        return;
+      }
+      onSuccess(data);
+    } catch (e2) {
+      setError('Couldn’t reach the server — check connection and try again');
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -211,10 +238,12 @@ function PinGate({ onSubmit, error }) {
             inputMode="numeric"
             autoFocus
             maxLength={40}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
           />
-          <button className="a-btn a-pin-submit" type="submit">Continue</button>
+          <button className="a-btn a-pin-submit" type="submit" disabled={submitting}>
+            {submitting ? 'Checking…' : 'Continue'}
+          </button>
           {error && <p className="a-error">{error}</p>}
         </form>
       </div>

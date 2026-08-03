@@ -190,16 +190,22 @@ the store directly (so even an entry for an already-decided match, which
 either a single entry (`{ matchId }`) or every entry at once
 (`{ all: true }`, used by the page's confirm-guarded "Clear all" button).
 Gated by a single **admin PIN** (`ADMIN_PIN` env var) — a static secret known
-only to the TD/ATD, not a per-person login like court hosts get, since there's
-no need to know *who* purged an entry, only that it was authorized. The page
-asks for the PIN once and keeps it in `sessionStorage` (not `localStorage`),
-so it doesn't survive closing the tab — this tool can wipe every live score
-at once, so it's worth not leaving that access sitting around on a shared
-device. Every request to `live-score-admin.js` sends the PIN as an
-`X-Admin-Pin` header, checked server-side with a constant-time comparison
-(`netlify/functions/_shared/adminAuth.js`); a missing/wrong PIN gets a `401`
-and bounces the page back to the PIN prompt. Like the court-host PIN, there's
-no rate limiting on guesses — pick something non-trivial.
+only to the TD/ATD, not a per-person login like court hosts get, since
+there's no need to know *who* purged an entry, only that it was authorized.
+Like the court-host login, the raw PIN is only ever sent once: `admin.html`'s
+PIN prompt POSTs it to `netlify/functions/admin-auth.js`, which checks it
+with a constant-time comparison and — on a match — signs a short-lived token
+(same HMAC mechanism as the court-host token, `_shared/hmacToken.js`, keyed
+by `ADMIN_PIN` itself rather than a separate secret). Every subsequent
+request to `live-score-admin.js` sends that token as `Authorization: Bearer
+<token>`, never the PIN again, so a leaked request exposes a time-boxed
+credential (`ADMIN_TOKEN_TTL_HOURS`, default 12h) rather than the permanent
+shared secret. The token is kept in `sessionStorage` (not `localStorage`) so
+it doesn't survive closing the tab either — this tool can wipe every live
+score at once, so it's worth not leaving that access sitting around on a
+shared device. A missing/invalid/expired token gets a `401` and bounces the
+page back to the PIN prompt. Like the court-host PIN, there's no rate
+limiting on login guesses — pick something non-trivial.
 
 ### Match ID scheme
 
@@ -271,7 +277,11 @@ it.
      court-host login stays valid before they need to log in again.
    - `ADMIN_PIN` — any PIN/passphrase known only to the TD/ATD, required for
      `admin.html` to work at all. Unlike the court-host PINs, this isn't
-     stored in the spreadsheet — set it directly as a Netlify env var.
+     stored in the spreadsheet — set it directly as a Netlify env var. It
+     also doubles as the signing secret for admin login tokens, so treat it
+     like a password (don't commit it).
+   - `ADMIN_TOKEN_TTL_HOURS` (optional) — defaults to `12`. How long an
+     admin login stays valid before the TD/ATD needs to re-enter the PIN.
 3. Deploy. Verify live data by visiting
    `/.netlify/functions/results` directly — it should return
    `{"matches": {...}, "updatedAt": ...}`.
@@ -297,16 +307,24 @@ it.
   scores (Netlify Blobs), used by `score.html`. Requires a court-host auth
   token and hard-blocks conflicting writes (see "Concurrency" above).
 - `netlify/functions/live-score-admin.js` — list/delete endpoint for the
-  `live-scores` Blobs store, used by `admin.html`. Requires the admin PIN.
+  `live-scores` Blobs store, used by `admin.html`. Requires an admin token.
 - `netlify/functions/score-auth.js` — verifies a court host's name/PIN
   against the Hosts sheet tab and issues their login token.
+- `netlify/functions/admin-auth.js` — verifies the shared admin PIN and
+  issues the TD/ATD's admin login token.
 - `netlify/functions/_shared/matchId.js` — shared match ID format/regex used
   across functions.
 - `netlify/functions/_shared/sheetsClient.js` — shared read-only Google
   Sheets client (JWT auth + value fetch), used by `results.js` and
   `score-auth.js`.
-- `netlify/functions/_shared/authToken.js` — signs/verifies the HMAC
-  court-host login token.
-- `netlify/functions/_shared/adminAuth.js` — constant-time check of the
-  shared admin PIN, used by `live-score-admin.js`.
+- `netlify/functions/_shared/hmacToken.js` — generic HMAC-signed token
+  primitive (sign/verify against a caller-supplied secret and claims), used
+  by both `authToken.js` and `adminAuth.js`.
+- `netlify/functions/_shared/authToken.js` — court-host login token, keyed
+  by `SCORE_AUTH_SECRET`.
+- `netlify/functions/_shared/adminAuth.js` — admin PIN check + admin login
+  token, keyed by `ADMIN_PIN` itself.
+- `netlify/functions/_shared/bearerToken.js` — extracts an `Authorization:
+  Bearer <token>` value, shared by `live-score.js` and
+  `live-score-admin.js`.
 - `assets/` — tournament and venue logos.

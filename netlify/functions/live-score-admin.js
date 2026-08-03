@@ -8,15 +8,18 @@
 // (which results.js stops surfacing once the sheet has a winner) still shows
 // up here and can be purged.
 //
-// Requires the admin PIN (see _shared/adminAuth.js) on every request — this
-// tool can purge every in-progress score at once, so unlike live-score.js
-// (which can only ever affect one match's display), it's worth gating with
-// a shared secret known only to the TD/ATD rather than relying on the URL
-// staying unshared.
+// Requires an admin auth token (see admin-auth.js / _shared/adminAuth.js) on
+// every request — this tool can purge every in-progress score at once, so
+// unlike live-score.js (which can only ever affect one match's display),
+// it's worth gating with a secret known only to the TD/ATD rather than
+// relying on the URL staying unshared. This endpoint only ever verifies the
+// token, never the raw PIN — that's checked once, at login, in
+// admin-auth.js.
 
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
-const { verifyAdminPin } = require('./_shared/adminAuth');
+const { verifyAdminToken } = require('./_shared/adminAuth');
+const { getBearerToken } = require('./_shared/bearerToken');
 
 const LIVE_SCORES_STORE = 'live-scores';
 
@@ -45,8 +48,9 @@ exports.handler = async function (event) {
   // function handlers.
   connectLambda(event);
 
-  if (!verifyAdminPin(event)) {
-    return { statusCode: 401, headers: JSON_HEADERS, body: JSON.stringify({ error: 'Invalid or missing admin PIN' }) };
+  const token = getBearerToken(event);
+  if (!token || !verifyAdminToken(token)) {
+    return { statusCode: 401, headers: JSON_HEADERS, body: JSON.stringify({ error: 'Missing or invalid admin token' }) };
   }
 
   const store = getStore(LIVE_SCORES_STORE);

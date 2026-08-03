@@ -23,3 +23,8 @@
   for = "/.netlify/functions/score-auth"
   [headers.values]
     Cache-Control = "no-store"
+
+[[headers]]
+  for = "/.netlify/functions/admin-auth"
+  [headers.values]
+    Cache-Control = "no-store"

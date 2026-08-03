@@ -29,6 +29,7 @@
 const { getStore, connectLambda } = require('@netlify/blobs');
 const { MATCH_ID_RE } = require('./_shared/matchId');
 const { verifyToken } = require('./_shared/authToken');
+const { getBearerToken } = require('./_shared/bearerToken');
 
 const LIVE_SCORES_STORE = 'live-scores';
 // A "10 off" penalty can push a side negative before it's scored anything,
@@ -64,12 +65,6 @@ function parseScore(value) {
   const n = Number(value);
   if (!Number.isInteger(n) || n < MIN_SCORE || n > MAX_SCORE) return null;
   return n;
-}
-
-function getBearerToken(event) {
-  const header = (event.headers && (event.headers.authorization || event.headers.Authorization)) || '';
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1] : null;
 }
 
 exports.handler = async function (event) {
