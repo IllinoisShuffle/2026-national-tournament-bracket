@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Live Score Admin</title>
+<style>
+:root{--paper:#F4EEDF;--ink:#15151A;--ink-dim:rgba(21,21,26,0.55);--live:#c0392b}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+.a-wrap{max-width:720px;margin:0 auto;padding:24px 16px 48px;box-sizing:border-box}
+.a-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.a-header h1{font-size:20px;font-weight:900;margin:0}
+.a-actions{display:flex;gap:8px}
+.a-btn{appearance:none;border:1.5px solid var(--ink);border-radius:8px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;font-family:inherit}
+.a-btn:active{background:rgba(21,21,26,0.06)}
+.a-btn-danger{border-color:var(--live);color:var(--live)}
+.a-empty{text-align:center;color:var(--ink-dim);font-size:14px;padding:32px 8px}
+.a-error{text-align:center;color:var(--live);font-size:13px;font-weight:700;padding:8px}
+.a-list{display:flex;flex-direction:column;gap:10px}
+.a-row{border:2px solid var(--ink);border-radius:12px;background:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.a-row-main{display:flex;flex-direction:column;gap:2px}
+.a-row-id{font-size:13px;font-weight:800;letter-spacing:0.5px}
+.a-row-meta{font-size:12px;color:var(--ink-dim)}
+.a-row-score{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.a-row-status{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--ink-dim)}
+.a-row-status-complete{color:var(--live)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react" src="admin.jsx"></script>
+</body>
+</html>
