@@ -9,6 +9,9 @@ const SCOREBOARD_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 const MATCH_ID_RE = /^([MC])(\d+)-(\d+)$/i;
+// Regulation is 16 frames; a tie goes to extra frames in pairs, so a frame
+// number past this just reads as "Tiebreak" rather than "of 16".
+const REGULATION_FRAMES = 16;
 
 // Parses a match ID into round/region metadata. Mirrors the block layout
 // documented in live-data.js: within a round, match numbers split into four
@@ -46,10 +49,10 @@ function describeMatch(m) {
 // but flagged explicitly here since scores are the whole point of this view.
 function buildDemoData() {
   const rows = [
-    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], black: window.TEAM_POOL[5], liveScore: { yellowScore: 6, blackScore: 4, status: 'in_progress' }, approxEnd: '3:15 PM' },
-    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], black: window.TEAM_POOL[21], liveScore: { yellowScore: 3, blackScore: 3, status: 'in_progress' }, approxEnd: '3:15 PM' },
-    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], black: window.TEAM_POOL[9], liveScore: { yellowScore: 5, blackScore: 2, status: 'in_progress' }, approxEnd: '3:15 PM' },
-    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress' }, approxEnd: '3:15 PM' },
+    { id: 'M32-05', time: '2:10 PM', court: 'Court 3', yellow: window.TEAM_POOL[4], black: window.TEAM_POOL[5], liveScore: { yellowScore: 6, blackScore: 4, status: 'in_progress', frame: 9 }, approxEnd: '3:15 PM' },
+    { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], black: window.TEAM_POOL[21], liveScore: { yellowScore: 3, blackScore: 3, status: 'in_progress', frame: 17 }, approxEnd: '3:15 PM' },
+    { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], black: window.TEAM_POOL[9], liveScore: { yellowScore: 5, blackScore: 2, status: 'in_progress', frame: 5 }, approxEnd: '3:15 PM' },
+    { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress', frame: 1 }, approxEnd: '3:15 PM' },
     { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], black: window.TEAM_POOL[13] },
     { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], black: window.TEAM_POOL[29] },
   ];
@@ -188,6 +191,11 @@ function MatchCard({ m }) {
       ? m.quarters[0].name
       : m.quarters.map((q) => q.name.split(' ')[0]).join(' + ');
 
+  const frame = m.liveScore && m.liveScore.frame;
+  const frameLabel = frame
+    ? (frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Tiebreak`)
+    : null;
+
   return (
     <div className="sb-card">
       <div className="sb-card-bar" style={{ background: regionColor }} />
@@ -198,7 +206,7 @@ function MatchCard({ m }) {
           {m.court ? `${m.court}` : 'LIVE'}
         </span>
       </div>
-      <div className="sb-round">{m.roundLabel}</div>
+      <div className="sb-round">{m.roundLabel}{frameLabel ? ` · ${frameLabel}` : ''}</div>
       <TeamRow puck="yellow" name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
       <TeamRow puck="black" name={m.black} score={m.liveScore && m.liveScore.blackScore} />
       {(m.time || m.approxEnd) && (

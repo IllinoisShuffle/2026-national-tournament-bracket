@@ -35,6 +35,10 @@ const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 // shooting team 10. Order here is [8, 7, 10, -10] because it maps directly
 // onto a 2-column CSS grid as top row [8, 7], bottom row [10, -10].
 const MAX_UNDO = 5;
+// Matches play 16 regulation frames; a tie after 16 goes to extra frames in
+// pairs until someone's ahead. There's no fixed ceiling on those, so the
+// frame counter just keeps climbing past 16 rather than wrapping/resetting.
+const REGULATION_FRAMES = 16;
 const SCORE_INCREMENTS = [
   { delta: 8, label: '+8' },
   { delta: 7, label: '+7' },
@@ -104,6 +108,10 @@ function formatAgo(ts) {
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 60) return `${s}s`;
   return `${Math.round(s / 60)}m`;
+}
+
+function frameLabel(frame) {
+  return frame <= REGULATION_FRAMES ? `Frame ${frame} of ${REGULATION_FRAMES}` : `Frame ${frame} · Tiebreak`;
 }
 
 function ScoreApp() {
@@ -203,6 +211,7 @@ function ScoreApp() {
                 {m.id}
                 {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
                 {m.time ? ` · ${m.time}` : ''}
+                {m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame)}` : ''}
               </div>
               <div className="s-match-teams">{m.yellow || 'TBD'}</div>
               <div className="s-match-vs">vs</div>
@@ -317,6 +326,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
+  const [frame, setFrame] = React.useState(initial.frame || 1);
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
   // Snapshots of {side, delta, prevYellow, prevBlack, nextYellow, nextBlack}
@@ -333,7 +343,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   const locked = saveState === 'saving' || saveState === 'conflict';
 
-  async function post(nextYellow, nextBlack, nextStatus, { force } = {}) {
+  async function post(nextYellow, nextBlack, nextStatus, { force, frame: nextFrame = frame } = {}) {
     setSaveState('saving');
     try {
       const res = await fetch(SCORE_ENDPOINT, {
@@ -345,6 +355,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           yellowScore: nextYellow,
           blackScore: nextBlack,
           status: nextStatus,
+          frame: nextFrame,
           force: !!force,
         }),
       });
@@ -360,9 +371,11 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           scorer: data.scorer || null,
           serverYellow: typeof data.yellowScore === 'number' ? data.yellowScore : null,
           serverBlack: typeof data.blackScore === 'number' ? data.blackScore : null,
+          serverFrame: typeof data.frame === 'number' ? data.frame : null,
           pendingYellow: nextYellow,
           pendingBlack: nextBlack,
           pendingStatus: nextStatus,
+          pendingFrame: nextFrame,
         });
         setSaveState('conflict');
         return;
@@ -372,6 +385,13 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     } catch (e) {
       setSaveState('error');
     }
+  }
+
+  function adjustFrame(delta) {
+    if (locked || status === 'complete') return;
+    const next = Math.max(1, frame + delta);
+    setFrame(next);
+    post(yellowScore, blackScore, status, { frame: next });
   }
 
   function adjust(side, delta) {
@@ -417,15 +437,16 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   function takeOver() {
     if (!conflict) return;
-    const { pendingYellow, pendingBlack, pendingStatus } = conflict;
+    const { pendingYellow, pendingBlack, pendingStatus, pendingFrame } = conflict;
     setConflict(null);
-    post(pendingYellow, pendingBlack, pendingStatus, { force: true });
+    post(pendingYellow, pendingBlack, pendingStatus, { force: true, frame: pendingFrame });
   }
 
   function cancelConflict() {
     if (conflict) {
       if (conflict.serverYellow !== null) setYellowScore(conflict.serverYellow);
       if (conflict.serverBlack !== null) setBlackScore(conflict.serverBlack);
+      if (conflict.serverFrame !== null) setFrame(conflict.serverFrame);
     }
     setConflict(null);
     setSaveState('idle');
@@ -440,6 +461,26 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           {match.id}
         </div>
       </header>
+
+      <div className="s-frame-bar">
+        <button
+          className="s-frame-btn"
+          onClick={() => adjustFrame(-1)}
+          disabled={locked || status === 'complete' || frame <= 1}
+          aria-label="Previous frame"
+        >
+          −
+        </button>
+        <div className="s-frame-label">{frameLabel(frame)}</div>
+        <button
+          className="s-frame-btn"
+          onClick={() => adjustFrame(1)}
+          disabled={locked || status === 'complete'}
+          aria-label="Next frame"
+        >
+          +
+        </button>
+      </div>
 
       {otherActive && saveState !== 'conflict' && (
         <div className="s-other-scorer-banner">
