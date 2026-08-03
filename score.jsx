@@ -39,6 +39,13 @@ const MAX_UNDO = 5;
 // pairs until someone's ahead. There's no fixed ceiling on those, so the
 // frame counter just keeps climbing past 16 rather than wrapping/resetting.
 const REGULATION_FRAMES = 16;
+// Teams play frames 1-8 on the color the sheet lists them under, then swap
+// to the other physical puck color for frame 9 onward — including overtime,
+// which stays on the post-swap color rather than flipping back. match.yellow
+// / match.black (and their scores) always identify the same two teams
+// throughout; only which puck color is shown for them changes. Mirrors
+// COLOR_FLIP_FRAME in app-scoreboard.jsx.
+const COLOR_FLIP_FRAME = 8;
 const SCORE_INCREMENTS = [
   { delta: 8, label: '+8' },
   { delta: 7, label: '+7' },
@@ -342,6 +349,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const otherActive = isRecentlyActive(match.liveScore) && match.liveScore.scorer && match.liveScore.scorer !== auth.name;
 
   const locked = saveState === 'saving' || saveState === 'conflict';
+  const colorsFlipped = frame > COLOR_FLIP_FRAME;
 
   async function post(nextYellow, nextBlack, nextStatus, { force, frame: nextFrame = frame } = {}) {
     setSaveState('saving');
@@ -511,9 +519,9 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide label={match.yellow || 'Yellow'} score={yellowScore} onAdjust={(d) => adjust('yellow', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} onAdjust={(d) => adjust('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide label={match.black || 'Black'} score={blackScore} onAdjust={(d) => adjust('black', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} onAdjust={(d) => adjust('black', d)} disabled={locked} />
         </div>
       )}
 
@@ -541,9 +549,10 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   );
 }
 
-function ScoreSide({ label, score, onAdjust, disabled }) {
+function ScoreSide({ label, score, onAdjust, disabled, puck }) {
   return (
     <div className="s-side">
+      <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
       <div className="s-stepper-grid">
