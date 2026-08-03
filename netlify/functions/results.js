@@ -24,6 +24,16 @@ const { MATCH_ID_RE } = require('./_shared/matchId');
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 const LIVE_SCORES_STORE = 'live-scores';
 
+// Cache-Control (no-store) keeps browsers from serving a poll out of their own
+// local cache; Netlify-CDN-Cache-Control lets Netlify's edge collapse many
+// concurrent spectators' polls into a single function invocation for a few
+// seconds, which is what actually saves compute credits under load.
+const SUCCESS_HEADERS = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store',
+  'Netlify-CDN-Cache-Control': 'public, max-age=5, durable',
+};
+
 // Reused across warm invocations of the same function container to avoid
 // re-authenticating (and hitting the Sheets API) on every single poll.
 let cachedClient = null;
@@ -65,7 +75,7 @@ function rowToMatch(row) {
     courtsUsed: courtsUsed || '',
     winner: (winner || '').trim(),
     loser: (loser || '').trim(),
-    live: /^(y|yes|true|1|live|LIVE)$/i.test(String(live || '').trim()),
+    live: /.*(y|yes|true|1|live|LIVE)$/i.test(String(live || '').trim()),
     approxEnd: approxEnd || '',
   };
 }
@@ -100,7 +110,7 @@ exports.handler = async function (event) {
   connectLambda(event);
 
   if (cachedResult && Date.now() - cachedAt < CACHE_MS) {
-    return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(cachedResult) };
+    return { statusCode: 200, headers: SUCCESS_HEADERS, body: JSON.stringify(cachedResult) };
   }
 
   try {
@@ -123,7 +133,7 @@ exports.handler = async function (event) {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      headers: SUCCESS_HEADERS,
       body: JSON.stringify(result),
     };
   } catch (err) {
