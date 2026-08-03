@@ -148,6 +148,18 @@ via `score.html` and the `live-score` function:
 picker — share the single link directly (text message, printed QR code)
 rather than publishing it.
 
+**`admin.html`** is a companion page (also unlinked, direct-URL-only) for
+inspecting and purging the `live-scores` store itself — the in-app
+replacement for running `netlify blobs:list`/`netlify blobs:delete` by hand
+to clean up test entries. It reads/writes via a new
+`netlify/functions/live-score-admin.js` endpoint: `GET` lists every entry in
+the store directly (so even an entry for an already-decided match, which
+`results.js` stops surfacing, still shows up here), and `DELETE` removes
+either a single entry (`{ matchId }`) or every entry at once
+(`{ all: true }`, used by the page's confirm-guarded "Clear all" button).
+Same unauthenticated posture as `live-score.js` — it only ever touches the
+supplementary live feed, never the Matches sheet.
+
 ### Match ID scheme
 
 The Google Sheet's `ID` column drives everything. Format: `<prefix><round
@@ -223,11 +235,14 @@ it.
 - `app.jsx` / `app-mobile.jsx` / `app-print.jsx` / `app-scoreboard.jsx` —
   top-level page components.
 - `score.jsx` — court host scorekeeping UI (paired with `score.html`).
+- `admin.jsx` — live-score store viewer/purge UI (paired with `admin.html`).
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
 - `netlify/functions/results.js` — reads the Matches sheet, merges in
   live scores from Blobs, returns normalized JSON.
 - `netlify/functions/live-score.js` — write endpoint for in-progress court
   scores (Netlify Blobs), used by `score.html`.
+- `netlify/functions/live-score-admin.js` — list/delete endpoint for the
+  `live-scores` Blobs store, used by `admin.html`.
 - `netlify/functions/_shared/matchId.js` — shared match ID format/regex used
-  by both functions.
+  by all three functions.
 - `assets/` — tournament and venue logos.
