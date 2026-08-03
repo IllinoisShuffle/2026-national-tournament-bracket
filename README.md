@@ -109,40 +109,72 @@ low-stakes store, keyed by match ID (e.g. `M32-07`), written by court hosts
 via `score.html` and the `live-score` function:
 
 - **`score.html`** — a single URL for every court host, nothing to
-  distribute per-court. It reads the same match feed as everything else
-  (`/.netlify/functions/results`), lists every unfinished match, and lets a
-  host tap into one to start scoring. An "All / Court 1 / Court 2 / …"
-  toggle on the page narrows the list — it's a convenience filter against
-  the sheet's `Court` column, remembered per-device via `localStorage` so a
-  host only sets it once, not a login or an identity check.
+  distribute per-court. A host logs in once with their name and a PIN (see
+  "Court host login" below), then sees the same match feed as everything
+  else (`/.netlify/functions/results`), lists every unfinished match, and
+  taps into one to start scoring. An "All / Court 1 / Court 2 / …" toggle on
+  the page narrows the list — it's a convenience filter against the sheet's
+  `Court` column, remembered per-device via `localStorage`, not an access
+  restriction (a logged-in host can score any match, any court).
 - **`netlify/functions/live-score.js`** — the write endpoint `score.html`
-  POSTs to. Validates the match ID and score values, then stores
+  POSTs to. Requires a valid auth token (see below), validates the match ID
+  and score values, then stores
   `{ matchId, court, yellowScore, blackScore, status, scorer, updatedAt }`
-  in the `live-scores` Blobs store, one entry per match ID, full overwrite
-  each call. It never touches the Google Sheets credentials — this endpoint
-  can only ever affect the supplementary live feed, never the Matches tab
-  itself.
+  in the `live-scores` Blobs store, one entry per match ID. `scorer` always
+  comes from the verified token, never from the request body. It never
+  touches the Google Sheets credentials — this endpoint can only ever affect
+  the supplementary live feed, never the Matches tab itself.
 - **`results.js`** merges this in: a match's `liveScore` field is attached
   only when that match's Matches-tab row has no `winner` yet. The instant
   the TD/ATD transcribes a final result into the sheet, `liveScore` stops
   being surfaced for that match — **the Matches tab always wins**. There's
   no expiry job for old Blobs entries; once a match is finalized its live
   entry is simply inert (small volume, no cost to leaving it).
-- This write endpoint is intentionally **unauthenticated** — no login/PIN.
-  Its blast radius is limited to a wrong-looking in-progress score, which
-  the TD's manual transcription supersedes regardless, so this was judged
-  not worth the friction of adding auth for an internal, venue-only tool.
-- **No write lock.** Nothing stops two devices from opening the same match
-  and both posting scores — each POST is a full overwrite of that match's
-  entry, last write wins, with no conflict detection. To make that visible
-  rather than silent, `score.html` asks each host for their name once (kept
-  in `localStorage` on that device) and sends it along with every score
-  update. Anyone else looking at the match picker sees a "Being scored by
-  &lt;name&gt;" tag on a match someone updated in the last 5 minutes, and
-  opening a match someone else recently touched shows a heads-up banner.
-  It's advisory only — it doesn't block a second host from scoring, it just
-  makes it obvious when two people might collide so they can sort it out
-  between themselves.
+
+### Court host login
+
+Only known court hosts can record scores, and every score update is tied to
+a real, server-verified name (not free-text):
+
+- **`netlify/functions/score-auth.js`** — `score.html`'s login screen POSTs
+  `{ name, pin }` here. It's checked against a **"Hosts" tab** on the same
+  tournament Google Sheet (columns `Name | Court | PIN`), which the TD
+  manages by hand the same way they already manage the Matches tab — adding,
+  removing, or re-PINing a host needs no redeploy. `Court` is informational
+  only (it prefills the host's court filter after login), not an access
+  restriction. On a match, the function signs a token embedding the host's
+  name and an expiry (`SCORE_AUTH_TTL_HOURS`, default 18h — long enough to
+  cover a full tournament day) and returns it to `score.html`, which stores
+  it in `localStorage` and attaches it as `Authorization: Bearer <token>` on
+  every write to `live-score.js`.
+- The token is a minimal HMAC-signed value (Node's built-in `crypto`, no JWT
+  library) signed with `SCORE_AUTH_SECRET`. `live-score.js` verifies the
+  signature and expiry on every write and derives `scorer` from it — a host
+  can no longer type an arbitrary display name, so "who is keeping score for
+  this game" is now trustworthy.
+- **Revocation**: removing a row (or changing its PIN) from the Hosts tab
+  blocks new logins immediately, but any token already issued to that host
+  stays valid until it expires. For an emergency (e.g. a lost/compromised
+  device), change `SCORE_AUTH_SECRET` and redeploy — that invalidates every
+  outstanding token at once, and every host simply logs in again.
+- **PINs are not rate-limited.** `score-auth.js` has no brute-force
+  protection, so pick PINs that aren't trivially guessable (not "1234", not
+  the court number) — acceptable given the low blast radius (a guessed PIN
+  can only misattribute or post a wrong-looking in-progress score, never
+  touch the official bracket), but worth being deliberate about at check-in.
+
+### Concurrency
+
+**Hard-blocked, not just advisory.** Two hosts opening the same match and
+both trying to record scores is a real scenario at a live event, so a write
+from a different verified host than whoever most recently updated an
+in-progress match (within the last 5 minutes) is rejected with `409` instead
+of silently overwriting. `score.html` shows a "`<name>` is currently scoring
+this — take over?" prompt; confirming retries the same write with an
+explicit override flag. The check uses Netlify Blobs' conditional-write
+primitives (`getWithMetadata`/`setJSON`'s `onlyIfMatch`) rather than a
+read-then-blind-write, so a genuine race between two near-simultaneous
+writes is also caught rather than silently letting the second one win.
 
 `score.html` is deliberately **not** linked from the public `index.html?choose`
 picker — share the single link directly (text message, printed QR code)
@@ -157,8 +189,13 @@ the store directly (so even an entry for an already-decided match, which
 `results.js` stops surfacing, still shows up here), and `DELETE` removes
 either a single entry (`{ matchId }`) or every entry at once
 (`{ all: true }`, used by the page's confirm-guarded "Clear all" button).
-Same unauthenticated posture as `live-score.js` — it only ever touches the
-supplementary live feed, never the Matches sheet.
+Unlike `live-score.js`, this endpoint is **not** gated by the court-host
+login — it's still unauthenticated, relying only on the URL being unlinked
+and unshared. It only ever touches the supplementary live feed, never the
+Matches sheet, but note that it can now read every match's `scorer` name and
+purge all live-score data with no login at all, which is a wider-open door
+than `live-score.js` used to be. Worth locking down with the same auth token
+if `admin.html`'s URL ever leaks beyond the TD/ATD.
 
 ### Match ID scheme
 
@@ -220,6 +257,14 @@ it.
    - `GOOGLE_PRIVATE_KEY` — that service account's `private_key`.
    - `SHEETS_SPREADSHEET_ID` — the ID from the sheet's URL.
    - `SHEETS_MATCHES_RANGE` (optional) — defaults to `Matches!A:L`.
+   - `SHEETS_HOSTS_RANGE` (optional) — defaults to `Hosts!A:C`. Add a
+     "Hosts" tab to the same spreadsheet with columns `Name | Court | PIN`
+     (see "Court host login" above).
+   - `SCORE_AUTH_SECRET` — any long random string, used to sign court-host
+     login tokens. Required for `score.html` logins to work at all; treat it
+     like a password (don't commit it).
+   - `SCORE_AUTH_TTL_HOURS` (optional) — defaults to `18`. How long a
+     court-host login stays valid before they need to log in again.
 3. Deploy. Verify live data by visiting
    `/.netlify/functions/results` directly — it should return
    `{"matches": {...}, "updatedAt": ...}`.
@@ -234,15 +279,24 @@ it.
   logic for each layout.
 - `app.jsx` / `app-mobile.jsx` / `app-print.jsx` / `app-scoreboard.jsx` —
   top-level page components.
-- `score.jsx` — court host scorekeeping UI (paired with `score.html`).
+- `score.jsx` — court host scorekeeping UI (paired with `score.html`),
+  including the login screen and takeover-conflict prompt.
 - `admin.jsx` — live-score store viewer/purge UI (paired with `admin.html`).
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
 - `netlify/functions/results.js` — reads the Matches sheet, merges in
   live scores from Blobs, returns normalized JSON.
 - `netlify/functions/live-score.js` — write endpoint for in-progress court
-  scores (Netlify Blobs), used by `score.html`.
+  scores (Netlify Blobs), used by `score.html`. Requires a court-host auth
+  token and hard-blocks conflicting writes (see "Concurrency" above).
 - `netlify/functions/live-score-admin.js` — list/delete endpoint for the
   `live-scores` Blobs store, used by `admin.html`.
+- `netlify/functions/score-auth.js` — verifies a court host's name/PIN
+  against the Hosts sheet tab and issues their login token.
 - `netlify/functions/_shared/matchId.js` — shared match ID format/regex used
-  by all three functions.
+  across functions.
+- `netlify/functions/_shared/sheetsClient.js` — shared read-only Google
+  Sheets client (JWT auth + value fetch), used by `results.js` and
+  `score-auth.js`.
+- `netlify/functions/_shared/authToken.js` — signs/verifies the HMAC
+  court-host login token.
 - `assets/` — tournament and venue logos.
