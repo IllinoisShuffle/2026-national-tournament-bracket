@@ -2,10 +2,10 @@
 // Train-line theme on main bracket, bus-route theme on consolation.
 
 const QUARTERS = [
-  { id: 'red',    name: 'RED LINE',    color: '#D63A3A', busNum: '50',  busName: 'DAMEN',     side: 'L', pos: 'top' },
-  { id: 'blue',   name: 'BLUE LINE',   color: '#1E7FB8', busNum: '49',  busName: 'WESTERN',   side: 'L', pos: 'bottom' },
-  { id: 'green',  name: 'GREEN LINE',  color: '#2D8C4C', busNum: '72',  busName: 'NORTH',     side: 'R', pos: 'top' },
-  { id: 'orange', name: 'ORANGE LINE', color: '#E7741A', busNum: '56',  busName: 'MILWAUKEE', side: 'R', pos: 'bottom' },
+  { id: 'blue',   name: 'BLUE LINE',   color: '#00a1de', busNum: '49',  busName: 'WESTERN',   side: 'L', pos: 'top' },
+  { id: 'red',    name: 'RED LINE',    color: '#c60c30', busNum: '50',  busName: 'DAMEN',     side: 'L', pos: 'bottom' },
+  { id: 'pink',   name: 'PINK LINE',   color: '#e27ea6', busNum: '56',  busName: 'MILWAUKEE', side: 'R', pos: 'top' },
+  { id: 'green',  name: 'GREEN LINE',  color: '#009b3a', busNum: '72',  busName: 'NORTH',     side: 'R', pos: 'bottom' },
 ];
 
 const TEAM_POOL = [

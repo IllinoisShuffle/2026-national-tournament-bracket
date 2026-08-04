@@ -22,9 +22,9 @@ const COLOR_FLIP_FRAME = 8;
 
 // Parses a match ID into round/region metadata. Mirrors the block layout
 // documented in live-data.js: within a round, match numbers split into four
-// equal blocks (Red, Blue, Green, Orange = window.QUARTERS order). Round
-// size 4 merges two quarters at a time (left half / right half); round size
-// 2 (final + 3rd place) spans the whole bracket, so it has no single region.
+// equal blocks in window.QUARTERS order. Round size 4 merges two quarters
+// at a time (left half / right half); round size 2 (final + 3rd place)
+// spans the whole bracket, so it has no single region.
 function describeMatch(m) {
   const parsed = MATCH_ID_RE.exec(m.id);
   if (!parsed) return null;
