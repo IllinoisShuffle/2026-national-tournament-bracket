@@ -131,6 +131,16 @@ function frameLabel(frame) {
   return frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`;
 }
 
+// Regulation ends at frame REGULATION_FRAMES (16); overtime after that plays
+// in pairs, so only the second frame of each pair (18, 20, 22, ...) is a
+// checkpoint where an untied score ends the match — the first frame of a
+// pair (17, 19, 21, ...) always advances regardless of score, since a tie
+// can't be broken mid-pair. REGULATION_FRAMES itself is even, so "checkpoint"
+// is just "even and at least REGULATION_FRAMES."
+function isDecisionFrame(frame) {
+  return frame >= REGULATION_FRAMES && frame % 2 === 0;
+}
+
 function ScoreApp() {
   const [auth, setAuth] = React.useState(readStoredAuth);
 
@@ -375,6 +385,10 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const blackTaps = pendingTaps.filter((t) => t.side === 'black');
   const stagedYellow = yellowTaps.reduce((sum, t) => sum + t.delta, 0);
   const stagedBlack = blackTaps.reduce((sum, t) => sum + t.delta, 0);
+  // Preview of what committing right now would do — drives the Submit
+  // Frame button's label/behavior so it reads "Complete Match" instead of
+  // "Start Frame N+1" exactly when committing would actually end the match.
+  const willComplete = isDecisionFrame(frame) && (yellowScore + stagedYellow) !== (blackScore + stagedBlack);
 
   async function post(nextYellow, nextBlack, nextStatus, { force, frame: nextFrame = frame } = {}) {
     setSaveState('saving');
@@ -431,23 +445,34 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   }
 
   // Commits whatever's staged (or nothing, for a scoreless "wash" frame)
-  // into the running total and advances the frame in one save.
+  // into the running total. On a decision frame (16, 18, 20, ...) an untied
+  // result ends the match right here instead of advancing — mirrors
+  // markComplete's "clear the undo stack, this is terminal" behavior since
+  // Reopen, not Undo, is the correction path once complete either way.
   function commitFrame() {
     if (locked || status === 'complete') return;
     // No floor at 0 — a "10 off" penalty can legitimately push a side
     // negative before it's put any points on the board.
     const nextYellow = yellowScore + stagedYellow;
     const nextBlack = blackScore + stagedBlack;
+    setYellowScore(nextYellow);
+    setBlackScore(nextBlack);
+    setPendingTaps([]);
+
+    if (isDecisionFrame(frame) && nextYellow !== nextBlack) {
+      setStatus('complete');
+      setUndoStack([]);
+      post(nextYellow, nextBlack, 'complete', { frame });
+      return;
+    }
+
     const nextFrame = frame + 1;
     setUndoStack([...undoStack, {
       prevYellow: yellowScore, prevBlack: blackScore, prevFrame: frame,
       nextYellow, nextBlack, nextFrame,
       stagedYellow, stagedBlack,
     }].slice(-MAX_UNDO));
-    setYellowScore(nextYellow);
-    setBlackScore(nextBlack);
     setFrame(nextFrame);
-    setPendingTaps([]);
     post(nextYellow, nextBlack, status, { frame: nextFrame });
   }
 
@@ -547,11 +572,12 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         const parts = [];
         if (stagedYellow !== 0) parts.push(`${stagedYellow > 0 ? '+' : ''}${stagedYellow} for ${match.yellow || 'Yellow'}`);
         if (stagedBlack !== 0) parts.push(`${stagedBlack > 0 ? '+' : ''}${stagedBlack} for ${match.black || 'Black'}`);
+        const ending = willComplete ? 'complete the match' : `start Frame ${frame + 1}`;
         return (
           <div className="s-frame-hint">
             {parts.length > 0
-              ? `Tap "Submit Frame" below to record ${parts.join(' and ')}, and start Frame ${frame + 1}`
-              : `No score this frame? "Submit Frame" below still starts Frame ${frame + 1}.`}
+              ? `Tap "Submit Frame" below to record ${parts.join(' and ')}, and ${ending}`
+              : `No score this frame? "Submit Frame" below still ${willComplete ? 'completes the match' : `starts Frame ${frame + 1}`}.`}
           </div>
         );
       })()}
@@ -623,7 +649,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       {status !== 'complete' && (
         <div className="s-actions">
           <button className="s-submit-frame" onClick={commitFrame} disabled={locked}>
-            Submit Frame {frame} &amp; Start Frame {frame + 1}
+            {willComplete ? 'Submit Frame & Complete Match' : `Submit Frame ${frame} & Start Frame ${frame + 1}`}
           </button>
           <div className="s-actions-row">
             <button className="s-reset-frame" onClick={resetFrame} disabled={locked || pendingTaps.length === 0}>Reset Frame</button>
@@ -633,7 +659,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       )}
 
       {status !== 'complete' && (
-        <button className="s-complete" onClick={markComplete} disabled={locked}>Match complete</button>
+        <button className="s-complete" onClick={markComplete} disabled={locked}>Complete Match</button>
       )}
 
       <div className={`s-status s-status-${saveState}`}>
