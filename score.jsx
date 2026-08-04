@@ -518,6 +518,31 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     setSaveState('idle');
   }
 
+  // Clears every staged (not-yet-committed) tap for the frame in progress
+  // in one shot — a faster mis-tap fix than repeatedly tapping Undo.
+  function resetFrame() {
+    if (locked || status === 'complete' || pendingTaps.length === 0) return;
+    setPendingTaps([]);
+  }
+
+  // Wipes the whole match back to 0-0, Frame 1 — for when the scoring
+  // itself went wrong (wrong match, wrong teams to a side, etc.), not just
+  // the frame in progress. Unlike Undo/Reset Frame this can erase already-
+  // committed frames, so it's confirmed the same way admin.jsx's "delete
+  // every live-score entry" is (window.confirm, no custom modal).
+  function resetMatch() {
+    if (locked) return;
+    const ok = window.confirm(`Reset ${match.yellow || 'Yellow'} vs ${match.black || 'Black'} back to 0–0, Frame 1? This can't be undone.`);
+    if (!ok) return;
+    setPendingTaps([]);
+    setUndoStack([]);
+    setYellowScore(0);
+    setBlackScore(0);
+    setFrame(1);
+    setStatus('in_progress');
+    post(0, 0, 'in_progress', { frame: 1 });
+  }
+
   return (
     <div className="s-wrap">
       <button className="s-back" onClick={onBack}>&larr; Back to matches</button>
@@ -538,14 +563,6 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           −
         </button>
         <div className="s-frame-label">{frameLabel(frame)}</div>
-        <button
-          className="s-frame-btn"
-          onClick={commitFrame}
-          disabled={locked || status === 'complete'}
-          aria-label="Record frame and advance"
-        >
-          +
-        </button>
       </div>
       {status !== 'complete' && (() => {
         const parts = [];
@@ -554,8 +571,8 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         return (
           <div className="s-frame-hint">
             {parts.length > 0
-              ? `Tap + to record ${parts.join(' and ')}, and start Frame ${frame + 1}`
-              : `No score this frame? Tap + to start Frame ${frame + 1} anyway.`}
+              ? `Tap "Submit Frame" below to record ${parts.join(' and ')}, and start Frame ${frame + 1}`
+              : `No score this frame? "Submit Frame" below still starts Frame ${frame + 1}.`}
           </div>
         );
       })()}
@@ -625,6 +642,18 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       })()}
 
       {status !== 'complete' && (
+        <div className="s-actions">
+          <button className="s-submit-frame" onClick={commitFrame} disabled={locked}>
+            Submit Frame {frame} &amp; Start Frame {frame + 1}
+          </button>
+          <div className="s-actions-row">
+            <button className="s-reset-frame" onClick={resetFrame} disabled={locked || pendingTaps.length === 0}>Reset Frame</button>
+            <button className="s-reset-match" onClick={resetMatch} disabled={locked}>Reset Match</button>
+          </div>
+        </div>
+      )}
+
+      {status !== 'complete' && (
         <button className="s-complete" onClick={markComplete} disabled={locked}>Match complete</button>
       )}
 
@@ -644,8 +673,10 @@ function ScoreSide({ label, score, stagedTotal, tapCount, maxTaps, taps, onTap, 
       <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
-      {stagedTotal !== 0 && (
-        <div className="s-pending">{stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending</div>
+      {tapCount > 0 && (
+        <div className="s-pending">
+          {stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending{atMax ? ' · 4/4 discs' : ''}
+        </div>
       )}
       <div className="s-stepper-grid">
         {SCORE_INCREMENTS.map((inc) => {
@@ -675,7 +706,6 @@ function ScoreSide({ label, score, stagedTotal, tapCount, maxTaps, taps, onTap, 
           );
         })}
       </div>
-      {atMax && <div className="s-max-discs">All 4 discs staged</div>}
     </div>
   );
 }
