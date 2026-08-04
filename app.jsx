@@ -240,13 +240,22 @@ function Poster() {
     ...(consolRankingsReady ? [{ label: 'CONSOLATION · FINAL RANKINGS', x0: CHAMPION_X - 320, y0: cThirdY + 20, x1: CHAMPION_X + 320, y1: cThirdY + 340 }] : []),
   ];
 
+  // Views are gated behind *Ready flags that flip true as live results land,
+  // which shifts where each view sits in the array. The rotation interval
+  // below is only created once (it must not reset the visitor's dwell timer
+  // on every render), so it reads this ref for the current length/order
+  // instead of closing over the kioskViews snapshot from whenever it mounted
+  // — otherwise the index can keep incrementing against a stale, shorter
+  // length and never reach views (like consolation) that later slid past it.
+  const kioskViewsRef = React.useRef(kioskViews);
+  kioskViewsRef.current = kioskViews;
+
   React.useEffect(() => {
     if (!isKiosk) return;
     const id = setInterval(() => {
-      setKioskIndex((i) => (i + 1) % kioskViews.length);
+      setKioskIndex((i) => (i + 1) % kioskViewsRef.current.length);
     }, KIOSK_HOLD_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isKiosk]);
 
   React.useEffect(() => {
