@@ -4,12 +4,13 @@ This is a plain-language walkthrough of `score.html`, the page court hosts
 and court managers use to keep a live running score during a match. For the
 technical details, see the main [README](../README.md).
 
-**The short version:** this app is a convenience for spectators watching the
-Live Scoreboard. It is *not* the official scorekeeping record — you keep
-scoring on the physical chalkboard exactly as you always have, and you still
-tell the TD/ATD the final score in person when the match ends. This app just
-mirrors what's on the board so people not standing at your court can follow
-along.
+**The short version:** the players keep score on the physical chalkboard at
+the court — that has not changed. This app is a convenience for spectators
+watching the Live Scoreboard, not the official scorekeeping record. Your job
+is to **mirror whatever the chalkboard shows**, tap for tap, even if you
+think the players got a number wrong — you're transcribing the board, not
+correcting it. When the match ends, you still tell the TD/ATD the final
+score in person, the same as always.
 
 ## Getting the link
 
