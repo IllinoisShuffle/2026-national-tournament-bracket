@@ -60,6 +60,7 @@ function buildDemoData() {
     { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], black: window.TEAM_POOL[21], liveScore: { yellowScore: 3, blackScore: 3, status: 'in_progress', frame: 17 }, approxEnd: '3:15 PM' },
     { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], black: window.TEAM_POOL[9], liveScore: { yellowScore: 5, blackScore: 2, status: 'in_progress', frame: 5 }, approxEnd: '3:15 PM' },
     { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress', frame: 1 }, approxEnd: '3:15 PM' },
+    { id: 'C32-08', time: '1:40 PM', court: 'Court 9', yellow: window.TEAM_POOL[24], black: window.TEAM_POOL[25], liveScore: { yellowScore: 6, blackScore: 5, status: 'complete', frame: 17 } },
     { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], black: window.TEAM_POOL[13] },
     { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], black: window.TEAM_POOL[29] },
     { id: 'M32-13', time: '1:35 PM', court: 'Court 6', yellow: window.TEAM_POOL[22], yellowScore: '6', black: window.TEAM_POOL[23], blackScore: '2', winner: window.TEAM_POOL[22] },
@@ -109,12 +110,25 @@ function Scoreboard() {
   // the TD/ATD's manual, post-match transcription, so a match only ever
   // shows a score there once it's already over; there's no way for the sheet
   // alone to represent "in progress."
+  //
+  // A match the host has marked "complete" on score.html keeps its liveScore
+  // entry (and stays here, badged "Just Finished") until the TD/ATD
+  // transcribes it into the Matches sheet — otherwise it would vanish from
+  // every view for however long that transcription takes. Once the sheet
+  // gets a winner, results.js stops attaching liveScore to it at all (see
+  // attachLiveScores), so it naturally falls out of this list and into Past
+  // Results below with no extra bookkeeping here.
   const activeMatches = allMatches
-    .filter((m) => m.liveScore && m.liveScore.status === 'in_progress' && !m.winner)
-    .sort((a, b) => courtNum(a) - courtNum(b) || a.id.localeCompare(b.id));
+    .filter((m) => m.liveScore && (m.liveScore.status === 'in_progress' || m.liveScore.status === 'complete') && !m.winner)
+    .sort((a, b) => {
+      const rank = (x) => (x.liveScore.status === 'in_progress' ? 0 : 1);
+      return rank(a) - rank(b) || courtNum(a) - courtNum(b) || a.id.localeCompare(b.id);
+    });
+
+  const inProgressCount = activeMatches.filter((m) => m.liveScore.status === 'in_progress').length;
 
   const upNext = allMatches
-    .filter((m) => !(m.liveScore && m.liveScore.status === 'in_progress') && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
+    .filter((m) => !(m.liveScore && (m.liveScore.status === 'in_progress' || m.liveScore.status === 'complete')) && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
     .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
 
   // Smaller round `size` = a later stage of the bracket, so it reads as more
@@ -161,7 +175,7 @@ function Scoreboard() {
             </nav>
           </div>
           <div className="sb-meta">
-            <div>{activeMatches.length} match{activeMatches.length === 1 ? '' : 'es'} in progress</div>
+            <div>{inProgressCount} match{inProgressCount === 1 ? '' : 'es'} in progress</div>
             {updatedLabel && <div className="sb-updated">Updated {updatedLabel}</div>}
           </div>
         </div>
@@ -240,33 +254,34 @@ function MatchCard({ m }) {
       ? m.quarters[0].name
       : m.quarters.map((q) => q.name.split(' ')[0]).join(' + ');
 
+  const finished = m.liveScore && m.liveScore.status === 'complete';
   const frame = m.liveScore && m.liveScore.frame;
   // "Playing" signals frame N is in progress (score reflects frames before
   // it) rather than just-finished — mirrors the wording on score.jsx so
-  // hosts and viewers read the same number the same way.
-  const frameLabel = frame
+  // hosts and viewers read the same number the same way. Once the host has
+  // marked the match complete there's no "playing" to report anymore.
+  const frameLabel = !finished && frame
     ? (frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`)
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
   return (
-    <div className="sb-card">
+    <div className={`sb-card${finished ? ' sb-card-final' : ''}`}>
       <div className="sb-card-bar" style={{ background: regionColor }} />
       <div className="sb-card-top">
         <span className="sb-region">{bracketLabel}</span>
-        <span className="sb-court">
-          <span className="sb-pulse" />
-          {m.court ? `${m.court}` : 'LIVE'}
+        <span className={`sb-court${finished ? ' sb-court-final' : ''}`}>
+          {finished ? 'Just Finished' : <><span className="sb-pulse" />{m.court ? `${m.court}` : 'LIVE'}</>}
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}{frameLabel ? ` · ${frameLabel}` : ''}</div>
       <TeamRow puck={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
       <TeamRow puck={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={m.liveScore && m.liveScore.blackScore} />
-      {(m.time || m.approxEnd) && (
+      {(finished || m.time || m.approxEnd) && (
         <div className="sb-card-foot">
-          {m.time && <>Started {m.time}</>}
-          {m.time && m.approxEnd && ' · '}
-          {m.approxEnd && <>Est. Finish {m.approxEnd}</>}
+          {finished
+            ? <>{m.court ? `${m.court} · ` : ''}Reported by court host · awaiting official score</>
+            : <>{m.time && <>Started {m.time}</>}{m.time && m.approxEnd && ' · '}{m.approxEnd && <>Est. Finish {m.approxEnd}</>}</>}
         </div>
       )}
     </div>
