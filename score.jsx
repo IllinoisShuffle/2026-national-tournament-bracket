@@ -238,6 +238,9 @@ function ScoreApp() {
       return true;
     })
     .sort((a, b) => {
+      const compA = a.liveScore && a.liveScore.status === 'complete' ? 1 : 0;
+      const compB = b.liveScore && b.liveScore.status === 'complete' ? 1 : 0;
+      if (compA !== compB) return compA - compB;
       const ca = Number(normalizeCourt(a.court)) || 999;
       const cb = Number(normalizeCourt(b.court)) || 999;
       return ca - cb || a.id.localeCompare(b.id);
@@ -272,15 +275,17 @@ function ScoreApp() {
       )}
       <div className="s-list">
         {visibleMatches.map((m) => {
-          const beingScored = isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== auth.name;
+          const isComplete = m.liveScore && m.liveScore.status === 'complete';
+          const beingScored = !isComplete && isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== auth.name;
           return (
-            <button key={m.id} className="s-match-card" onClick={() => setSelectedId(m.id)}>
+            <button key={m.id} className={`s-match-card${isComplete ? ' s-match-card-complete' : ''}`} onClick={() => setSelectedId(m.id)}>
               <div className="s-match-id">
                 {m.id}
                 {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
                 {m.time ? ` · ${m.time}` : ''}
-                {m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame)}` : ''}
+                {!isComplete && m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame)}` : ''}
               </div>
+              {isComplete && <div className="s-match-complete-tag">Complete &middot; awaiting TD</div>}
               <div className="s-match-teams">{m.yellow || 'TBD'}</div>
               {m.liveScore ? (
                 <div className="s-match-score">{m.liveScore.yellowScore} &ndash; {m.liveScore.blackScore}</div>
