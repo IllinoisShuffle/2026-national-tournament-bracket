@@ -76,6 +76,22 @@ function normalizeCourt(v) {
   return m ? m[0].replace(/^0+(?=\d)/, '') : '';
 }
 
+// courtFilter holds either a specific court number, one of these two
+// building-half shortcuts, 'my' (games the logged-in host is the scorer of
+// record on), or '' for all. The venue's 10 courts split into two halves of
+// 5 — court hosts/managers only need to watch their own half.
+const COURTS_1_5 = 'courts-1-5';
+const COURTS_6_10 = 'courts-6-10';
+const MY_GAMES = 'my';
+
+function courtFilterLabel(courtFilter) {
+  if (courtFilter === MY_GAMES) return ' you’re scoring';
+  if (courtFilter === COURTS_1_5) return ' on Courts 1–5';
+  if (courtFilter === COURTS_6_10) return ' on Courts 6–10';
+  if (courtFilter) return ` at Court ${courtFilter}`;
+  return '';
+}
+
 function readStoredCourtFilter() {
   try {
     return localStorage.getItem(COURT_FILTER_KEY) || '';
@@ -210,7 +226,17 @@ function ScoreApp() {
   const matches = (liveData && liveData.matches) || {};
   const unfinished = Object.values(matches).filter((m) => !m.winner);
 
-  const visibleMatches = (courtFilter ? unfinished.filter((m) => normalizeCourt(m.court) === courtFilter) : unfinished)
+  const visibleMatches = unfinished
+    .filter((m) => {
+      if (courtFilter === MY_GAMES) return !!(m.liveScore && m.liveScore.scorer === auth.name);
+      if (courtFilter === COURTS_1_5 || courtFilter === COURTS_6_10) {
+        const c = Number(normalizeCourt(m.court));
+        if (!c) return false;
+        return courtFilter === COURTS_1_5 ? c <= 5 : c >= 6;
+      }
+      if (courtFilter) return normalizeCourt(m.court) === courtFilter;
+      return true;
+    })
     .sort((a, b) => {
       const ca = Number(normalizeCourt(a.court)) || 999;
       const cb = Number(normalizeCourt(b.court)) || 999;
@@ -242,7 +268,7 @@ function ScoreApp() {
 
       {!liveData && <p className="s-empty">Loading matches…</p>}
       {liveData && visibleMatches.length === 0 && (
-        <p className="s-empty">No unfinished matches{courtFilter ? ` at Court ${courtFilter}` : ''} right now.</p>
+        <p className="s-empty">No unfinished matches{courtFilterLabel(courtFilter)} right now.</p>
       )}
       <div className="s-list">
         {visibleMatches.map((m) => {
@@ -357,6 +383,15 @@ function CourtToggle({ courts, value, onChange }) {
     <div className="s-court-toggle" role="group" aria-label="Filter by court">
       <button className={`s-court-chip${value === '' ? ' s-court-chip-active' : ''}`} onClick={() => onChange('')}>
         All
+      </button>
+      <button className={`s-court-chip${value === MY_GAMES ? ' s-court-chip-active' : ''}`} onClick={() => onChange(MY_GAMES)}>
+        My Games
+      </button>
+      <button className={`s-court-chip${value === COURTS_1_5 ? ' s-court-chip-active' : ''}`} onClick={() => onChange(COURTS_1_5)}>
+        Courts 1&ndash;5
+      </button>
+      <button className={`s-court-chip${value === COURTS_6_10 ? ' s-court-chip-active' : ''}`} onClick={() => onChange(COURTS_6_10)}>
+        Courts 6&ndash;10
       </button>
       {courts.map((c) => (
         <button key={c} className={`s-court-chip${value === c ? ' s-court-chip-active' : ''}`} onClick={() => onChange(c)}>
