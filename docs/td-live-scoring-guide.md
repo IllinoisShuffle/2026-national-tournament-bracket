@@ -6,6 +6,11 @@ Sheet is still the only official record, and how to use the admin page to
 clean up bad or stale live-score entries. For the technical/implementation
 details, see the main [README](../README.md).
 
+**The ATD is the technical point of contact for this whole system.** If
+anything about the app itself isn't working — a host's PIN won't work, the
+admin page won't load, a live score looks stuck or wrong — that's a question
+for the ATD, not something to troubleshoot solo.
+
 ## The one rule that matters
 
 **The Matches Google Sheet is the only source of truth. Nothing on
@@ -148,3 +153,4 @@ link somewhere private.
 | Can a live score ever override or contest the sheet? | No — the sheet always wins the instant you fill it in. |
 | What does `admin.html` change on the actual bracket? | Nothing. It only clears the supplementary live/in-progress score feed. |
 | Where do I go to fix a wrong or stuck live score? | `admin.html`, with the TD/ATD admin PIN. |
+| Something with the app is broken — who do I ask? | The ATD — they're the technical point of contact for this whole system. |

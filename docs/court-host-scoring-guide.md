@@ -15,23 +15,24 @@ score in person, the same as always.
 ## Getting the link
 
 There's one URL for every court host — nobody needs a link specific to their
-court. Your TD will send it to you directly (text message or QR code); it's
+court. Your ATD will send it to you directly (text message or QR code); it's
 not listed anywhere on the public tournament site, so bookmark it once you
 have it.
 
 ## Logging in
 
 1. Open the link. You'll see **"Court Scorekeeping."**
-2. Enter the **name and PIN your TD gave you.**
+2. Enter the **name and PIN your ATD gave you.**
 3. Tap **Log in.**
 
 Your login stays active on that device for a while (about 18 hours by
 default) so you shouldn't need to log in again mid-tournament unless you
-switch devices or it's been a very long time. If your PIN doesn't work,
-check with the TD — PINs are managed on their end and can be reset without
-you needing a new app or link.
+switch devices or it's been a very long time. If your PIN doesn't work, or
+anything about the app itself isn't working, check with the **ATD** — they're
+the technical point of contact for this whole system, and PINs are managed
+on their end and can be reset without you needing a new app or link.
 
-Only people the TD has set up can log in — there's no free-text "type your
+Only people the ATD has set up can log in — there's no free-text "type your
 name" option. This is deliberate: it means every score update on the board
 is attributed to a real, verified person.
 
@@ -165,7 +166,7 @@ attention to before you start.
 
 | Action | Where |
 |---|---|
-| Log in | Enter the name + PIN your TD gave you |
+| Log in | Enter the name + PIN your ATD gave you |
 | Find your match | "Pick your match" list, filter by court if needed |
 | Score a point | Tap +8 / +7 / +10 / −10 (or +1/−1 to correct) — stages it, doesn't save yet |
 | Undo a single tap | "Undo last pick" |
@@ -174,3 +175,4 @@ attention to before you start.
 | Finish the match | "Complete Match" — **then tell the TD/ATD in person** |
 | Fix a mis-tapped "Complete" | "Reopen (mis-tap)" |
 | Start completely over on a match | "Reset Match" (confirms first) |
+| PIN doesn't work, or the app is broken | Ask the ATD — they're the technical point of contact for this system |
