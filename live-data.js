@@ -5,9 +5,9 @@
 // Match ID scheme (see netlify/functions/results.js for the sheet format):
 //   M64-01..32, M32-01..16, M16-01..08, M8-01..04, M4-01..02, M2-01/M2-02
 //   (main bracket), same pattern with a "C" prefix for consolation.
-// Each round's match numbers split into 4 equal blocks in fixed order:
-// Red, Blue, Green, Orange (window.QUARTERS order) — e.g. M64-01..08 = Red,
-// 09..16 = Blue, 17..24 = Green, 25..32 = Orange.
+// Each round's match numbers split into 4 equal blocks in fixed order,
+// matching window.QUARTERS order — e.g. for M64: 01..08 = QUARTERS[0],
+// 09..16 = QUARTERS[1], 17..24 = QUARTERS[2], 25..32 = QUARTERS[3].
 //
 // Returns null from fetchLiveData() on any failure (no backend deployed yet,
 // network error, etc.) so callers fall back to demo/mock data.
@@ -30,7 +30,7 @@ async function fetchLiveData() {
   }
 }
 
-// Match IDs for one bracket region (quarterIndex 0-3 = Red/Blue/Green/Orange)
+// Match IDs for one bracket region (quarterIndex 0-3 = window.QUARTERS order)
 // in a given round. `roundSize` is the "team count entering this round" label
 // used in the ID (64, 32, 16, 8, 4, or 2) — total matches globally = roundSize / 2.
 function regionMatchIds(prefix, roundSize, quarterIndex) {

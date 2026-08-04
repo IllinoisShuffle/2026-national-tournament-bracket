@@ -134,8 +134,8 @@ function Poster() {
     ...window.twinBend('m5', leftHalfX, leftHalfY, CHAMPION_X, champY, qLT.color, qLB.color, 4.5),
     ...window.twinBend('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, qRT.color, qRB.color, 4.5),
   ];
-  // M4-01/M4-02 = the two semifinal games (Left half: Red+Blue champs, Right
-  // half: Green+Orange champs). M2-01 = final, M2-02 = 3rd place game.
+  // M4-01/M4-02 = the two semifinal games (Left half: Blue+Red champs, Right
+  // half: Pink+Green champs). M2-01 = final, M2-02 = 3rd place game.
   const finalA = useLiveShape ? (liveMatches['M4-01'] || {}) : null;
   const finalB = useLiveShape ? (liveMatches['M4-02'] || {}) : null;
   const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
@@ -227,8 +227,8 @@ function Poster() {
 
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
-    { label: 'MAIN · RED & BLUE', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
-    { label: 'MAIN · GREEN & ORANGE', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
+    { label: 'MAIN · BLUE & RED', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
+    { label: 'MAIN · PINK & GREEN', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
     // Semifinals + final + 3rd place game, matching the drawn "loop" rect
     // plus room above for the championship matchup label, which sits above it.
     ...(mainLoopReady ? [{ label: 'MAIN · THE LOOP', x0: loopBounds.x0, y0: Math.min(loopBounds.y0, champY - 150), x1: loopBounds.x1, y1: loopBounds.y1 }] : []),
