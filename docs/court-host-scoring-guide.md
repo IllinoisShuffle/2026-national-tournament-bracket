@@ -91,7 +91,7 @@ bottom — it's labeled either:
   moves on to the next frame, or
 - **"Submit Frame N & Complete Match"** — appears automatically once the
   score is no longer tied on a frame where the match can end (frame 16, or
-  an even overtime frame past that). Tapping it both records the frame *and*
+  an overtime frame past that). Tapping it both records the frame *and*
   finishes the match in one step.
 
 If nothing landed for either team that frame (a "wash"), you can still tap
@@ -101,21 +101,22 @@ A hint line right above the button tells you exactly what tapping it will
 do (e.g. "Submit records +8 for Yellow, and will start Frame 10"), so you
 can always double check before committing.
 
-### Regulation, overtime, and disc colors
+### Disc colors and the frame counter
 
-- Matches play **16 regulation frames.** If it's tied after 16, play
-  continues in **overtime, two frames at a time** — there's no fixed cap,
-  it just keeps going until someone's ahead after an even-numbered frame.
-- The frame counter at the top always reads **"Playing Frame N of 16"** (or
-  **"Playing Frame N · Overtime"** past regulation) — "Playing" means frame
-  N is the one currently underway, and the score shown reflects everything
-  before it, not that frame N just finished.
-- **Disc colors swap at frame 9.** Each team plays frames 1–8 as the color
-  the sheet lists them under, then switches to the other physical disc color
-  from frame 9 through the rest of the match (including overtime — it
-  doesn't swap back). The app automatically updates which color dot shows
-  next to each team once you cross that line, so just keep tapping the same
-  team's buttons regardless of which color disc they're currently shooting.
+- The frame counter at the top always reads **"Playing Frame N of 16"** —
+  "Playing" means frame N is the one currently underway, and the score
+  shown reflects everything before it, not that frame N just finished.
+- **Disc colors swap at frame 9.** The app automatically updates which
+  color dot shows next to each team once you cross that line, so just keep
+  tapping the same team's buttons regardless of which color disc they're
+  currently shooting.
+
+### If it goes to overtime
+
+A match tied after frame 16 just keeps going — score it exactly the same
+way you have been. The frame counter switches to **"Playing Frame N ·
+Overtime,"** and disc colors stay on whatever they swapped to at frame 9
+(they don't swap back).
 
 ### If you made a bigger mistake
 
