@@ -58,7 +58,7 @@ score becomes eligible to show up in two places:
   live-score badge next to that match instead of "TBD."
 - **The Live Scoreboard** (`scoreboard.html`) lists it under **"On the
   Courts"** with the running score, current frame ("Playing Frame 9 of 16,"
-  etc.), and which team is which puck color.
+  etc.), and which team is which disc color.
 
 This is explicitly labeled as unofficial, and behaves accordingly:
 

@@ -57,15 +57,15 @@ Tap a match to open it.
 
 ## Scoring the match
 
-You'll see both teams' names with a puck-color dot, the running score, and a
+You'll see both teams' names with a disc-color dot, the running score, and a
 2x2 grid of buttons under each team:
 
 | Button | Meaning |
 |---|---|
-| **+8** | Puck landed in the 8 zone |
-| **+7** | Puck landed in the 7 zone |
-| **+10** | Puck landed in the 10 zone |
-| **−10** | "10 off" — a puck hanging past the line, which *costs* that team 10 |
+| **+8** | Disc landed in the 8 zone |
+| **+7** | Disc landed in the 7 zone |
+| **+10** | Disc landed in the 10 zone |
+| **−10** | "10 off" — a disc hanging past the line, which *costs* that team 10 |
 | **+1 / −1** | Manual correction — nudge a total up or down by one, for matching whatever the chalkboard actually shows |
 
 **Tapping a button does not save immediately.** It stages a pick for the
@@ -73,7 +73,7 @@ frame currently in progress — you'll see a **"pending"** total appear under
 that team's score, and the button itself gets a highlighted ring so you can
 see everything you've tapped for this frame at a glance. You can tap
 multiple buttons, on either side, in any order — a frame can have more than
-one puck land, for either team, so there's no one-tap-per-frame limit.
+one disc land, for either team, so there's no one-tap-per-frame limit.
 
 Made a mistake on a single tap? Use the **"Undo last pick"** button that
 appears — it removes just your most recent tap.
@@ -100,7 +100,7 @@ A hint line right above the button tells you exactly what tapping it will
 do (e.g. "Submit records +8 for Yellow, and will start Frame 10"), so you
 can always double check before committing.
 
-### Regulation, overtime, and puck colors
+### Regulation, overtime, and disc colors
 
 - Matches play **16 regulation frames.** If it's tied after 16, play
   continues in **overtime, two frames at a time** — there's no fixed cap,
@@ -109,12 +109,12 @@ can always double check before committing.
   **"Playing Frame N · Overtime"** past regulation) — "Playing" means frame
   N is the one currently underway, and the score shown reflects everything
   before it, not that frame N just finished.
-- **Puck colors swap at frame 9.** Each team plays frames 1–8 as the color
-  the sheet lists them under, then switches to the other physical puck color
+- **Disc colors swap at frame 9.** Each team plays frames 1–8 as the color
+  the sheet lists them under, then switches to the other physical disc color
   from frame 9 through the rest of the match (including overtime — it
   doesn't swap back). The app automatically updates which color dot shows
   next to each team once you cross that line, so just keep tapping the same
-  team's buttons regardless of which color puck they're currently shooting.
+  team's buttons regardless of which color disc they're currently shooting.
 
 ### If you made a bigger mistake
 
