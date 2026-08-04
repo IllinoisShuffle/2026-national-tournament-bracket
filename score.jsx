@@ -568,19 +568,6 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       <div className="s-frame-bar">
         <div className="s-frame-label">{frameLabel(frame)}</div>
       </div>
-      {status !== 'complete' && (() => {
-        const parts = [];
-        if (stagedYellow !== 0) parts.push(`${stagedYellow > 0 ? '+' : ''}${stagedYellow} for ${match.yellow || 'Yellow'}`);
-        if (stagedBlack !== 0) parts.push(`${stagedBlack > 0 ? '+' : ''}${stagedBlack} for ${match.black || 'Black'}`);
-        const ending = willComplete ? 'complete the match' : `start Frame ${frame + 1}`;
-        return (
-          <div className="s-frame-hint">
-            {parts.length > 0
-              ? `Tap "Submit Frame" below to record ${parts.join(' and ')}, and ${ending}`
-              : `No score this frame? "Submit Frame" below still ${willComplete ? 'completes the match' : `starts Frame ${frame + 1}`}.`}
-          </div>
-        );
-      })()}
 
       {otherActive && saveState !== 'conflict' && (
         <div className="s-other-scorer-banner">
@@ -648,6 +635,19 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
       {status !== 'complete' && (
         <div className="s-actions">
+          {(() => {
+            const parts = [];
+            if (stagedYellow !== 0) parts.push(`${stagedYellow > 0 ? '+' : ''}${stagedYellow} for ${match.yellow || 'Yellow'}`);
+            if (stagedBlack !== 0) parts.push(`${stagedBlack > 0 ? '+' : ''}${stagedBlack} for ${match.black || 'Black'}`);
+            const ending = willComplete ? 'complete the match' : `start Frame ${frame + 1}`;
+            return (
+              <div className="s-frame-hint">
+                {parts.length > 0
+                  ? `Submit records ${parts.join(' and ')}, and will ${ending}.`
+                  : `No score this frame? Submit still ${willComplete ? 'completes the match' : `starts Frame ${frame + 1}`}.`}
+              </div>
+            );
+          })()}
           <button className="s-submit-frame" onClick={commitFrame} disabled={locked}>
             {willComplete ? 'Submit Frame & Complete Match' : `Submit Frame ${frame} & Start Frame ${frame + 1}`}
           </button>
@@ -677,11 +677,11 @@ function ScoreSide({ label, score, stagedTotal, taps, onTap, disabled, puck }) {
       <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
-      {taps.length > 0 && (
-        <div className="s-pending">
-          {stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending
-        </div>
-      )}
+      {/* Always mounted, just hidden when empty — reserves its height so
+          the stepper grid below never shifts under a host's finger. */}
+      <div className={`s-pending${taps.length > 0 ? '' : ' s-pending-hidden'}`}>
+        {stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending
+      </div>
       <div className="s-stepper-grid">
         {SCORE_INCREMENTS.map((inc) => {
           const count = taps.filter((t) => t.delta === inc.delta).length;
