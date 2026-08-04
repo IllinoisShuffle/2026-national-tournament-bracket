@@ -1,0 +1,175 @@
+# Court Host / Court Manager Guide — Scoring a Match
+
+This is a plain-language walkthrough of `score.html`, the page court hosts
+and court managers use to keep a live running score during a match. For the
+technical details, see the main [README](../README.md).
+
+**The short version:** this app is a convenience for spectators watching the
+Live Scoreboard. It is *not* the official scorekeeping record — you keep
+scoring on the physical chalkboard exactly as you always have, and you still
+tell the TD/ATD the final score in person when the match ends. This app just
+mirrors what's on the board so people not standing at your court can follow
+along.
+
+## Getting the link
+
+There's one URL for every court host — nobody needs a link specific to their
+court. Your TD will send it to you directly (text message or QR code); it's
+not listed anywhere on the public tournament site, so bookmark it once you
+have it.
+
+## Logging in
+
+1. Open the link. You'll see **"Court Scorekeeping."**
+2. Enter the **name and PIN your TD gave you.**
+3. Tap **Log in.**
+
+Your login stays active on that device for a while (about 18 hours by
+default) so you shouldn't need to log in again mid-tournament unless you
+switch devices or it's been a very long time. If your PIN doesn't work,
+check with the TD — PINs are managed on their end and can be reset without
+you needing a new app or link.
+
+Only people the TD has set up can log in — there's no free-text "type your
+name" option. This is deliberate: it means every score update on the board
+is attributed to a real, verified person.
+
+## Picking your match
+
+After logging in you'll see **"Pick your match"** — a list of every match
+that isn't finished yet, across all courts.
+
+- If your login was set up with a home court, the list is automatically
+  filtered to just that court. You'll see a row of pills at the top — **All
+  / Court 1 / Court 2 / …** — tap a different one any time.
+- **This filter is just a convenience, not a restriction.** You can score
+  any match on any court if you need to — say, covering for someone, or your
+  match got moved.
+- Each match card shows the match ID, court, scheduled time, and — if
+  someone's already got a score going — the current frame and running score.
+- If another host is actively updating that match right now, you'll see
+  **"Being scored by `<name>`"** under it. That's a heads-up, not a lock —
+  see "If two people try to score the same match" below.
+
+Tap a match to open it.
+
+## Scoring the match
+
+You'll see both teams' names with a puck-color dot, the running score, and a
+2x2 grid of buttons under each team:
+
+| Button | Meaning |
+|---|---|
+| **+8** | Puck landed in the 8 zone |
+| **+7** | Puck landed in the 7 zone |
+| **+10** | Puck landed in the 10 zone |
+| **−10** | "10 off" — a puck hanging past the line, which *costs* that team 10 |
+| **+1 / −1** | Manual correction — nudge a total up or down by one, for matching whatever the chalkboard actually shows |
+
+**Tapping a button does not save immediately.** It stages a pick for the
+frame currently in progress — you'll see a **"pending"** total appear under
+that team's score, and the button itself gets a highlighted ring so you can
+see everything you've tapped for this frame at a glance. You can tap
+multiple buttons, on either side, in any order — a frame can have more than
+one puck land, for either team, so there's no one-tap-per-frame limit.
+
+Made a mistake on a single tap? Use the **"Undo last pick"** button that
+appears — it removes just your most recent tap.
+
+Want to clear everything you've staged for the current frame and start over?
+Tap **Reset Frame.**
+
+### Ending the frame
+
+When play for that frame is actually done, tap the big button at the
+bottom — it's labeled either:
+
+- **"Submit Frame N & Start Frame N+1"** — records whatever you staged and
+  moves on to the next frame, or
+- **"Submit Frame N & Complete Match"** — appears automatically once the
+  score is no longer tied on a frame where the match can end (frame 16, or
+  an even overtime frame past that). Tapping it both records the frame *and*
+  finishes the match in one step.
+
+If nothing landed for either team that frame (a "wash"), you can still tap
+Submit — it just advances to the next frame with no score change.
+
+A hint line right above the button tells you exactly what tapping it will
+do (e.g. "Submit records +8 for Yellow, and will start Frame 10"), so you
+can always double check before committing.
+
+### Regulation, overtime, and puck colors
+
+- Matches play **16 regulation frames.** If it's tied after 16, play
+  continues in **overtime, two frames at a time** — there's no fixed cap,
+  it just keeps going until someone's ahead after an even-numbered frame.
+- The frame counter at the top always reads **"Playing Frame N of 16"** (or
+  **"Playing Frame N · Overtime"** past regulation) — "Playing" means frame
+  N is the one currently underway, and the score shown reflects everything
+  before it, not that frame N just finished.
+- **Puck colors swap at frame 9.** Each team plays frames 1–8 as the color
+  the sheet lists them under, then switches to the other physical puck color
+  from frame 9 through the rest of the match (including overtime — it
+  doesn't swap back). The app automatically updates which color dot shows
+  next to each team once you cross that line, so just keep tapping the same
+  team's buttons regardless of which color puck they're currently shooting.
+
+### If you made a bigger mistake
+
+- **Undo last pick** — reverses your most recent tap, whether or not it's
+  been submitted yet.
+- **Reset Frame** — clears everything staged for the frame in progress, if
+  you haven't submitted it yet.
+- **Reset Match** — wipes the whole match back to 0–0, Frame 1. This is for
+  when something's gone seriously wrong (wrong match opened, scores way off
+  from the board, etc.) — it asks you to confirm first, and it *can* erase
+  frames you already submitted, so only use it as a real reset, not a
+  quick undo.
+
+## Finishing the match
+
+Once the match is actually over, tap **Complete Match** (or it happens
+automatically the moment you submit a decisive frame at frame 16 or later,
+as described above). You'll see a **"Marked complete"** screen with the
+final score.
+
+**This is the step that matters most: tell the TD or ATD the final score in
+person, the same way you always have.** Tapping "Complete Match" only
+updates what spectators see on the Live Scoreboard — it does **not** notify
+the TD, does not write anything into the official tournament sheet, and does
+not advance any bracket. The on-screen note reminds you of this every time.
+
+If you tapped Complete by mistake, there's a **"Reopen (mis-tap)"** button
+to go back to live scoring.
+
+## If two people try to score the same match
+
+The app actively prevents two hosts from silently overwriting each other. If
+you try to save a change and someone else has updated that match in the last
+few minutes, you'll see:
+
+> **`<name>` is currently scoring this — take over?**
+
+- **Take over** — saves your update anyway. Use this if you're the one who
+  should actually be scoring it right now (e.g. you're taking over the
+  court, or the other update was stale/wrong).
+- **Cancel** — backs out and reloads their latest score instead, so you're
+  not fighting over the same match.
+
+This is a real check, not just a warning — it can't be silently bypassed,
+which is why the "Being scored by" note on the match list is worth paying
+attention to before you start.
+
+## Quick reference
+
+| Action | Where |
+|---|---|
+| Log in | Enter the name + PIN your TD gave you |
+| Find your match | "Pick your match" list, filter by court if needed |
+| Score a point | Tap +8 / +7 / +10 / −10 (or +1/−1 to correct) — stages it, doesn't save yet |
+| Undo a single tap | "Undo last pick" |
+| Clear the whole current frame | "Reset Frame" |
+| Move to the next frame | "Submit Frame N & Start Frame N+1" |
+| Finish the match | "Complete Match" — **then tell the TD/ATD in person** |
+| Fix a mis-tapped "Complete" | "Reopen (mis-tap)" |
+| Start completely over on a match | "Reset Match" (confirms first) |

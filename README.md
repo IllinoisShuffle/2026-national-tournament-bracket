@@ -4,6 +4,16 @@ Live bracket site for the 2026 Chicago National shuffleboard tournament at
 Royal Palms. Static, build-free React (loaded via CDN + in-browser Babel) —
 no bundler, no `npm run build`.
 
+## Guides
+
+Plain-language walkthroughs for non-technical users, as opposed to the
+implementation notes below:
+
+- [TD/ATD guide](docs/td-live-scoring-guide.md) — how live scoring and the
+  admin page work, and why the Matches sheet is always the official record.
+- [Court host / court manager guide](docs/court-host-scoring-guide.md) — how
+  to log into `score.html` and keep score during a match.
+
 ## Views
 
 | Page | URL | Purpose |
