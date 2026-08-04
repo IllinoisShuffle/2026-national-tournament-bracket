@@ -160,9 +160,11 @@ function twinDrop(key, x1, y1, x2, y2, colorA, colorB, width, dash, radius = 16)
     const sx = x1 + xOff, sy2 = y2 + yOff;
     return `M ${sx} ${y1} L ${sx} ${sy2 - radius} Q ${sx} ${sy2} ${sx + dx * radius} ${sy2} L ${x2} ${sy2}`;
   };
+  // Assign colorA to strand(dx) so it always lands on the same visual side (top)
+  // regardless of which half of the bracket we're on, matching twinBend's convention.
   return [
-    <path key={key + 'a'} d={strand(-1)} stroke={colorA} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
-    <path key={key + 'b'} d={strand(1)} stroke={colorB} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
+    <path key={key + 'a'} d={strand(dx)} stroke={colorA} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
+    <path key={key + 'b'} d={strand(-dx)} stroke={colorB} strokeWidth={width} strokeDasharray={dash} strokeLinecap="round" fill="none" />,
   ];
 }
 
