@@ -241,7 +241,11 @@ function ScoreApp() {
                 {m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame)}` : ''}
               </div>
               <div className="s-match-teams">{m.yellow || 'TBD'}</div>
-              <div className="s-match-vs">vs</div>
+              {m.liveScore ? (
+                <div className="s-match-score">{m.liveScore.yellowScore} &ndash; {m.liveScore.blackScore}</div>
+              ) : (
+                <div className="s-match-vs">vs</div>
+              )}
               <div className="s-match-teams">{m.black || 'TBD'}</div>
               {beingScored && (
                 <div className="s-being-scored">Being scored by {m.liveScore.scorer} · {formatAgo(m.liveScore.updatedAt)} ago</div>
