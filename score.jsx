@@ -32,8 +32,13 @@ const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
 // Shuffleboard doesn't score in single points — the triangle's zones are
 // worth 10, 8, 7, with "10 off" (a puck hanging past the line) costing the
-// shooting team 10. Order here is [8, 7, 10, -10] because it maps directly
-// onto a 2-column CSS grid as top row [8, 7], bottom row [10, -10].
+// shooting team 10. Order here maps onto a 2-column CSS grid as row 1
+// [8, 7], row 2 [10, -10], row 3 [+1, -1]. The +1/-1 pair isn't a real
+// shuffleboard value — it exists so a host can correct the board to match
+// whatever the chalkboard actually shows, including a total that "shouldn't"
+// be reachable from 7/8/10 zone values (e.g. the chalk got scored 6 instead
+// of 8 by mistake). This app always mirrors the physical scoreboard exactly,
+// mistakes included — it's not the source of truth.
 const MAX_UNDO = 5;
 // Matches play 16 regulation frames; a tie after 16 goes to extra frames in
 // pairs until someone's ahead. There's no fixed ceiling on those, so the
@@ -51,6 +56,8 @@ const SCORE_INCREMENTS = [
   { delta: 7, label: '+7' },
   { delta: 10, label: '+10' },
   { delta: -10, label: '−10' },
+  { delta: 1, label: '+1' },
+  { delta: -1, label: '−1' },
 ];
 
 // The venue has 10 courts. The court toggle always shows all of them,
@@ -568,7 +575,13 @@ function ScoreSide({ label, score, onAdjust, disabled, puck }) {
             className={inc.delta < 0 ? 's-stepper s-stepper-minus' : 's-stepper'}
             onClick={() => onAdjust(inc.delta)}
             disabled={disabled}
-            aria-label={inc.delta < 0 ? `Subtract 10 from ${label} (10 off)` : `Add ${inc.delta} to ${label}`}
+            aria-label={
+              inc.delta === -10
+                ? `Subtract 10 from ${label} (10 off)`
+                : inc.delta < 0
+                ? `Subtract ${-inc.delta} from ${label}`
+                : `Add ${inc.delta} to ${label}`
+            }
           >
             {inc.label}
           </button>
