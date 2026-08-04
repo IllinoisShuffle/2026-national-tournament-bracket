@@ -189,6 +189,20 @@ function ScoreApp() {
     setSelectedId(null);
   }
 
+  // Merges a just-confirmed write straight into the polled cache so the
+  // match list (and this match, if reopened) reflects it immediately —
+  // otherwise a host bouncing right back after Submit Frame would see
+  // whatever the last poll captured, up to SCORE_POLL_MS stale, and could
+  // easily mistake that lag for the write having been lost.
+  function handleSaved(matchId, entry) {
+    setLiveData((prev) => {
+      if (!prev) return prev;
+      const existing = prev.matches[matchId];
+      if (!existing) return prev;
+      return { ...prev, matches: { ...prev.matches, [matchId]: { ...existing, liveScore: entry } } };
+    });
+  }
+
   if (!auth) {
     return <Login onSuccess={handleLogin} />;
   }
@@ -212,6 +226,7 @@ function ScoreApp() {
         auth={auth}
         onBack={() => setSelectedId(null)}
         onAuthExpired={handleAuthExpired}
+        onSaved={handleSaved}
       />
     );
   }
@@ -352,7 +367,7 @@ function CourtToggle({ courts, value, onChange }) {
   );
 }
 
-function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
+function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
   const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'in_progress' };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
@@ -432,6 +447,19 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         return;
       }
 
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onSaved(match.id, {
+          matchId: match.id,
+          court: match.court || '',
+          yellowScore: nextYellow,
+          blackScore: nextBlack,
+          status: nextStatus,
+          scorer: auth.name,
+          frame: nextFrame,
+          updatedAt: data.updatedAt || Date.now(),
+        });
+      }
       setSaveState(res.ok ? 'saved' : 'error');
     } catch (e) {
       setSaveState('error');
@@ -561,7 +589,9 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   return (
     <div className="s-wrap">
-      <button className="s-back" onClick={onBack}>&larr; Back to matches</button>
+      <button className="s-back" onClick={onBack} disabled={locked}>
+        &larr; {saveState === 'saving' ? 'Saving…' : 'Back to matches'}
+      </button>
       <header className="s-header">
         <div className="s-court-label">
           {match.court ? `Court ${normalizeCourt(match.court) || match.court} · ` : ''}
