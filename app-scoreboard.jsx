@@ -265,6 +265,17 @@ function MatchCard({ m }) {
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
+  // Once a match is finished, the yellow/black puck colors are no longer
+  // meaningful — a team plays both colors over the course of a match (see
+  // COLOR_FLIP_FRAME) — so swap them for a win/loss tag based on the score
+  // the host reported. A tie (shouldn't happen — overtime frames keep
+  // playing until it's broken) falls back to no tag rather than guessing.
+  const yellowScore = m.liveScore && m.liveScore.yellowScore;
+  const blackScore = m.liveScore && m.liveScore.blackScore;
+  const hasDecisiveScore = finished && yellowScore != null && blackScore != null && yellowScore !== blackScore;
+  const yellowResult = hasDecisiveScore ? (yellowScore > blackScore ? 'win' : 'loss') : null;
+  const blackResult = hasDecisiveScore ? (blackScore > yellowScore ? 'win' : 'loss') : null;
+
   return (
     <div className={`sb-card${finished ? ' sb-card-final' : ''}`}>
       <div className="sb-card-bar" style={{ background: regionColor }} />
@@ -275,8 +286,8 @@ function MatchCard({ m }) {
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}{frameLabel ? ` · ${frameLabel}` : ''}</div>
-      <TeamRow puck={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={m.liveScore && m.liveScore.yellowScore} />
-      <TeamRow puck={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={m.liveScore && m.liveScore.blackScore} />
+      <TeamRow puck={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={yellowScore} finished={finished} result={yellowResult} />
+      <TeamRow puck={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={blackScore} finished={finished} result={blackResult} />
       {(finished || m.time || m.approxEnd) && (
         <div className="sb-card-foot">
           {finished
@@ -288,11 +299,13 @@ function MatchCard({ m }) {
   );
 }
 
-function TeamRow({ puck, name, score }) {
+function TeamRow({ puck, name, score, finished, result }) {
   return (
     <div className="sb-team-row">
       <span className="sb-team-name">
-        <span className={`sb-puck sb-puck-${puck}`} />
+        {finished
+          ? (result && <span className={`sb-result-tag sb-result-tag-${result}`}>{result === 'win' ? 'W' : 'L'}</span>)
+          : <span className={`sb-puck sb-puck-${puck}`} />}
         <span className="name">{name || 'TBD'}</span>
       </span>
       <span className="sb-score">{score != null ? score : '–'}</span>
