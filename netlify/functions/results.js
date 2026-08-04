@@ -34,8 +34,15 @@ const SUCCESS_HEADERS = {
 };
 
 // Reused across warm invocations of the same function container to avoid
-// re-hitting the Sheets API on every single poll.
-let cachedResult = null;
+// re-hitting the Sheets API on every single poll. This caches only the
+// Sheets-derived skeleton (no live scores) — attachLiveScores runs fresh on
+// every request regardless of this cache's age, since a Blobs list+get is
+// cheap and fast, unlike a Sheets API call. Caching the merged result here
+// too (as an earlier version did) meant an in-progress score/frame update
+// could sit invisible for up to CACHE_MS on top of the client's own poll
+// interval — a host correcting a score would see it un-correct itself, and
+// nobody would see the frame counter advance, for up to ~20s.
+let cachedSheetMatches = null;
 let cachedAt = 0;
 const CACHE_MS = 10000;
 
@@ -87,27 +94,33 @@ exports.handler = async function (event) {
   // event.blobs before any getStore() call will work.
   connectLambda(event);
 
-  if (cachedResult && Date.now() - cachedAt < CACHE_MS) {
-    return { statusCode: 200, headers: SUCCESS_HEADERS, body: JSON.stringify(cachedResult) };
-  }
-
   try {
-    const range = process.env.SHEETS_MATCHES_RANGE || 'Matches!A:L';
-    const rows = await fetchValues(range);
+    let matches;
+    if (cachedSheetMatches && Date.now() - cachedAt < CACHE_MS) {
+      // Clone so this request's attachLiveScores() mutations (and the next
+      // Sheets refresh) never leak into the cached skeleton other requests
+      // are about to reuse.
+      matches = JSON.parse(JSON.stringify(cachedSheetMatches));
+    } else {
+      const range = process.env.SHEETS_MATCHES_RANGE || 'Matches!A:L';
+      const rows = await fetchValues(range);
 
-    const matches = {};
-    for (const row of rows) {
-      const id = (row[0] || '').trim();
-      if (!MATCH_ID_RE.test(id)) continue; // header row, spacer row, or unrelated row
-      const m = rowToMatch(row);
-      matches[m.id.toUpperCase()] = m;
+      matches = {};
+      for (const row of rows) {
+        const id = (row[0] || '').trim();
+        if (!MATCH_ID_RE.test(id)) continue; // header row, spacer row, or unrelated row
+        const m = rowToMatch(row);
+        matches[m.id.toUpperCase()] = m;
+      }
+
+      cachedSheetMatches = matches;
+      cachedAt = Date.now();
+      matches = JSON.parse(JSON.stringify(matches));
     }
 
     await attachLiveScores(matches);
 
     const result = { matches, updatedAt: Date.now() };
-    cachedResult = result;
-    cachedAt = Date.now();
 
     return {
       statusCode: 200,
