@@ -143,9 +143,9 @@ via `score.html` and the `live-score` function:
   frames before it, not that frame N just finished. `score.html` shows the
   same wording, plus a hint under the +/- control telling the host exactly
   when to tap it ("Tap + once Frame N ends, to start Frame N+1"). Teams play frames 1-8 on
-  the color the sheet lists them under, then swap physical puck color for
+  the color the sheet lists them under, then swap physical disc color for
   frame 9 onward (staying swapped through overtime); the scoreboard's
-  `MatchCard` flips which puck color renders next to each team once the
+  `MatchCard` flips which disc color renders next to each team once the
   frame passes 8 — the sheet's yellow/black columns still identify the same
   two teams the whole match, only the drawn dot color changes.
 - **`results.js`** merges this in: a match's `liveScore` field is attached
