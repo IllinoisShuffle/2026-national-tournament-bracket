@@ -59,6 +59,9 @@ html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-famil
 .s-stepper:active{opacity:0.7}
 .s-stepper-minus{background:var(--live);color:#fff}
 .s-stepper:disabled{opacity:0.35;cursor:default}
+.s-stepper-selected{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--ink)}
+.s-stepper-selected.s-stepper-minus{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--live)}
+.s-pending{font-size:12px;font-weight:800;color:var(--live);margin:-4px 0 8px}
 .s-dash{font-size:28px;font-weight:900;color:var(--ink-dim)}
 .s-undo-bar{margin:0 0 14px}
 .s-undo{display:block;width:100%;appearance:none;border:1.5px solid var(--ink);border-radius:10px;background:none;color:var(--ink);font-size:13px;font-weight:700;padding:11px;cursor:pointer;font-family:inherit}

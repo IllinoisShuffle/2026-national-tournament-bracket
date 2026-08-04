@@ -346,9 +346,17 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const [frame, setFrame] = React.useState(initial.frame || 1);
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
-  // Snapshots of {side, delta, prevYellow, prevBlack, nextYellow, nextBlack}
-  // for the last few taps, most-recent last — lets "Undo" restore the exact
-  // prior stored value without having to reverse-engineer it from the delta.
+  // The staged, not-yet-saved pick for the frame in progress — set by
+  // tapping a stepper button, applied to the running total only once the
+  // host taps "Next Frame". Lives in local state only: if the host
+  // navigates away or reloads before committing, it's lost and the match
+  // reloads from the last *committed* server state. That's the tradeoff of
+  // staging rather than saving on every tap, and is intentional.
+  const [pending, setPending] = React.useState(null); // null | { side, delta }
+  // Snapshots of {prevYellow, prevBlack, prevFrame, nextYellow, nextBlack,
+  // nextFrame, pendingSide, pendingDelta} for the last few committed
+  // frames, most-recent last — lets "Undo" restore the exact prior stored
+  // score and frame together, since a commit now changes both at once.
   const [undoStack, setUndoStack] = React.useState([]);
 
   // match.liveScore refreshes on every poll (see ScoreApp), so this stays
@@ -405,30 +413,41 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     }
   }
 
-  function adjustFrame(delta) {
-    if (locked || status === 'complete') return;
-    const next = Math.max(1, frame + delta);
+  function prevFrame() {
+    if (locked || status === 'complete' || frame <= 1) return;
+    setPending(null);
+    const next = frame - 1;
     setFrame(next);
     post(yellowScore, blackScore, status, { frame: next });
   }
 
-  function adjust(side, delta) {
+  // Stages a pick for the frame in progress — no save until "Next Frame"
+  // commits it. Tapping the same button again clears the pick, so a mis-tap
+  // can be corrected before anything is sent.
+  function selectPending(side, delta) {
     if (locked || status === 'complete') return;
-    const prevYellow = yellowScore;
-    const prevBlack = blackScore;
-    let nextYellow = yellowScore;
-    let nextBlack = blackScore;
+    setPending((prev) => (prev && prev.side === side && prev.delta === delta ? null : { side, delta }));
+  }
+
+  // Commits whatever's staged (or nothing, for a scoreless "wash" frame)
+  // into the running total and advances the frame in one save.
+  function commitFrame() {
+    if (locked || status === 'complete') return;
     // No floor at 0 — a "10 off" penalty can legitimately push a side
     // negative before it's put any points on the board.
-    if (side === 'yellow') {
-      nextYellow = yellowScore + delta;
-      setYellowScore(nextYellow);
-    } else {
-      nextBlack = blackScore + delta;
-      setBlackScore(nextBlack);
-    }
-    setUndoStack([...undoStack, { side, delta, prevYellow, prevBlack, nextYellow, nextBlack }].slice(-MAX_UNDO));
-    post(nextYellow, nextBlack, status);
+    const nextYellow = yellowScore + (pending && pending.side === 'yellow' ? pending.delta : 0);
+    const nextBlack = blackScore + (pending && pending.side === 'black' ? pending.delta : 0);
+    const nextFrame = frame + 1;
+    setUndoStack([...undoStack, {
+      prevYellow: yellowScore, prevBlack: blackScore, prevFrame: frame,
+      nextYellow, nextBlack, nextFrame,
+      pendingSide: pending ? pending.side : null, pendingDelta: pending ? pending.delta : null,
+    }].slice(-MAX_UNDO));
+    setYellowScore(nextYellow);
+    setBlackScore(nextBlack);
+    setFrame(nextFrame);
+    setPending(null);
+    post(nextYellow, nextBlack, status, { frame: nextFrame });
   }
 
   function undoLast() {
@@ -436,15 +455,21 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     const last = undoStack[undoStack.length - 1];
     setYellowScore(last.prevYellow);
     setBlackScore(last.prevBlack);
+    setFrame(last.prevFrame);
     setUndoStack(undoStack.slice(0, -1));
-    post(last.prevYellow, last.prevBlack, status);
+    post(last.prevYellow, last.prevBlack, status, { frame: last.prevFrame });
   }
 
   function markComplete() {
     if (locked) return;
+    const nextYellow = yellowScore + (pending && pending.side === 'yellow' ? pending.delta : 0);
+    const nextBlack = blackScore + (pending && pending.side === 'black' ? pending.delta : 0);
+    setYellowScore(nextYellow);
+    setBlackScore(nextBlack);
+    setPending(null);
     setStatus('complete');
     setUndoStack([]);
-    post(yellowScore, blackScore, 'complete');
+    post(nextYellow, nextBlack, 'complete', { frame });
   }
 
   function reopen() {
@@ -483,24 +508,28 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       <div className="s-frame-bar">
         <button
           className="s-frame-btn"
-          onClick={() => adjustFrame(-1)}
+          onClick={prevFrame}
           disabled={locked || status === 'complete' || frame <= 1}
-          aria-label="Previous frame"
+          aria-label="Previous frame (correction only, no score change)"
         >
           −
         </button>
         <div className="s-frame-label">{frameLabel(frame)}</div>
         <button
           className="s-frame-btn"
-          onClick={() => adjustFrame(1)}
+          onClick={commitFrame}
           disabled={locked || status === 'complete'}
-          aria-label="Next frame"
+          aria-label="Record frame and advance"
         >
           +
         </button>
       </div>
       {status !== 'complete' && (
-        <div className="s-frame-hint">Tap + once Frame {frame} ends, to start Frame {frame + 1}</div>
+        <div className="s-frame-hint">
+          {pending
+            ? `Tap + to record ${pending.delta > 0 ? `+${pending.delta}` : pending.delta} for ${pending.side === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black')} and start Frame ${frame + 1}`
+            : `No score this frame? Tap + to start Frame ${frame + 1} anyway.`}
+        </div>
       )}
 
       {otherActive && saveState !== 'conflict' && (
@@ -532,19 +561,26 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} onAdjust={(d) => adjust('yellow', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} pendingDelta={pending && pending.side === 'yellow' ? pending.delta : null} onSelect={(d) => selectPending('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} onAdjust={(d) => adjust('black', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} pendingDelta={pending && pending.side === 'black' ? pending.delta : null} onSelect={(d) => selectPending('black', d)} disabled={locked} />
         </div>
       )}
 
       {status !== 'complete' && undoStack.length > 0 && (() => {
         const last = undoStack[undoStack.length - 1];
-        const sideLabel = last.side === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black');
-        const deltaLabel = last.delta > 0 ? `+${last.delta}` : last.delta;
+        if (!last.pendingSide) {
+          return (
+            <div className="s-undo-bar">
+              <button className="s-undo" onClick={undoLast}>Undo Frame {last.prevFrame} (no score)</button>
+            </div>
+          );
+        }
+        const sideLabel = last.pendingSide === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black');
+        const deltaLabel = last.pendingDelta > 0 ? `+${last.pendingDelta}` : last.pendingDelta;
         return (
           <div className="s-undo-bar">
-            <button className="s-undo" onClick={undoLast}>Undo {deltaLabel} to {sideLabel}</button>
+            <button className="s-undo" onClick={undoLast}>Undo Frame {last.prevFrame}: {deltaLabel} to {sideLabel}</button>
           </div>
         );
       })()}
@@ -562,30 +598,41 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   );
 }
 
-function ScoreSide({ label, score, onAdjust, disabled, puck }) {
+function ScoreSide({ label, score, pendingDelta, onSelect, disabled, puck }) {
   return (
     <div className="s-side">
       <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
+      {pendingDelta != null && (
+        <div className="s-pending">{pendingDelta > 0 ? `+${pendingDelta}` : pendingDelta} pending</div>
+      )}
       <div className="s-stepper-grid">
-        {SCORE_INCREMENTS.map((inc) => (
-          <button
-            key={inc.delta}
-            className={inc.delta < 0 ? 's-stepper s-stepper-minus' : 's-stepper'}
-            onClick={() => onAdjust(inc.delta)}
-            disabled={disabled}
-            aria-label={
-              inc.delta === -10
-                ? `Subtract 10 from ${label} (10 off)`
-                : inc.delta < 0
-                ? `Subtract ${-inc.delta} from ${label}`
-                : `Add ${inc.delta} to ${label}`
-            }
-          >
-            {inc.label}
-          </button>
-        ))}
+        {SCORE_INCREMENTS.map((inc) => {
+          const selected = pendingDelta === inc.delta;
+          return (
+            <button
+              key={inc.delta}
+              className={[
+                's-stepper',
+                inc.delta < 0 ? 's-stepper-minus' : '',
+                selected ? 's-stepper-selected' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={() => onSelect(inc.delta)}
+              disabled={disabled}
+              aria-pressed={selected}
+              aria-label={
+                inc.delta === -10
+                  ? `Select 10 off for ${label} (this frame)`
+                  : inc.delta < 0
+                  ? `Select ${inc.delta} for ${label} (this frame)`
+                  : `Select +${inc.delta} for ${label} (this frame)`
+              }
+            >
+              {inc.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
