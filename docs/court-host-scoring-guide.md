@@ -9,8 +9,9 @@ the court — that has not changed. This app is a convenience for spectators
 watching the Live Scoreboard, not the official scorekeeping record. Your job
 is to **mirror whatever the chalkboard shows**, tap for tap, even if you
 think the players got a number wrong — you're transcribing the board, not
-correcting it. When the match ends, you still tell the TD/ATD the final
-score in person, the same as always.
+correcting it. When the match ends, you still fill out that match's **Match
+Report Sheet**, get it signed by the winning team, and bring it to the ATD
+in the DJ Booth, the same as always.
 
 ## Getting the link
 
@@ -135,11 +136,13 @@ automatically the moment you submit a decisive frame at frame 16 or later,
 as described above). You'll see a **"Marked complete"** screen with the
 final score.
 
-**This is the step that matters most: tell the TD or ATD the final score in
-person, the same way you always have.** Tapping "Complete Match" only
-updates what spectators see on the Live Scoreboard — it does **not** notify
-the TD, does not write anything into the official tournament sheet, and does
-not advance any bracket. The on-screen note reminds you of this every time.
+**This is the step that matters most:** fill out that match's **Match
+Report Sheet**, make sure it's filled out correctly, get it **signed by the
+winning team**, and bring it to the **ATD in the DJ Booth**, the same way
+you always have. Tapping "Complete Match" only updates what spectators see
+on the Live Scoreboard — it does **not** notify the TD or ATD, does not
+write anything into the official tournament sheet, and does not advance any
+bracket. The on-screen note reminds you of this every time.
 
 If you tapped Complete by mistake, there's a **"Reopen (mis-tap)"** button
 to go back to live scoring.
@@ -172,7 +175,7 @@ attention to before you start.
 | Undo a single tap | "Undo last pick" |
 | Clear the whole current frame | "Reset Frame" |
 | Move to the next frame | "Submit Frame N & Start Frame N+1" |
-| Finish the match | "Complete Match" — **then tell the TD/ATD in person** |
+| Finish the match | "Complete Match" — **then bring the signed Match Report Sheet to the ATD in the DJ Booth** |
 | Fix a mis-tapped "Complete" | "Reopen (mis-tap)" |
 | Start completely over on a match | "Reset Match" (confirms first) |
 | PIN doesn't work, or the app is broken | Ask the ATD — they're the technical point of contact for this system |

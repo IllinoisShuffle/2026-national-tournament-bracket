@@ -41,13 +41,14 @@ Concretely:
 
 Court hosts log into `score.html` (see the companion Court Host guide) and
 tap in points as they happen, frame by frame. When they finish a match they
-tap "Complete Match" and — this is the important part — **tell you or the
-ATD the final score in person, the same way they always have.** The app
-reminds them to do this on-screen. It does not notify you automatically, it
-does not text you, it does not update the sheet for you. A court host
-finishing a match on their phone changes nothing about your workflow: you
-still write the final score and winner into the Matches sheet by hand,
-exactly as before.
+tap "Complete Match" and — this is the important part — **fill out that
+match's Match Report Sheet, get it signed by the winning team, and bring it
+to the ATD in the DJ Booth, the same way they always have.** The app reminds
+them to do this on-screen. It does not notify you automatically, it does not
+text you, it does not update the sheet for you. A court host finishing a
+match on their phone changes nothing about your workflow: you still write
+the final score and winner into the Matches sheet by hand, from the signed
+Match Report Sheet, exactly as before.
 
 ## The "pending" / unofficial nature of what shows up live
 
@@ -82,10 +83,11 @@ never times out or gets treated as official on its own.
 **Practical implication for you:** you can use "Just Finished" cards on the
 scoreboard as a to-do list of matches waiting on your transcription, but you
 should never announce a result, update seeding, or hand out a bracket
-advancement based on what a court host tapped in. Always confirm the actual
-final score with the court host (or check the physical chalkboard) before
-writing it into the sheet — the host's app is a convenience, not a substitute
-for your own verification.
+advancement based on what a court host tapped in. Always transcribe the
+final score from that match's **signed Match Report Sheet** — verify it's
+filled out correctly and signed by the winning team before you enter it —
+not from what a court host tapped into the app. The host's app is a
+convenience, not a substitute for the paper record.
 
 ## The admin page (`admin.html`)
 
@@ -148,7 +150,7 @@ link somewhere private.
 | Question | Answer |
 |---|---|
 | What's the official result of a match? | Whatever is written in the Matches Google Sheet. Always. |
-| Does a court host finishing a match on their phone update the sheet? | No. They still have to tell you/the ATD in person. |
+| Does a court host finishing a match on their phone update the sheet? | No. They still bring the signed Match Report Sheet to the ATD in the DJ Booth. |
 | What does "Just Finished · awaiting official score" mean? | The court host tapped "Complete," but you haven't entered the result in the sheet yet. It's a to-do reminder, not an official result. |
 | Can a live score ever override or contest the sheet? | No — the sheet always wins the instant you fill it in. |
 | What does `admin.html` change on the actual bracket? | Nothing. It only clears the supplementary live/in-progress score feed. |
