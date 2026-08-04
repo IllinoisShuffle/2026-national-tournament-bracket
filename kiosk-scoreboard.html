@@ -20,38 +20,6 @@
     transition: opacity 1.1s ease;
   }
   .frame-stage iframe.active { opacity: 1; pointer-events: auto; }
-
-  .combo-caption {
-    position: fixed;
-    left: 50%;
-    bottom: 26px;
-    transform: translateX(-50%);
-    z-index: 2147483000;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(6px);
-    color: #fff;
-    padding: 11px 24px;
-    border-radius: 999px;
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    pointer-events: none;
-  }
-  .combo-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #2ECC71;
-    animation: combo-pulse 1.8s infinite;
-  }
-  @keyframes combo-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(46,204,113,0.6); }
-    70% { box-shadow: 0 0 0 10px rgba(46,204,113,0); }
-    100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
-  }
 </style>
 </head>
 <body>
@@ -59,7 +27,6 @@
     <iframe id="frame-bracket" class="active" src="web-bracket.html?kiosk&full" title="Bracket kiosk"></iframe>
     <iframe id="frame-scoreboard" src="scoreboard.html" title="Live scoreboard"></iframe>
   </div>
-  <div class="combo-caption"><span class="combo-dot"></span><span id="combo-label">BRACKET</span></div>
 
   <script>
     // Two full-screen iframes stay mounted the whole time and just cross-fade
@@ -70,22 +37,16 @@
 
     var bracketFrame = document.getElementById('frame-bracket');
     var scoreboardFrame = document.getElementById('frame-scoreboard');
-    var label = document.getElementById('combo-label');
-    var onBracket = true;
 
     function showScoreboard() {
-      onBracket = false;
       bracketFrame.classList.remove('active');
       scoreboardFrame.classList.add('active');
-      label.textContent = 'LIVE SCOREBOARD';
       setTimeout(showBracket, SCOREBOARD_HOLD_MS);
     }
 
     function showBracket() {
-      onBracket = true;
       scoreboardFrame.classList.remove('active');
       bracketFrame.classList.add('active');
-      label.textContent = 'BRACKET';
       setTimeout(showScoreboard, BRACKET_HOLD_MS);
     }
 
