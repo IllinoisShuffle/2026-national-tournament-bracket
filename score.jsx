@@ -40,10 +40,6 @@ const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 // of 8 by mistake). This app always mirrors the physical scoreboard exactly,
 // mistakes included — it's not the source of truth.
 const MAX_UNDO = 5;
-// Each side plays 4 discs per frame, so at most 4 taps can be staged per
-// side before "Next Frame" commits them — more than one disc scoring in a
-// frame (for one or both sides) is normal, not an edge case.
-const MAX_DISCS_PER_SIDE = 4;
 // Matches play 16 regulation frames; a tie after 16 goes to extra frames in
 // pairs until someone's ahead. There's no fixed ceiling on those, so the
 // frame counter just keeps climbing past 16 rather than wrapping/resetting.
@@ -424,14 +420,13 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     }
   }
 
-  // Stages a disc's outcome for the frame in progress — no save until
-  // "Next Frame" commits it. Up to MAX_DISCS_PER_SIDE taps can stack per
-  // side (each disc scores independently; landing in the same zone twice
-  // is a separate tap, not a toggle).
+  // Stages a tap for the frame in progress — no save until "Next Frame"
+  // commits it. Taps stack freely, on either or both sides, with no cap —
+  // a host catching up after missing a frame or two needs to lump several
+  // frames' worth of points into one submit without fighting a per-frame
+  // disc limit.
   function stageTap(side, delta) {
     if (locked || status === 'complete') return;
-    const sideCount = pendingTaps.filter((t) => t.side === side).length;
-    if (sideCount >= MAX_DISCS_PER_SIDE) return;
     setPendingTaps([...pendingTaps, { side, delta }]);
   }
 
@@ -590,9 +585,9 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} tapCount={yellowTaps.length} maxTaps={MAX_DISCS_PER_SIDE} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} tapCount={blackTaps.length} maxTaps={MAX_DISCS_PER_SIDE} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
         </div>
       )}
 
@@ -650,16 +645,15 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   );
 }
 
-function ScoreSide({ label, score, stagedTotal, tapCount, maxTaps, taps, onTap, disabled, puck }) {
-  const atMax = tapCount >= maxTaps;
+function ScoreSide({ label, score, stagedTotal, taps, onTap, disabled, puck }) {
   return (
     <div className="s-side">
       <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
-      {tapCount > 0 && (
+      {taps.length > 0 && (
         <div className="s-pending">
-          {stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending{atMax ? ' · 4/4 discs' : ''}
+          {stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending
         </div>
       )}
       <div className="s-stepper-grid">
@@ -674,7 +668,7 @@ function ScoreSide({ label, score, stagedTotal, tapCount, maxTaps, taps, onTap, 
                 count > 0 ? 's-stepper-selected' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => onTap(inc.delta)}
-              disabled={disabled || atMax}
+              disabled={disabled}
               aria-pressed={count > 0}
               aria-label={
                 inc.delta === -10
