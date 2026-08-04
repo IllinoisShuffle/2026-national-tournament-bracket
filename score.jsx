@@ -424,14 +424,6 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     }
   }
 
-  function prevFrame() {
-    if (locked || status === 'complete' || frame <= 1) return;
-    setPendingTaps([]);
-    const next = frame - 1;
-    setFrame(next);
-    post(yellowScore, blackScore, status, { frame: next });
-  }
-
   // Stages a disc's outcome for the frame in progress — no save until
   // "Next Frame" commits it. Up to MAX_DISCS_PER_SIDE taps can stack per
   // side (each disc scores independently; landing in the same zone twice
@@ -554,14 +546,6 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
       </header>
 
       <div className="s-frame-bar">
-        <button
-          className="s-frame-btn"
-          onClick={prevFrame}
-          disabled={locked || status === 'complete' || frame <= 1}
-          aria-label="Previous frame (correction only, no score change)"
-        >
-          −
-        </button>
         <div className="s-frame-label">{frameLabel(frame)}</div>
       </div>
       {status !== 'complete' && (() => {
