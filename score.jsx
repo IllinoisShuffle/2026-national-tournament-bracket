@@ -40,6 +40,10 @@ const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 // of 8 by mistake). This app always mirrors the physical scoreboard exactly,
 // mistakes included — it's not the source of truth.
 const MAX_UNDO = 5;
+// Each side plays 4 discs per frame, so at most 4 taps can be staged per
+// side before "Next Frame" commits them — more than one disc scoring in a
+// frame (for one or both sides) is normal, not an edge case.
+const MAX_DISCS_PER_SIDE = 4;
 // Matches play 16 regulation frames; a tie after 16 goes to extra frames in
 // pairs until someone's ahead. There's no fixed ceiling on those, so the
 // frame counter just keeps climbing past 16 rather than wrapping/resetting.
@@ -346,15 +350,18 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   const [frame, setFrame] = React.useState(initial.frame || 1);
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
-  // The staged, not-yet-saved pick for the frame in progress — set by
-  // tapping a stepper button, applied to the running total only once the
-  // host taps "Next Frame". Lives in local state only: if the host
-  // navigates away or reloads before committing, it's lost and the match
-  // reloads from the last *committed* server state. That's the tradeoff of
-  // staging rather than saving on every tap, and is intentional.
-  const [pending, setPending] = React.useState(null); // null | { side, delta }
+  // Staged, not-yet-saved taps for the frame in progress. A shuffleboard
+  // frame can score up to 4 discs per side (8 total) — more than one puck
+  // landing for a side, or for both sides, in the same frame is normal —
+  // so this is a list of {side, delta} taps rather than a single pick.
+  // Applied to the running total only once the host taps "Next Frame".
+  // Lives in local state only: if the host navigates away or reloads
+  // before committing, it's lost and the match reloads from the last
+  // *committed* server state. That's the tradeoff of staging rather than
+  // saving on every tap, and is intentional.
+  const [pendingTaps, setPendingTaps] = React.useState([]); // [{side, delta}]
   // Snapshots of {prevYellow, prevBlack, prevFrame, nextYellow, nextBlack,
-  // nextFrame, pendingSide, pendingDelta} for the last few committed
+  // nextFrame, stagedYellow, stagedBlack} for the last few committed
   // frames, most-recent last — lets "Undo" restore the exact prior stored
   // score and frame together, since a commit now changes both at once.
   const [undoStack, setUndoStack] = React.useState([]);
@@ -368,6 +375,10 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   const locked = saveState === 'saving' || saveState === 'conflict';
   const colorsFlipped = frame > COLOR_FLIP_FRAME;
+  const yellowTaps = pendingTaps.filter((t) => t.side === 'yellow');
+  const blackTaps = pendingTaps.filter((t) => t.side === 'black');
+  const stagedYellow = yellowTaps.reduce((sum, t) => sum + t.delta, 0);
+  const stagedBlack = blackTaps.reduce((sum, t) => sum + t.delta, 0);
 
   async function post(nextYellow, nextBlack, nextStatus, { force, frame: nextFrame = frame } = {}) {
     setSaveState('saving');
@@ -415,18 +426,21 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   function prevFrame() {
     if (locked || status === 'complete' || frame <= 1) return;
-    setPending(null);
+    setPendingTaps([]);
     const next = frame - 1;
     setFrame(next);
     post(yellowScore, blackScore, status, { frame: next });
   }
 
-  // Stages a pick for the frame in progress — no save until "Next Frame"
-  // commits it. Tapping the same button again clears the pick, so a mis-tap
-  // can be corrected before anything is sent.
-  function selectPending(side, delta) {
+  // Stages a disc's outcome for the frame in progress — no save until
+  // "Next Frame" commits it. Up to MAX_DISCS_PER_SIDE taps can stack per
+  // side (each disc scores independently; landing in the same zone twice
+  // is a separate tap, not a toggle).
+  function stageTap(side, delta) {
     if (locked || status === 'complete') return;
-    setPending((prev) => (prev && prev.side === side && prev.delta === delta ? null : { side, delta }));
+    const sideCount = pendingTaps.filter((t) => t.side === side).length;
+    if (sideCount >= MAX_DISCS_PER_SIDE) return;
+    setPendingTaps([...pendingTaps, { side, delta }]);
   }
 
   // Commits whatever's staged (or nothing, for a scoreless "wash" frame)
@@ -435,23 +449,32 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
     if (locked || status === 'complete') return;
     // No floor at 0 — a "10 off" penalty can legitimately push a side
     // negative before it's put any points on the board.
-    const nextYellow = yellowScore + (pending && pending.side === 'yellow' ? pending.delta : 0);
-    const nextBlack = blackScore + (pending && pending.side === 'black' ? pending.delta : 0);
+    const nextYellow = yellowScore + stagedYellow;
+    const nextBlack = blackScore + stagedBlack;
     const nextFrame = frame + 1;
     setUndoStack([...undoStack, {
       prevYellow: yellowScore, prevBlack: blackScore, prevFrame: frame,
       nextYellow, nextBlack, nextFrame,
-      pendingSide: pending ? pending.side : null, pendingDelta: pending ? pending.delta : null,
+      stagedYellow, stagedBlack,
     }].slice(-MAX_UNDO));
     setYellowScore(nextYellow);
     setBlackScore(nextBlack);
     setFrame(nextFrame);
-    setPending(null);
+    setPendingTaps([]);
     post(nextYellow, nextBlack, status, { frame: nextFrame });
   }
 
+  // Undo always reverts the most recent action. If there's a staged
+  // (not-yet-committed) tap for the frame in progress, pop just that one —
+  // purely local, nothing was ever sent. Otherwise revert the last
+  // *committed* frame's score and frame number together in one save.
   function undoLast() {
-    if (locked || undoStack.length === 0 || status === 'complete') return;
+    if (locked || status === 'complete') return;
+    if (pendingTaps.length > 0) {
+      setPendingTaps(pendingTaps.slice(0, -1));
+      return;
+    }
+    if (undoStack.length === 0) return;
     const last = undoStack[undoStack.length - 1];
     setYellowScore(last.prevYellow);
     setBlackScore(last.prevBlack);
@@ -462,11 +485,11 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
 
   function markComplete() {
     if (locked) return;
-    const nextYellow = yellowScore + (pending && pending.side === 'yellow' ? pending.delta : 0);
-    const nextBlack = blackScore + (pending && pending.side === 'black' ? pending.delta : 0);
+    const nextYellow = yellowScore + stagedYellow;
+    const nextBlack = blackScore + stagedBlack;
     setYellowScore(nextYellow);
     setBlackScore(nextBlack);
-    setPending(null);
+    setPendingTaps([]);
     setStatus('complete');
     setUndoStack([]);
     post(nextYellow, nextBlack, 'complete', { frame });
@@ -524,13 +547,18 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
           +
         </button>
       </div>
-      {status !== 'complete' && (
-        <div className="s-frame-hint">
-          {pending
-            ? `Tap + to record ${pending.delta > 0 ? `+${pending.delta}` : pending.delta} for ${pending.side === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black')} and start Frame ${frame + 1}`
-            : `No score this frame? Tap + to start Frame ${frame + 1} anyway.`}
-        </div>
-      )}
+      {status !== 'complete' && (() => {
+        const parts = [];
+        if (stagedYellow !== 0) parts.push(`${stagedYellow > 0 ? '+' : ''}${stagedYellow} for ${match.yellow || 'Yellow'}`);
+        if (stagedBlack !== 0) parts.push(`${stagedBlack > 0 ? '+' : ''}${stagedBlack} for ${match.black || 'Black'}`);
+        return (
+          <div className="s-frame-hint">
+            {parts.length > 0
+              ? `Tap + to record ${parts.join(' and ')}, and start Frame ${frame + 1}`
+              : `No score this frame? Tap + to start Frame ${frame + 1} anyway.`}
+          </div>
+        );
+      })()}
 
       {otherActive && saveState !== 'conflict' && (
         <div className="s-other-scorer-banner">
@@ -561,26 +589,37 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} pendingDelta={pending && pending.side === 'yellow' ? pending.delta : null} onSelect={(d) => selectPending('yellow', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} tapCount={yellowTaps.length} maxTaps={MAX_DISCS_PER_SIDE} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} pendingDelta={pending && pending.side === 'black' ? pending.delta : null} onSelect={(d) => selectPending('black', d)} disabled={locked} />
+          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} tapCount={blackTaps.length} maxTaps={MAX_DISCS_PER_SIDE} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
         </div>
       )}
 
-      {status !== 'complete' && undoStack.length > 0 && (() => {
+      {status !== 'complete' && (pendingTaps.length > 0 || undoStack.length > 0) && (() => {
+        if (pendingTaps.length > 0) {
+          const last = pendingTaps[pendingTaps.length - 1];
+          const sideLabel = last.side === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black');
+          const deltaLabel = last.delta > 0 ? `+${last.delta}` : last.delta;
+          return (
+            <div className="s-undo-bar">
+              <button className="s-undo" onClick={undoLast}>Undo last pick: {deltaLabel} to {sideLabel}</button>
+            </div>
+          );
+        }
         const last = undoStack[undoStack.length - 1];
-        if (!last.pendingSide) {
+        if (last.stagedYellow === 0 && last.stagedBlack === 0) {
           return (
             <div className="s-undo-bar">
               <button className="s-undo" onClick={undoLast}>Undo Frame {last.prevFrame} (no score)</button>
             </div>
           );
         }
-        const sideLabel = last.pendingSide === 'yellow' ? (match.yellow || 'Yellow') : (match.black || 'Black');
-        const deltaLabel = last.pendingDelta > 0 ? `+${last.pendingDelta}` : last.pendingDelta;
+        const parts = [];
+        if (last.stagedYellow !== 0) parts.push(`${last.stagedYellow > 0 ? '+' : ''}${last.stagedYellow} to ${match.yellow || 'Yellow'}`);
+        if (last.stagedBlack !== 0) parts.push(`${last.stagedBlack > 0 ? '+' : ''}${last.stagedBlack} to ${match.black || 'Black'}`);
         return (
           <div className="s-undo-bar">
-            <button className="s-undo" onClick={undoLast}>Undo Frame {last.prevFrame}: {deltaLabel} to {sideLabel}</button>
+            <button className="s-undo" onClick={undoLast}>Undo Frame {last.prevFrame}: {parts.join(', ')}</button>
           </div>
         );
       })()}
@@ -598,42 +637,45 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired }) {
   );
 }
 
-function ScoreSide({ label, score, pendingDelta, onSelect, disabled, puck }) {
+function ScoreSide({ label, score, stagedTotal, tapCount, maxTaps, taps, onTap, disabled, puck }) {
+  const atMax = tapCount >= maxTaps;
   return (
     <div className="s-side">
       <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
-      {pendingDelta != null && (
-        <div className="s-pending">{pendingDelta > 0 ? `+${pendingDelta}` : pendingDelta} pending</div>
+      {stagedTotal !== 0 && (
+        <div className="s-pending">{stagedTotal > 0 ? `+${stagedTotal}` : stagedTotal} pending</div>
       )}
       <div className="s-stepper-grid">
         {SCORE_INCREMENTS.map((inc) => {
-          const selected = pendingDelta === inc.delta;
+          const count = taps.filter((t) => t.delta === inc.delta).length;
           return (
             <button
               key={inc.delta}
               className={[
                 's-stepper',
                 inc.delta < 0 ? 's-stepper-minus' : '',
-                selected ? 's-stepper-selected' : '',
+                count > 0 ? 's-stepper-selected' : '',
               ].filter(Boolean).join(' ')}
-              onClick={() => onSelect(inc.delta)}
-              disabled={disabled}
-              aria-pressed={selected}
+              onClick={() => onTap(inc.delta)}
+              disabled={disabled || atMax}
+              aria-pressed={count > 0}
               aria-label={
                 inc.delta === -10
-                  ? `Select 10 off for ${label} (this frame)`
+                  ? `Add 10 off for ${label} (this frame)`
                   : inc.delta < 0
-                  ? `Select ${inc.delta} for ${label} (this frame)`
-                  : `Select +${inc.delta} for ${label} (this frame)`
+                  ? `Add ${inc.delta} for ${label} (this frame)`
+                  : `Add +${inc.delta} for ${label} (this frame)`
               }
             >
               {inc.label}
+              {count > 1 && <span className="s-stepper-count"> ×{count}</span>}
             </button>
           );
         })}
       </div>
+      {atMax && <div className="s-max-discs">All 4 discs staged</div>}
     </div>
   );
 }
