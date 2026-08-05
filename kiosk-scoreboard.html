@@ -54,6 +54,12 @@
     function showBracket() {
       scoreboardFrame.classList.remove('active');
       bracketFrame.classList.add('active');
+      // The bracket's rotation kept running while it was hidden, so it's
+      // sitting on whatever view it silently drifted to — snap it back to
+      // the first view and restart its dwell timer so a fresh lap starts now.
+      try {
+        bracketFrame.contentWindow.postMessage({ source: 'ilsa-kiosk-host', type: 'reset' }, '*');
+      } catch (e) { /* ignore */ }
       bracketFallbackTimer = setTimeout(showScoreboard, BRACKET_FALLBACK_MS);
     }
 
