@@ -65,14 +65,7 @@ function resolveRegion(liveData, prefix, sizes, quarterIndex) {
     return ids.map((id) => get(id).winner || null);
   });
 
-  // In-progress court scores (see netlify/functions/live-score.js), only
-  // ever present on matches that don't have a winner yet.
-  const roundLive = sizes.map((size) => {
-    const ids = regionMatchIds(prefix, size, quarterIndex);
-    return ids.map((id) => get(id).liveScore || null);
-  });
-
-  return { leafNames, roundWinners, roundLive };
+  return { leafNames, roundWinners };
 }
 
 window.LiveData = { fetchLiveData, regionMatchIds, resolveRegion, LIVE_POLL_MS };
