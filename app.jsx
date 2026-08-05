@@ -110,14 +110,43 @@ function Poster() {
   const byPos = (side, pos) => window.QUARTERS.find(q => q.side === side && q.pos === pos);
   const qLT = byPos('L', 'top'), qLB = byPos('L', 'bottom'), qRT = byPos('R', 'top'), qRB = byPos('R', 'bottom');
 
+  // A team's own score in one match record (by name, not by side, since the
+  // sheet's yellow/black order isn't tied to our left/right layout). Returns
+  // null until that match has a recorded winner — never a live/in-progress
+  // guess.
+  const scoreFor = (match, teamName) => {
+    if (!match || !match.winner || !teamName || teamName === 'TBD') return null;
+    if (match.yellow === teamName) return match.yellowScore || null;
+    if (match.black === teamName) return match.blackScore || null;
+    return null;
+  };
+  // A region's own champion name, straight from its resolved round data —
+  // available before that region's geometry is built, so it can be used to
+  // look up the champion's score in its next (semifinal) match up front.
+  const champNameOf = (resolved) => {
+    const rw = resolved.roundWinners;
+    if (!rw || !rw.length) return null;
+    const last = rw[rw.length - 1];
+    return (last && last[0]) || null;
+  };
+
+  // M4-01/M4-02 = the two semifinal games (Left half: Blue+Red champs, Right
+  // half: Pink+Green champs). M2-01 = final, M2-02 = 3rd place game. Resolved
+  // up front (independent of region geometry) so each region can be told its
+  // own champion's semifinal score/court when it's built below.
+  const finalA = useLiveShape ? (liveMatches['M4-01'] || {}) : null;
+  const finalB = useLiveShape ? (liveMatches['M4-02'] || {}) : null;
+  const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
+  const thirdMatch = useLiveShape ? (liveMatches['M2-02'] || {}) : null;
+
   // ---------- MAIN BRACKET ----------
   const mainMidY = (MAIN_Y0 + MAIN_Y1) / 2;
   const MAIN_GAPS = [305, 295, 285, 255];
   const MAIN_HALF_GAP = 260;
-  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1), roundWinners: mainResolved[qLT.id].roundWinners });
-  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17), roundWinners: mainResolved[qLB.id].roundWinners });
-  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33), roundWinners: mainResolved[qRT.id].roundWinners });
-  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49), roundWinners: mainResolved[qRB.id].roundWinners });
+  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1), roundWinners: mainResolved[qLT.id].roundWinners, roundMatches: mainResolved[qLT.id].roundMatches, extraScore: scoreFor(finalA, champNameOf(mainResolved[qLT.id])) });
+  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17), roundWinners: mainResolved[qLB.id].roundWinners, roundMatches: mainResolved[qLB.id].roundMatches, extraScore: scoreFor(finalA, champNameOf(mainResolved[qLB.id])) });
+  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33), roundWinners: mainResolved[qRT.id].roundWinners, roundMatches: mainResolved[qRT.id].roundMatches, extraScore: scoreFor(finalB, champNameOf(mainResolved[qRT.id])) });
+  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49), roundWinners: mainResolved[qRB.id].roundWinners, roundMatches: mainResolved[qRB.id].roundMatches, extraScore: scoreFor(finalB, champNameOf(mainResolved[qRB.id])) });
 
   const mainGapSum = MAIN_GAPS.reduce((a, b) => a + b, 0);
   const leftHalfX = 100 + mainGapSum + MAIN_HALF_GAP;
@@ -134,12 +163,6 @@ function Poster() {
     ...window.twinBend('m5', leftHalfX, leftHalfY, CHAMPION_X, champY, qLT.color, qLB.color, 4.5),
     ...window.twinBend('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, qRT.color, qRB.color, 4.5),
   ];
-  // M4-01/M4-02 = the two semifinal games (Left half: Blue+Red champs, Right
-  // half: Pink+Green champs). M2-01 = final, M2-02 = 3rd place game.
-  const finalA = useLiveShape ? (liveMatches['M4-01'] || {}) : null;
-  const finalB = useLiveShape ? (liveMatches['M4-02'] || {}) : null;
-  const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
-  const thirdMatch = useLiveShape ? (liveMatches['M2-02'] || {}) : null;
 
   const leftHalfWinner = useLiveShape ? (finalA.winner || 'TBD') : window.pickWinner(regLT.champTeam, regLB.champTeam);
   const rightHalfWinner = useLiveShape ? (finalB.winner || 'TBD') : window.pickWinner(regRT.champTeam, regRB.champTeam);
@@ -159,14 +182,22 @@ function Poster() {
     y0: Math.min(regLT.champY, regRT.champY) - 55, y1: Math.max(regLB.champY, regRB.champY, thirdY) + 70,
   };
 
+  // C4-01/C4-02 = the two consolation semifinal games. C2-01 = consolation
+  // final, C2-02 = consolation 3rd place game. Resolved up front for the same
+  // reason as finalA/finalB above.
+  const cFinalA = useLiveShape ? (liveMatches['C4-01'] || {}) : null;
+  const cFinalB = useLiveShape ? (liveMatches['C4-02'] || {}) : null;
+  const cChampMatch = useLiveShape ? (liveMatches['C2-01'] || {}) : null;
+  const cThirdMatch = useLiveShape ? (liveMatches['C2-02'] || {}) : null;
+
   // ---------- CONSOLATION BRACKET ----------
   const consolMidY = (CONSOL_Y0 + CONSOL_Y1) / 2;
   const CONSOL_GAPS = [420, 400, 300];
   const CONSOL_HALF_GAP = 230;
-  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLT.id].roundWinners });
-  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLB.id].roundWinners });
-  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRT.id].roundWinners });
-  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRB.id].roundWinners });
+  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLT.id].roundWinners, roundMatches: consolResolved[qLT.id].roundMatches, extraScore: scoreFor(cFinalA, champNameOf(consolResolved[qLT.id])) });
+  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLB.id].roundWinners, roundMatches: consolResolved[qLB.id].roundMatches, extraScore: scoreFor(cFinalA, champNameOf(consolResolved[qLB.id])) });
+  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRT.id].roundWinners, roundMatches: consolResolved[qRT.id].roundMatches, extraScore: scoreFor(cFinalB, champNameOf(consolResolved[qRT.id])) });
+  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRB.id].roundWinners, roundMatches: consolResolved[qRB.id].roundMatches, extraScore: scoreFor(cFinalB, champNameOf(consolResolved[qRB.id])) });
 
   const consolGapSum = CONSOL_GAPS.reduce((a, b) => a + b, 0);
   const cLeftHalfX = 100 + consolGapSum + CONSOL_HALF_GAP;
@@ -183,10 +214,6 @@ function Poster() {
     ...window.twinBend('c5', cLeftHalfX, cLeftHalfY, CHAMPION_X, cChampY, qLT.color, qLB.color, 2.25, '7,6'),
     ...window.twinBend('c6', cRightHalfX, cRightHalfY, CHAMPION_X, cChampY, qRT.color, qRB.color, 2.25, '7,6'),
   ];
-  const cFinalA = useLiveShape ? (liveMatches['C4-01'] || {}) : null;
-  const cFinalB = useLiveShape ? (liveMatches['C4-02'] || {}) : null;
-  const cChampMatch = useLiveShape ? (liveMatches['C2-01'] || {}) : null;
-  const cThirdMatch = useLiveShape ? (liveMatches['C2-02'] || {}) : null;
 
   const cLeftHalfWinner = useLiveShape ? (cFinalA.winner || 'TBD') : window.pickWinner(cLT.champTeam, cLB.champTeam);
   const cRightHalfWinner = useLiveShape ? (cFinalB.winner || 'TBD') : window.pickWinner(cRT.champTeam, cRB.champTeam);
@@ -362,13 +389,19 @@ function Poster() {
           <RegionCap x={regRB.champX} y={regRB.champY} color={qRB.color} />
           <JunctionNode x={leftHalfX} y={leftHalfY} size={13} />
           <JunctionNode x={rightHalfX} y={rightHalfY} size={13} />
+          {t.showResults && finalA?.court && (
+            <text x={(regLT.champX + leftHalfX) / 2} y={leftHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalA.court}</text>
+          )}
+          {t.showResults && finalB?.court && (
+            <text x={(regRT.champX + rightHalfX) / 2} y={rightHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalB.court}</text>
+          )}
           <ChampionNode x={CHAMPION_X} y={champY} label1="1ST" label2="PLACE" sub="" size={46} />
 
           <JunctionNode x={CHAMPION_X} y={thirdY} size={20} />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} title="CHAMPIONSHIP GAME" />
-              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} title="3RD PLACE GAME" />
+              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} scoreA={scoreFor(champMatch, leftHalfWinner)} scoreB={scoreFor(champMatch, rightHalfWinner)} court={champMatch?.court} title="CHAMPIONSHIP GAME" />
+              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} scoreA={scoreFor(thirdMatch, leftHalfLoser)} scoreB={scoreFor(thirdMatch, rightHalfLoser)} court={thirdMatch?.court} title="3RD PLACE GAME" />
             </>
           )}
 
@@ -396,13 +429,19 @@ function Poster() {
           <RegionCap x={cRB.champX} y={cRB.champY} color={qRB.color} />
           <JunctionNode x={cLeftHalfX} y={cLeftHalfY} size={10} dashed />
           <JunctionNode x={cRightHalfX} y={cRightHalfY} size={10} dashed />
+          {t.showResults && cFinalA?.court && (
+            <text x={(cLT.champX + cLeftHalfX) / 2} y={cLeftHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalA.court}</text>
+          )}
+          {t.showResults && cFinalB?.court && (
+            <text x={(cRT.champX + cRightHalfX) / 2} y={cRightHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalB.court}</text>
+          )}
           <ChampionNode x={CHAMPION_X} y={cChampY} label1="1ST" label2="PLACE" sub="" size={32} dashed />
 
           <JunctionNode x={CHAMPION_X} y={cThirdY} size={14} dashed />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} title="CHAMPIONSHIP GAME" small />
-              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} title="3RD PLACE GAME" small />
+              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} scoreA={scoreFor(cChampMatch, cLeftHalfWinner)} scoreB={scoreFor(cChampMatch, cRightHalfWinner)} court={cChampMatch?.court} title="CHAMPIONSHIP GAME" small />
+              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} scoreA={scoreFor(cThirdMatch, cLeftHalfLoser)} scoreB={scoreFor(cThirdMatch, cRightHalfLoser)} court={cThirdMatch?.court} title="3RD PLACE GAME" small />
             </>
           )}
 
@@ -535,7 +574,7 @@ function ChampionNode({ x, y, label1, label2, sub, size, dashed }) {
   );
 }
 
-function MatchupLabel({ x, bottomY, teamA, teamB, title, small }) {
+function MatchupLabel({ x, bottomY, teamA, teamB, scoreA, scoreB, court, title, small }) {
   const lh = small ? 15 : 18;
   const fsTeam = small ? 12 : 15;
   const fsVs = small ? 8.5 : 10;
@@ -543,14 +582,18 @@ function MatchupLabel({ x, bottomY, teamA, teamB, title, small }) {
   const yVs = yB - lh;
   const yA = yVs - lh;
   const yTitle = yA - (small ? 22 : 28);
+  const yCourt = yTitle - (small ? 13 : 15);
   return (
     <g>
       {title && (
-        <text x={x} y={yTitle} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={small ? 10 : 12} letterSpacing="2" fill="var(--ink-dim)">{title}</text>
+        <text x={x} y={yCourt} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={small ? 10 : 12} letterSpacing="2" fill="var(--ink-dim)">{title}</text>
       )}
-      <text x={x} y={yA} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamA}</text>
+      {court && (
+        <text x={x} y={yTitle} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize={small ? 9 : 10} letterSpacing="0.8" fill="var(--ink-dim)">COURT {court}</text>
+      )}
+      <text x={x} y={yA} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamA}{scoreA != null && <tspan fontWeight="700" fill="var(--ink-dim)" dx="6">{scoreA}</tspan>}</text>
       <text x={x} y={yVs} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize={fsVs} letterSpacing="1.5" fill="var(--ink-dim)">VS</text>
-      <text x={x} y={yB} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamB}</text>
+      <text x={x} y={yB} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamB}{scoreB != null && <tspan fontWeight="700" fill="var(--ink-dim)" dx="6">{scoreB}</tspan>}</text>
     </g>
   );
 }

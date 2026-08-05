@@ -65,7 +65,14 @@ function resolveRegion(liveData, prefix, sizes, quarterIndex) {
     return ids.map((id) => get(id).winner || null);
   });
 
-  return { leafNames, roundWinners };
+  // Full match records per round — lets callers read each match's final score
+  // (yellowScore/blackScore, once winner is set) and its assigned court.
+  const roundMatches = sizes.map((size) => {
+    const ids = regionMatchIds(prefix, size, quarterIndex);
+    return ids.map((id) => get(id));
+  });
+
+  return { leafNames, roundWinners, roundMatches };
 }
 
 window.LiveData = { fetchLiveData, regionMatchIds, resolveRegion, LIVE_POLL_MS };
