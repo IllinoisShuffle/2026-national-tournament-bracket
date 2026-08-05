@@ -53,13 +53,12 @@ Match Report Sheet, exactly as before.
 ## The "pending" / unofficial nature of what shows up live
 
 Once a match has no winner recorded in the sheet yet, its court-reported
-score becomes eligible to show up in two places:
-
-- **Bracket pages** (`/web-bracket`, `/mobile-bracket`) show a small
-  live-score badge next to that match instead of "TBD."
-- **The Live Scoreboard** (`/scoreboard`) lists it under **"On the
-  Courts"** with the running score, current frame ("Playing Frame 9 of 16,"
-  etc.), and which team is which disc color.
+score becomes eligible to show up on **the Live Scoreboard** (`/scoreboard`)
+under **"On the Courts"** — with the running score, current frame
+("Playing Frame 9 of 16," etc.), and which team is which disc color. The
+bracket pages (`/web-bracket`, `/mobile-bracket`) don't show any of this —
+they just say "TBD" until you enter the official result, so they only ever
+reflect finalized results.
 
 This is explicitly labeled as unofficial, and behaves accordingly:
 

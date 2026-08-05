@@ -80,11 +80,12 @@ match's teams, scores, court, and winner as JSON.
 - Once live, matches without a result yet render as `TBD` rather than a
   guessed winner.
 - Winners always come from the Matches sheet. In-progress scores are a
-  separate, supplementary feed — see "In-progress court scores" below — so
-  the bracket views (`/web-bracket`, `/mobile-bracket`) can now show
-  a small live-score badge next to an undecided match, and `/scoreboard`
-  lists actively-scored matches under "On the Courts" with their running
-  score, and everything else with a court/time assigned under "Up Next".
+  separate, supplementary feed — see "In-progress court scores" below —
+  surfaced only on `/scoreboard`, which lists actively-scored matches under
+  "On the Courts" with their running score, and everything else with a
+  court/time assigned under "Up Next". The bracket views (`/web-bracket`,
+  `/mobile-bracket`) don't show any of this — undecided matches just render
+  as `TBD` until the sheet has a winner.
 
 ### Cost and Sheets API quota
 
