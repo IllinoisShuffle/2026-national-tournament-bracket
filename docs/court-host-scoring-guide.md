@@ -128,9 +128,7 @@ Overtime,"** and disc colors stay on whatever they swapped to at frame 9
   you haven't submitted it yet.
 - **Reset Match** — wipes the whole match back to 0–0, Frame 1. This is for
   when something's gone seriously wrong (wrong match opened, scores way off
-  from the board, etc.) — it asks you to confirm first, and it *can* erase
-  frames you already submitted, so only use it as a real reset, not a
-  quick undo.
+  from the board, etc.), so only use it as a real reset, not a quick undo.
 
 ## Finishing the match
 
