@@ -252,10 +252,38 @@ function Poster() {
 
   React.useEffect(() => {
     if (!isKiosk) return;
-    const id = setInterval(() => {
-      setKioskIndex((i) => (i + 1) % kioskViewsRef.current.length);
-    }, KIOSK_HOLD_MS);
-    return () => clearInterval(id);
+
+    function tick() {
+      setKioskIndex((i) => {
+        const next = (i + 1) % kioskViewsRef.current.length;
+        // Let an embedding page (e.g. the combined kiosk+scoreboard view) know
+        // a full rotation just finished, since how many views that takes
+        // varies as consolation sections come online — a fixed-duration timer
+        // on the outside can't track that on its own.
+        if (next === 0 && window.parent !== window) {
+          window.parent.postMessage({ source: 'ilsa-kiosk', type: 'lap-complete' }, '*');
+        }
+        return next;
+      });
+    }
+
+    let id = setInterval(tick, KIOSK_HOLD_MS);
+
+    // A same-origin embedding page can call this directly to jump back to
+    // the first view and restart the dwell timer from scratch — used when
+    // it reveals this iframe after keeping it hidden (and running) behind
+    // something else, so viewers see a fresh lap start rather than wherever
+    // the rotation silently drifted to while off-screen.
+    window.__ilsaKioskReset = function () {
+      setKioskIndex(0);
+      clearInterval(id);
+      id = setInterval(tick, KIOSK_HOLD_MS);
+    };
+
+    return () => {
+      clearInterval(id);
+      delete window.__ilsaKioskReset;
+    };
   }, [isKiosk]);
 
   React.useEffect(() => {

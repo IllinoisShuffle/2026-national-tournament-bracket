@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2026 Chicago National · Kiosk + Live Scoreboard</title>
+<style>
+  :root { --paper: #F4EEDF; --ink: #15151A; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #1a1a1d; overflow: hidden; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  .frame-stage { position: fixed; inset: 0; }
+  .frame-stage iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.1s ease;
+  }
+  .frame-stage iframe.active { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+  <div class="frame-stage">
+    <iframe id="frame-bracket" class="active" src="web-bracket.html?kiosk&full" title="Bracket kiosk"></iframe>
+    <iframe id="frame-scoreboard" src="scoreboard.html" title="Live scoreboard"></iframe>
+  </div>
+
+  <script>
+    // Two full-screen iframes stay mounted the whole time and just cross-fade
+    // instead of reloading (and re-fetching) every time one comes back on
+    // screen. How many stops the bracket kiosk rotation has varies as
+    // consolation sections unlock mid-tournament, so we can't just hold on it
+    // for a fixed duration — that either cuts a view short or leaves it
+    // sitting on "FULL BRACKET" long after a full lap finished. Instead
+    // app.jsx posts a message when its rotation completes one full lap, and
+    // we switch to the scoreboard on that signal.
+    var SCOREBOARD_HOLD_MS = 20000;
+    var BRACKET_FALLBACK_MS = 180000; // safety net if the lap-complete signal is ever missed
+
+    var bracketFrame = document.getElementById('frame-bracket');
+    var scoreboardFrame = document.getElementById('frame-scoreboard');
+    var bracketFallbackTimer = null;
+
+    function showScoreboard() {
+      clearTimeout(bracketFallbackTimer);
+      bracketFrame.classList.remove('active');
+      scoreboardFrame.classList.add('active');
+      setTimeout(showBracket, SCOREBOARD_HOLD_MS);
+    }
+
+    function showBracket() {
+      scoreboardFrame.classList.remove('active');
+      bracketFrame.classList.add('active');
+      // The bracket's rotation kept running while it was hidden, so it's
+      // sitting on whatever view it silently drifted to — snap it back to
+      // the first view and restart its dwell timer so a fresh lap starts now.
+      // Same-origin, so call straight into the iframe rather than round-
+      // tripping through postMessage.
+      try {
+        if (bracketFrame.contentWindow && typeof bracketFrame.contentWindow.__ilsaKioskReset === 'function') {
+          bracketFrame.contentWindow.__ilsaKioskReset();
+        }
+      } catch (e) { /* ignore cross-origin/load-order edge cases */ }
+      bracketFallbackTimer = setTimeout(showScoreboard, BRACKET_FALLBACK_MS);
+    }
+
+    window.addEventListener('message', function (event) {
+      var msg = event.data;
+      if (!msg || msg.source !== 'ilsa-kiosk' || msg.type !== 'lap-complete') return;
+      if (event.source !== bracketFrame.contentWindow) return;
+      if (bracketFrame.classList.contains('active')) showScoreboard();
+    });
+
+    // Hide the scoreboard's own "All views" link once it loads — it's
+    // same-origin, so we can reach into the iframe, and it's redundant chrome
+    // on an unattended display that's already wrapped in this kiosk shell.
+    scoreboardFrame.addEventListener('load', function () {
+      try {
+        var link = scoreboardFrame.contentDocument.querySelector('.all-views-link');
+        if (link) link.style.display = 'none';
+      } catch (e) { /* ignore cross-origin/load-order edge cases */ }
+    });
+
+    showBracket();
+  </script>
+</body>
+</html>
