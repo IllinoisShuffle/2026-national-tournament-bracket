@@ -33,7 +33,7 @@ function pickCourt(a, b) {
 window.pickCourt = pickCourt;
 
 function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLabels, showResults, slotNumbers, roundWinners, roundMatches, extraScore }) {
-  const { bendPath, nextRoundYs } = window.LayoutHelpers;
+  const { bendPath, nextRoundYs, formatCourt } = window.LayoutHelpers;
   const N = teams.length;
   const S = Math.log2(N);
   const leafYs = teams.map((_, i) => y0 + (i + 0.5) * ((y1 - y0) / N));
@@ -67,7 +67,7 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
           winner,
           aScore: m.yellow === a ? (m.yellowScore || null) : (m.black === a ? (m.blackScore || null) : null),
           bScore: m.yellow === b ? (m.yellowScore || null) : (m.black === b ? (m.blackScore || null) : null),
-          court: m.court || null,
+          court: formatCourt(m.court),
         });
       } else {
         const winner = pickWinner(a, b);

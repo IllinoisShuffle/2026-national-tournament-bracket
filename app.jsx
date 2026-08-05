@@ -67,7 +67,7 @@ function Poster() {
     POSTER_W, POSTER_H, HEADER_H, MAIN_Y0, MAIN_Y1, DIVIDER_Y0, DIVIDER_Y1,
     CONSOL_Y0, CONSOL_Y1, FOOTER_Y0, CHAMPION_X,
   } = window.LayoutConsts;
-  const { bendPath } = window.LayoutHelpers;
+  const { bendPath, formatCourt } = window.LayoutHelpers;
   const { buildRegion } = window;
 
   const dark = t.theme === 'ink';
@@ -138,6 +138,10 @@ function Poster() {
   const finalB = useLiveShape ? (liveMatches['M4-02'] || {}) : null;
   const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
   const thirdMatch = useLiveShape ? (liveMatches['M2-02'] || {}) : null;
+  const finalACourt = formatCourt(finalA?.court);
+  const finalBCourt = formatCourt(finalB?.court);
+  const champMatchCourt = formatCourt(champMatch?.court);
+  const thirdMatchCourt = formatCourt(thirdMatch?.court);
 
   // ---------- MAIN BRACKET ----------
   const mainMidY = (MAIN_Y0 + MAIN_Y1) / 2;
@@ -189,6 +193,10 @@ function Poster() {
   const cFinalB = useLiveShape ? (liveMatches['C4-02'] || {}) : null;
   const cChampMatch = useLiveShape ? (liveMatches['C2-01'] || {}) : null;
   const cThirdMatch = useLiveShape ? (liveMatches['C2-02'] || {}) : null;
+  const cFinalACourt = formatCourt(cFinalA?.court);
+  const cFinalBCourt = formatCourt(cFinalB?.court);
+  const cChampMatchCourt = formatCourt(cChampMatch?.court);
+  const cThirdMatchCourt = formatCourt(cThirdMatch?.court);
 
   // ---------- CONSOLATION BRACKET ----------
   const consolMidY = (CONSOL_Y0 + CONSOL_Y1) / 2;
@@ -389,19 +397,19 @@ function Poster() {
           <RegionCap x={regRB.champX} y={regRB.champY} color={qRB.color} />
           <JunctionNode x={leftHalfX} y={leftHalfY} size={13} />
           <JunctionNode x={rightHalfX} y={rightHalfY} size={13} />
-          {t.showResults && finalA?.court && (
-            <text x={(regLT.champX + leftHalfX) / 2} y={leftHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalA.court}</text>
+          {t.showResults && finalACourt && (
+            <text x={(regLT.champX + leftHalfX) / 2} y={leftHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalACourt}</text>
           )}
-          {t.showResults && finalB?.court && (
-            <text x={(regRT.champX + rightHalfX) / 2} y={rightHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalB.court}</text>
+          {t.showResults && finalBCourt && (
+            <text x={(regRT.champX + rightHalfX) / 2} y={rightHalfY - 15} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="11" letterSpacing="0.8" fill="var(--ink-dim)">COURT {finalBCourt}</text>
           )}
           <ChampionNode x={CHAMPION_X} y={champY} label1="1ST" label2="PLACE" sub="" size={46} />
 
           <JunctionNode x={CHAMPION_X} y={thirdY} size={20} />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} scoreA={scoreFor(champMatch, leftHalfWinner)} scoreB={scoreFor(champMatch, rightHalfWinner)} court={champMatch?.court} title="CHAMPIONSHIP GAME" />
-              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} scoreA={scoreFor(thirdMatch, leftHalfLoser)} scoreB={scoreFor(thirdMatch, rightHalfLoser)} court={thirdMatch?.court} title="3RD PLACE GAME" />
+              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} scoreA={scoreFor(champMatch, leftHalfWinner)} scoreB={scoreFor(champMatch, rightHalfWinner)} court={champMatchCourt} title="CHAMPIONSHIP GAME" />
+              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} scoreA={scoreFor(thirdMatch, leftHalfLoser)} scoreB={scoreFor(thirdMatch, rightHalfLoser)} court={thirdMatchCourt} title="3RD PLACE GAME" />
             </>
           )}
 
@@ -429,19 +437,19 @@ function Poster() {
           <RegionCap x={cRB.champX} y={cRB.champY} color={qRB.color} />
           <JunctionNode x={cLeftHalfX} y={cLeftHalfY} size={10} dashed />
           <JunctionNode x={cRightHalfX} y={cRightHalfY} size={10} dashed />
-          {t.showResults && cFinalA?.court && (
-            <text x={(cLT.champX + cLeftHalfX) / 2} y={cLeftHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalA.court}</text>
+          {t.showResults && cFinalACourt && (
+            <text x={(cLT.champX + cLeftHalfX) / 2} y={cLeftHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalACourt}</text>
           )}
-          {t.showResults && cFinalB?.court && (
-            <text x={(cRT.champX + cRightHalfX) / 2} y={cRightHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalB.court}</text>
+          {t.showResults && cFinalBCourt && (
+            <text x={(cRT.champX + cRightHalfX) / 2} y={cRightHalfY - 12} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize="9" letterSpacing="0.8" fill="var(--ink-dim)">COURT {cFinalBCourt}</text>
           )}
           <ChampionNode x={CHAMPION_X} y={cChampY} label1="1ST" label2="PLACE" sub="" size={32} dashed />
 
           <JunctionNode x={CHAMPION_X} y={cThirdY} size={14} dashed />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} scoreA={scoreFor(cChampMatch, cLeftHalfWinner)} scoreB={scoreFor(cChampMatch, cRightHalfWinner)} court={cChampMatch?.court} title="CHAMPIONSHIP GAME" small />
-              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} scoreA={scoreFor(cThirdMatch, cLeftHalfLoser)} scoreB={scoreFor(cThirdMatch, cRightHalfLoser)} court={cThirdMatch?.court} title="3RD PLACE GAME" small />
+              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} scoreA={scoreFor(cChampMatch, cLeftHalfWinner)} scoreB={scoreFor(cChampMatch, cRightHalfWinner)} court={cChampMatchCourt} title="CHAMPIONSHIP GAME" small />
+              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} scoreA={scoreFor(cThirdMatch, cLeftHalfLoser)} scoreB={scoreFor(cThirdMatch, cRightHalfLoser)} court={cThirdMatchCourt} title="3RD PLACE GAME" small />
             </>
           )}
 
