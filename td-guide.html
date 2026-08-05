@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Live Scoring &amp; Admin — TD/ATD Guide</title>
+<style>
+:root{
+  --paper:#F4EEDF; --ink:#15151A; --ink-dim:rgba(21,21,26,.62);
+  --card:rgba(21,21,26,.035); --card-border:rgba(21,21,26,.13);
+  --accent:#C60C30; --accent-ink:#ffffff; --accent-soft:rgba(198,12,48,.09);
+  --live:#E7433A; --good:#0E8F4F; --good-soft:rgba(14,143,79,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#131315; --ink:#F2ECDD; --ink-dim:rgba(242,236,221,.62);
+    --card:rgba(242,236,221,.045); --card-border:rgba(242,236,221,.14);
+    --accent:#FF5D75; --accent-ink:#15151A; --accent-soft:rgba(255,93,117,.14);
+    --live:#FF6E62; --good:#3ED07A; --good-soft:rgba(62,208,122,.14);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.stripe{height:6px;display:flex}
+.stripe span{flex:1}
+.wrap{max-width:760px;margin:0 auto;padding:36px 22px 64px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--ink-dim);margin:26px 0 10px}
+h1{font-size:clamp(28px,5vw,40px);font-weight:900;letter-spacing:-0.01em;margin:0 0 8px;text-wrap:balance}
+.sub{font-size:15.5px;color:var(--ink-dim);max-width:56ch;margin:0 0 28px}
+nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 34px;padding:14px 0;border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border)}
+nav.jump a{font-size:11.5px;font-weight:700;letter-spacing:0.3px;color:var(--ink-dim);text-decoration:none;background:var(--card);border:1px solid var(--card-border);padding:6px 12px;border-radius:999px}
+nav.jump a:hover{color:var(--ink);border-color:var(--accent)}
+
+.rule-box{background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:26px 24px;margin:0 0 40px}
+.rule-box .rule-eyebrow{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+.rule-box p{margin:0;font-size:19px;font-weight:800;line-height:1.4;text-wrap:balance}
+.rule-box p.sub2{margin-top:10px;font-size:14px;font-weight:600;opacity:.92}
+
+section{margin:0 0 42px}
+h2{font-size:21px;font-weight:900;letter-spacing:-0.01em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+p{margin:0 0 14px;max-width:66ch}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin:0 0 8px;max-width:62ch}
+strong{font-weight:800}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:var(--card);border:1px solid var(--card-border);padding:1px 6px;border-radius:5px}
+
+.callout{border:1.5px solid var(--card-border);background:var(--card);border-radius:12px;padding:16px 18px;margin:0 0 18px}
+.callout.warn{border-color:var(--live);background:color-mix(in srgb, var(--live) 10%, transparent)}
+.callout .label{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);margin:0 0 6px}
+.callout.warn .label{color:var(--live)}
+
+/* --- illustrative mock of the Live Scoreboard states --- */
+.demo-row{display:flex;flex-direction:column;gap:10px;margin:18px 0 22px}
+.mock-card{border:1px solid var(--card-border);background:var(--card);border-radius:12px;padding:12px 14px;font-size:13px}
+.mock-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mock-tag{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.mock-tag.live{color:var(--live)}
+.mock-tag.finished{color:var(--ink-dim)}
+.mock-tag.past{color:var(--ink-dim)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.pulse{animation:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.mock-teams{display:flex;justify-content:space-between;font-weight:700}
+.mock-note{margin-top:8px;font-size:11.5px;color:var(--ink-dim);font-style:italic}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--card-border);border-radius:12px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--card-border);vertical-align:top}
+th{font-size:10.5px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink-dim);background:var(--card)}
+tr:last-child td{border-bottom:none}
+
+.admin-mock{border:1px solid var(--card-border);border-radius:12px;overflow:hidden;margin:16px 0 22px}
+.admin-mock-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--card-border);font-size:12.5px}
+.admin-mock-row:last-child{border-bottom:none}
+.admin-mock-id{font-weight:800}
+.admin-mock-meta{color:var(--ink-dim);font-size:11px}
+.admin-mock-btn{font-size:10.5px;font-weight:800;letter-spacing:0.4px;color:#fff;background:var(--live);border-radius:7px;padding:5px 10px;flex:0 0 auto}
+.pin-chip{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;font-weight:700;background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:4px 10px}
+
+.all-views-link{display:inline-block;font-size:11.5px;font-weight:700;color:var(--ink-dim);text-decoration:none;margin:0 0 18px}
+.all-views-link:hover{color:var(--ink)}
+
+footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--card-border);text-align:center;font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:var(--ink-dim)}
+footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(--paper);padding:6px 14px;border-radius:6px;letter-spacing:1px}
+
+@media (max-width:480px){
+  .mock-top,.mock-teams{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="stripe">
+  <span style="background:#00a1de"></span>
+  <span style="background:#c60c30"></span>
+  <span style="background:#e27ea6"></span>
+  <span style="background:#009b3a"></span>
+</div>
+
+<div class="wrap">
+  <a class="all-views-link" href="/admin">&larr; Back to Live Score Admin</a>
+  <div class="kicker">2026 Chicago National · Royal Palms — For the TD / ATD</div>
+  <h1>Live Scoring, the Sheet &amp; the Admin Page</h1>
+  <p class="sub">A plain-language guide to how court-reported live scores work, why they're never official, and how to use the admin page to clean them up.</p>
+
+  <div class="callout" style="margin-bottom:34px">
+    <div class="label">Who to call</div>
+    The ATD is the technical point of contact for this whole system. If anything about the app itself isn't working — a host's PIN won't work, the admin page won't load, a live score looks stuck or wrong — that's a question for the ATD, not something to troubleshoot solo.
+  </div>
+
+  <nav class="jump">
+    <a href="#rule">The One Rule</a>
+    <a href="#hosts">What Hosts Do</a>
+    <a href="#pending">Pending Scores</a>
+    <a href="#admin">Admin Page</a>
+    <a href="#reference">Quick Reference</a>
+  </nav>
+
+  <div class="rule-box" id="rule">
+    <div class="rule-eyebrow">The one rule that matters</div>
+    <p>The Matches Google Sheet is the only source of truth. Nothing on /score or the Live Scoreboard is ever official.</p>
+    <p class="sub2">If live scoring goes down entirely — a dead phone, an outage, anything — it has zero effect on the tournament. You keep running off the sheet exactly as before this feature existed.</p>
+  </div>
+
+  <section id="hosts">
+    <h2><span class="dot"></span>What court hosts are actually doing</h2>
+    <p>Court hosts log into <code>/score</code> and tap in points as they happen, frame by frame, so spectators not standing at the court can follow along on the Live Scoreboard. When a host finishes a match, they tap <strong>“Complete Match”</strong> — and the app reminds them, on screen, to fill out that match's <strong>Match Report Sheet</strong>, get it signed by the winning team, and bring it to you in the DJ Booth.</p>
+    <p>That's the whole handoff. The app does not notify you automatically. It does not update the sheet. A host finishing a match on their phone changes nothing about your workflow: you still write the final score and winner into the Matches sheet by hand, from the signed Match Report Sheet, exactly as before.</p>
+  </section>
+
+  <section id="pending">
+    <h2><span class="dot"></span>The pending nature of what shows up live</h2>
+    <p>Once a match has no winner in the sheet yet, its court-reported score becomes eligible to appear on the Live Scoreboard, under <strong>“On the Courts.”</strong> The bracket pages don't show any of this — they just say “TBD” until you enter the official result, so they only ever reflect finalized results. On the scoreboard, a match moves through three states:</p>
+
+    <div class="demo-row">
+      <div class="mock-card">
+        <div class="mock-top">
+          <span class="mock-tag live"><span class="pulse"></span>Court 3</span>
+          <span style="font-size:11px;color:var(--ink-dim);font-weight:700">Playing Frame 9 of 16</span>
+        </div>
+        <div class="mock-teams"><span>Reyes / Chen</span><span>6</span></div>
+        <div class="mock-teams"><span>Novak / Park</span><span>4</span></div>
+        <div class="mock-note">In progress — a host is actively tapping this in right now.</div>
+      </div>
+      <div class="mock-card">
+        <div class="mock-top">
+          <span class="mock-tag finished">Just Finished</span>
+        </div>
+        <div class="mock-teams"><span>Reyes / Chen</span><span>16</span></div>
+        <div class="mock-teams"><span>Novak / Park</span><span>11</span></div>
+        <div class="mock-note">Reported by court host · awaiting official score — this is your to-do, not a result.</div>
+      </div>
+      <div class="mock-card">
+        <div class="mock-top">
+          <span class="mock-tag past">Past Results</span>
+        </div>
+        <div class="mock-teams"><span><strong>Reyes / Chen</strong></span><span>16</span></div>
+        <div class="mock-teams"><span style="color:var(--ink-dim)">Novak / Park</span><span>11</span></div>
+        <div class="mock-note">Now official — this only appears once you've entered it in the sheet.</div>
+      </div>
+    </div>
+
+    <p><strong>“Just Finished · awaiting official score”</strong> is the pending state: it's the host's word that the match is over, shown to spectators as informational only, explicitly flagged as unofficial, and still waiting on you. There's no timeout — it sits there until you transcribe the result, however long that takes.</p>
+
+    <div class="callout warn">
+      <div class="label">Worth remembering</div>
+      Always transcribe the final score from that match's <strong>signed Match Report Sheet</strong> — check it's filled out correctly and signed by the winning team — never from what a court host tapped into the app. The instant you fill in a winner, the match drops off “On the Courts” and into “Past Results” automatically.
+    </div>
+  </section>
+
+  <section id="admin">
+    <h2><span class="dot"></span>The admin page</h2>
+    <p><code>/admin</code> lets you inspect and clear the in-progress court-score data directly — the same data behind “On the Courts.” Use it to remove a bad or stale entry, or wipe test data, with no CLI access needed. It's <strong>not linked anywhere public</strong> — reach it by direct URL only.</p>
+
+    <ol>
+      <li>Go to <code>/admin</code> and enter the <span class="pin-chip">Admin PIN</span> — one shared PIN known only to the TD/ATD, separate from individual court-host PINs.</li>
+      <li>You're in until the login expires (12 hours by default) or you close the tab. It's deliberately not remembered longer than that — this page can wipe every live score at once.</li>
+    </ol>
+
+    <div class="admin-mock">
+      <div class="admin-mock-row">
+        <div>
+          <div class="admin-mock-id">M32-05 · Court 3</div>
+          <div class="admin-mock-meta">Reyes / Chen scoring · updated 40s ago · In Progress</div>
+        </div>
+        <span class="admin-mock-btn">Delete</span>
+      </div>
+      <div class="admin-mock-row">
+        <div>
+          <div class="admin-mock-id">C16-02 · Court 1</div>
+          <div class="admin-mock-meta">test entry · updated 3h ago · Complete</div>
+        </div>
+        <span class="admin-mock-btn">Delete</span>
+      </div>
+    </div>
+
+    <p>Every entry shows the match ID, court, who's scoring it, when it last updated, and its score — including matches already finalized in the sheet, which stop showing on the public scoreboard but linger here until cleared. <strong>Delete</strong> removes one row; <strong>Clear all</strong> wipes every entry at once, with a confirmation prompt first.</p>
+
+    <div class="callout">
+      <div class="label">Important</div>
+      Deleting an entry here never changes the official bracket — it only hides a row from the live/in-progress display. There's also no per-person audit trail, since the PIN is shared: don't rely on this page for “who touched what” history. Treat the PIN like a password.
+    </div>
+  </section>
+
+  <section id="reference">
+    <h2><span class="dot"></span>Quick reference</h2>
+    <div class="tbl-wrap">
+      <table>
+        <tbody>
+          <tr><th>What's the official result?</th><td>Whatever is written in the Matches Google Sheet. Always.</td></tr>
+          <tr><th>Does finishing on /score update the sheet?</th><td>No — the host still brings the signed Match Report Sheet to the DJ Booth.</td></tr>
+          <tr><th>What does “Just Finished” mean?</th><td>Host tapped Complete; you haven't entered it in the sheet yet.</td></tr>
+          <tr><th>Can a live score override the sheet?</th><td>No — the sheet always wins the instant you fill it in.</td></tr>
+          <tr><th>What does /admin change on the bracket?</th><td>Nothing — it only clears the supplementary live-score feed.</td></tr>
+          <tr><th>Where do I fix a stuck live score?</th><td><code>/admin</code>, with the TD/ATD admin PIN.</td></tr>
+          <tr><th>Something with the app is broken — who do I ask?</th><td>The ATD — the technical point of contact for this whole system.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Royal Palms Shuffleboard Club · 1750 N. Milwaukee Ave · Chicago IL
+    <div class="tag">TD / ATD Reference</div>
+  </footer>
+</div>
+</body>
+</html>

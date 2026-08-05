@@ -11,8 +11,14 @@ implementation notes below:
 
 - [TD/ATD guide](docs/td-live-scoring-guide.md) — how live scoring and the
   admin page work, and why the Matches sheet is always the official record.
+  Also viewable as a styled page at `/td-guide`, linked from `/admin`.
 - [Court host / court manager guide](docs/court-host-scoring-guide.md) — how
-  to log into `/score` and keep score during a match.
+  to log into `/score` and keep score during a match. Also viewable as a
+  styled page at `/court-host-guide`, linked from `/score`.
+
+Both styled pages are deliberately not linked from the public view picker
+(`index.html`) — they're for the people running `/score` and `/admin`, not
+players/spectators.
 
 ## Views
 
@@ -80,11 +86,12 @@ match's teams, scores, court, and winner as JSON.
 - Once live, matches without a result yet render as `TBD` rather than a
   guessed winner.
 - Winners always come from the Matches sheet. In-progress scores are a
-  separate, supplementary feed — see "In-progress court scores" below — so
-  the bracket views (`/web-bracket`, `/mobile-bracket`) can now show
-  a small live-score badge next to an undecided match, and `/scoreboard`
-  lists actively-scored matches under "On the Courts" with their running
-  score, and everything else with a court/time assigned under "Up Next".
+  separate, supplementary feed — see "In-progress court scores" below —
+  surfaced only on `/scoreboard`, which lists actively-scored matches under
+  "On the Courts" with their running score, and everything else with a
+  court/time assigned under "Up Next". The bracket views (`/web-bracket`,
+  `/mobile-bracket`) don't show any of this — undecided matches just render
+  as `TBD` until the sheet has a winner.
 
 ### Cost and Sheets API quota
 

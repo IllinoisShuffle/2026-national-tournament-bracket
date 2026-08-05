@@ -42,6 +42,16 @@
   to = "/kiosk-scoreboard.html"
   status = 200
 
+[[redirects]]
+  from = "/court-host-guide"
+  to = "/court-host-guide.html"
+  status = 200
+
+[[redirects]]
+  from = "/td-guide"
+  to = "/td-guide.html"
+  status = 200
+
 # Cache-Control/Netlify-CDN-Cache-Control for /.netlify/functions/results are
 # set per-response in results.js (success vs. error need different caching),
 # so no blanket header override here.
