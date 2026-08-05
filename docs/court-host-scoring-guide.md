@@ -76,6 +76,13 @@ see everything you've tapped for this frame at a glance. You can tap
 multiple buttons, on either side, in any order — a frame can have more than
 one disc land, for either team, so there's no one-tap-per-frame limit.
 
+**Fell behind by a frame or two — stepped away, got busy, whatever?** The
+frames along the way are just there to help you keep pace; they don't each
+need to be right. Just stage enough taps to bring the running score up to
+whatever the chalkboard actually shows right now, and hit Submit once to
+catch up in a single step. Matching the current score matters far more
+than getting every frame in between exactly right.
+
 Made a mistake on a single tap? Use the **"Undo last pick"** button that
 appears — it removes just your most recent tap.
 
@@ -171,6 +178,7 @@ attention to before you start.
 | Undo a single tap | "Undo last pick" |
 | Clear the whole current frame | "Reset Frame" |
 | Move to the next frame | "Submit Frame N & Start Frame N+1" |
+| Fell behind a frame or two | Stage enough taps to match the current board, then Submit once to catch up |
 | Finish the match | "Complete Match" — **then bring the signed Match Report Sheet to the ATD in the DJ Booth** |
 | Fix a mis-tapped "Complete" | "Reopen (mis-tap)" |
 | Start completely over on a match | "Reset Match" (confirms first) |
