@@ -11,8 +11,14 @@ implementation notes below:
 
 - [TD/ATD guide](docs/td-live-scoring-guide.md) — how live scoring and the
   admin page work, and why the Matches sheet is always the official record.
+  Also viewable as a styled page at `/td-guide`, linked from `/admin`.
 - [Court host / court manager guide](docs/court-host-scoring-guide.md) — how
-  to log into `/score` and keep score during a match.
+  to log into `/score` and keep score during a match. Also viewable as a
+  styled page at `/court-host-guide`, linked from `/score`.
+
+Both styled pages are deliberately not linked from the public view picker
+(`index.html`) — they're for the people running `/score` and `/admin`, not
+players/spectators.
 
 ## Views
 

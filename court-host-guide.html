@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Court Scorekeeping — Host &amp; Manager Guide</title>
+<style>
+:root{
+  --paper:#F4EEDF; --ink:#15151A; --ink-dim:rgba(21,21,26,.62);
+  --card:rgba(21,21,26,.035); --card-border:rgba(21,21,26,.13);
+  --accent:#009B3A; --accent-ink:#ffffff; --accent-soft:rgba(0,155,58,.10);
+  --live:#E7433A;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#131315; --ink:#F2ECDD; --ink-dim:rgba(242,236,221,.62);
+    --card:rgba(242,236,221,.045); --card-border:rgba(242,236,221,.14);
+    --accent:#39D97A; --accent-ink:#0C1F13; --accent-soft:rgba(57,217,122,.14);
+    --live:#FF6E62;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.stripe{height:6px;display:flex}
+.stripe span{flex:1}
+.wrap{max-width:760px;margin:0 auto;padding:36px 22px 64px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--ink-dim);margin:26px 0 10px}
+h1{font-size:clamp(28px,5vw,40px);font-weight:900;letter-spacing:-0.01em;margin:0 0 8px;text-wrap:balance}
+.sub{font-size:15.5px;color:var(--ink-dim);max-width:56ch;margin:0 0 28px}
+nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 34px;padding:14px 0;border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border)}
+nav.jump a{font-size:11.5px;font-weight:700;letter-spacing:0.3px;color:var(--ink-dim);text-decoration:none;background:var(--card);border:1px solid var(--card-border);padding:6px 12px;border-radius:999px}
+nav.jump a:hover{color:var(--ink);border-color:var(--accent)}
+
+.rule-box{background:var(--accent);color:var(--accent-ink);border-radius:16px;padding:26px 24px;margin:0 0 40px}
+.rule-box .rule-eyebrow{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+.rule-box p{margin:0;font-size:18px;font-weight:800;line-height:1.4;text-wrap:balance}
+.rule-box p.sub2{margin-top:10px;font-size:14px;font-weight:600;opacity:.92}
+
+section{margin:0 0 42px}
+h2{font-size:21px;font-weight:900;letter-spacing:-0.01em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+p{margin:0 0 14px;max-width:66ch}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin:0 0 8px;max-width:62ch}
+strong{font-weight:800}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.92em;background:var(--card);border:1px solid var(--card-border);padding:1px 6px;border-radius:5px}
+
+.steps{counter-reset:step;list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:14px}
+.steps li{counter-increment:step;position:relative;padding-left:40px;margin:0}
+.steps li::before{content:counter(step);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+
+.callout{border:1.5px solid var(--card-border);background:var(--card);border-radius:12px;padding:16px 18px;margin:0 0 18px}
+.callout.warn{border-color:var(--live);background:color-mix(in srgb, var(--live) 10%, transparent)}
+.callout .label{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-dim);margin:0 0 6px}
+.callout.warn .label{color:var(--live)}
+
+/* --- illustrative mock of the /score scorekeeper screen --- */
+.phone-mock{border:1px solid var(--card-border);background:var(--card);border-radius:18px;padding:18px;margin:18px 0 22px;max-width:340px}
+.pm-frame{text-align:center;font-size:11.5px;font-weight:800;letter-spacing:0.6px;color:var(--ink-dim);margin-bottom:14px}
+.pm-score{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
+.pm-side{flex:1;text-align:center;border:1.5px solid var(--card-border);border-radius:12px;padding:10px 6px}
+.pm-name{font-size:11px;font-weight:700;margin-bottom:2px}
+.pm-num{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;margin-bottom:8px}
+.pm-pending{font-size:10.5px;font-weight:800;color:var(--accent);margin-bottom:6px;height:12px}
+.pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pm-btn{border:1.5px solid var(--ink);border-radius:8px;padding:7px 0;font-size:11.5px;font-weight:800;background:transparent}
+.pm-btn.sel{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--accent);border-color:var(--accent)}
+.pm-btn.minus{background:var(--live);color:#fff;border-color:var(--live)}
+.pm-dash{font-size:20px;font-weight:900;color:var(--ink-dim);align-self:center}
+.pm-submit{display:block;width:100%;text-align:center;background:var(--ink);color:var(--paper);border-radius:10px;padding:11px;font-size:13px;font-weight:800}
+.pm-hint{text-align:center;font-size:10.5px;color:var(--ink-dim);margin:8px 0 0}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--card-border);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--card-border);vertical-align:top}
+th{font-size:10.5px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink-dim);background:var(--card);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+
+.pin-chip{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;font-weight:700;background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:4px 10px}
+.disc{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;border:1.5px solid var(--card-border)}
+.disc.yellow{background:#F2C230}
+.disc.black{background:#1b1b1b}
+
+.all-views-link{display:inline-block;font-size:11.5px;font-weight:700;color:var(--ink-dim);text-decoration:none;margin:0 0 18px}
+.all-views-link:hover{color:var(--ink)}
+
+footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--card-border);text-align:center;font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:var(--ink-dim)}
+footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(--paper);padding:6px 14px;border-radius:6px;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="stripe">
+  <span style="background:#00a1de"></span>
+  <span style="background:#c60c30"></span>
+  <span style="background:#e27ea6"></span>
+  <span style="background:#009b3a"></span>
+</div>
+
+<div class="wrap">
+  <a class="all-views-link" href="/score">&larr; Back to Court Scorekeeping</a>
+  <div class="kicker">2026 Chicago National · Royal Palms — For Court Hosts &amp; Court Managers</div>
+  <h1>Keeping Score on /score</h1>
+  <p class="sub">How to log in, follow along frame by frame, and wrap up a match — using the exact buttons you'll see on your phone.</p>
+
+  <nav class="jump">
+    <a href="#golden">The Short Version</a>
+    <a href="#login">Logging In</a>
+    <a href="#pick">Picking a Match</a>
+    <a href="#score">Scoring</a>
+    <a href="#finish">Finishing Up</a>
+    <a href="#conflict">Two Hosts, One Match</a>
+    <a href="#reference">Quick Reference</a>
+  </nav>
+
+  <div class="rule-box" id="golden">
+    <div class="rule-eyebrow">The short version</div>
+    <p>The players keep score on the physical chalkboard — that hasn't changed. This app is a convenience for spectators, not the official record.</p>
+    <p class="sub2">Keep it matching the chalkboard as the match goes, and if you notice an obvious mis-call in the moment (“that was an 8, not a 7”), it's fine to say something — that's not considered coaching. When the match ends, fill out the Match Report Sheet, get it signed by the winning team, and bring it to the ATD in the DJ Booth, same as always.</p>
+  </div>
+
+  <section id="login">
+    <h2><span class="dot"></span>Logging in</h2>
+    <p>There's one link for every host — nobody needs a link specific to their court. Your ATD will send it directly; bookmark it once you have it.</p>
+    <ol class="steps">
+      <li>Open the link — you'll see <strong>“Court Scorekeeping.”</strong></li>
+      <li>Enter the <span class="pin-chip">name + PIN</span> your ATD gave you.</li>
+      <li>Tap <strong>Log in.</strong></li>
+    </ol>
+    <p>Your login stays active on that device for about 18 hours, so you shouldn't need to log in again mid-tournament. Only people the ATD has set up can log in — there's no free-text name field, so every score update on the board is attributed to a real, verified person. PIN trouble, or the app not working, goes to the <strong>ATD</strong> — they're the technical point of contact for this whole system.</p>
+  </section>
+
+  <section id="pick">
+    <h2><span class="dot"></span>Picking your match</h2>
+    <p>After logging in you'll see every unfinished match, across all courts. If your login has a home court, the list starts filtered to it — tap <strong>All / Court 1 / Court 2 / …</strong> any time to change it. It's a convenience filter only: you can score any match on any court, say if you're covering for someone.</p>
+    <p>If another host is actively updating a match, you'll see <strong>“Being scored by &lt;name&gt;”</strong> under it — a heads-up, not a lock (see “Two hosts, one match” below).</p>
+  </section>
+
+  <section id="score">
+    <h2><span class="dot"></span>Scoring the match</h2>
+    <p>Tap the zone the disc landed in. Shuffleboard doesn't score in single points, so the grid maps to the board:</p>
+
+    <div class="phone-mock">
+      <div class="pm-frame">Playing Frame 9 of 16</div>
+      <div class="pm-score">
+        <div class="pm-side">
+          <div class="pm-name"><span class="disc black"></span>Reyes / Chen</div>
+          <div class="pm-num">14</div>
+          <div class="pm-pending">+8 pending</div>
+          <div class="pm-grid">
+            <div class="pm-btn sel">+8</div><div class="pm-btn">+7</div>
+            <div class="pm-btn">+10</div><div class="pm-btn minus">−10</div>
+            <div class="pm-btn">+1</div><div class="pm-btn minus">−1</div>
+          </div>
+        </div>
+        <div class="pm-dash">–</div>
+        <div class="pm-side">
+          <div class="pm-name"><span class="disc yellow"></span>Novak / Park</div>
+          <div class="pm-num">9</div>
+          <div class="pm-pending" style="visibility:hidden">—</div>
+          <div class="pm-grid">
+            <div class="pm-btn">+8</div><div class="pm-btn">+7</div>
+            <div class="pm-btn">+10</div><div class="pm-btn minus">−10</div>
+            <div class="pm-btn">+1</div><div class="pm-btn minus">−1</div>
+          </div>
+        </div>
+      </div>
+      <div class="pm-submit">Submit Frame 9 &amp; Start Frame 10</div>
+      <div class="pm-hint">Submit records +8 for Reyes / Chen, and will start Frame 10.</div>
+    </div>
+
+    <table style="margin-bottom:16px">
+      <tbody>
+        <tr><th>+8 / +7 / +10</th><td>Disc landed in that scoring zone</td></tr>
+        <tr><th>−10</th><td>“10 off” — a disc hanging past the line costs that team 10</td></tr>
+        <tr><th>+1 / −1</th><td>Convenience nudge, for keeping the app in sync with the board</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Tapping doesn't save right away.</strong> It stages the pick for the frame in progress — you'll see a highlighted button and a “pending” total. Tap as many buttons as you need, on either side, in any order; a frame can have more than one disc land. <strong>Undo last pick</strong> removes just your latest tap, and <strong>Reset Frame</strong> clears everything staged so far this frame.</p>
+
+    <div class="callout">
+      <div class="label">Fell behind a frame or two?</div>
+      The frames along the way are just there to help you keep pace — they don't each need to be right. Stage enough taps to bring the running score up to whatever the chalkboard actually shows right now, then hit Submit once to catch up in a single step. Matching the current score matters far more than getting every frame in between exactly right.
+    </div>
+
+    <p>Tap the big button at the bottom when the frame's done — normally <strong>“Submit Frame N &amp; Start Frame N+1.”</strong> On a frame that ends the match, it relabels to <strong>“…&amp; Complete Match”</strong> and finishes the match in the same tap. Nothing landed for either team? Submit still advances — a scoreless “wash” frame is normal.</p>
+
+    <div class="callout">
+      <div class="label">Disc colors &amp; the frame counter</div>
+      The header always reads “Playing Frame N of 16” — the score shown reflects everything <em>before</em> frame N, since it's still in progress. <strong>Disc colors swap at frame 9</strong>: the app updates the dot automatically once you cross that line, so just keep tapping the same team's buttons regardless of which color they're currently shooting.
+    </div>
+
+    <p>If the match is tied after frame 16, just keep scoring it the same way — the header switches to “Playing Frame N · Overtime,” and disc colors stay on whatever they swapped to at frame 9 (no swapping back).</p>
+
+    <p>Something went more wrong than one bad tap? <strong>Reset Match</strong> wipes the whole match back to 0–0, Frame 1 — use it only as a real do-over.</p>
+  </section>
+
+  <section id="finish">
+    <h2><span class="dot"></span>Finishing up</h2>
+    <p>Once the match is truly over, tap <strong>Complete Match</strong> (or it happens automatically on a decisive frame 16+, as above). You'll land on a “Marked complete” screen with the final score.</p>
+    <div class="callout warn">
+      <div class="label">This is the step that matters most</div>
+      Fill out that match's <strong>Match Report Sheet</strong>, make sure it's filled out correctly, get it <strong>signed by the winning team</strong>, and bring it to the <strong>ATD in the DJ Booth</strong>. Tapping Complete only updates what spectators see — it does <strong>not</strong> notify the TD or ATD, write to the official tournament sheet, or advance any bracket.
+    </div>
+    <p>Tapped Complete by mistake? <strong>Reopen (mis-tap)</strong> goes back to live scoring.</p>
+  </section>
+
+  <section id="conflict">
+    <h2><span class="dot"></span>Two hosts, one match</h2>
+    <p>If you try to save and someone else updated that match in the last few minutes, you'll see:</p>
+    <div class="callout">“&lt;name&gt; is currently scoring this — take over?”</div>
+    <p><strong>Take over</strong> saves your update anyway — use this if you should actually be the one scoring right now. <strong>Cancel</strong> backs out and loads their latest score instead. This is a real check, not just a warning, so it's worth heeding the “Being scored by” note before you start.</p>
+  </section>
+
+  <section id="reference">
+    <h2><span class="dot"></span>Quick reference</h2>
+    <div class="tbl-wrap">
+      <table>
+        <tbody>
+          <tr><th>Log in</th><td>Name + PIN your ATD gave you</td></tr>
+          <tr><th>Find your match</th><td>“Pick your match” list, filter by court if needed</td></tr>
+          <tr><th>Score a point</th><td>Tap +8 / +7 / +10 / −10 (or ±1 to nudge) — stages, doesn't save yet</td></tr>
+          <tr><th>Undo one tap</th><td>“Undo last pick”</td></tr>
+          <tr><th>Clear the current frame</th><td>“Reset Frame”</td></tr>
+          <tr><th>Move to the next frame</th><td>“Submit Frame N &amp; Start Frame N+1”</td></tr>
+          <tr><th>Fell behind a frame or two</th><td>Stage enough taps to match the current board, then Submit once to catch up</td></tr>
+          <tr><th>Finish the match</th><td>“Complete Match” — <strong>then bring the signed Match Report Sheet to the ATD in the DJ Booth</strong></td></tr>
+          <tr><th>Fix a mis-tapped Complete</th><td>“Reopen (mis-tap)”</td></tr>
+          <tr><th>Start completely over</th><td>“Reset Match” (confirms first)</td></tr>
+          <tr><th>PIN doesn't work / app is broken</th><td>Ask the ATD — the technical contact for this system</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Royal Palms Shuffleboard Club · 1750 N. Milwaukee Ave · Chicago IL
+    <div class="tag">Court Host / Manager Reference</div>
+  </footer>
+</div>
+</body>
+</html>

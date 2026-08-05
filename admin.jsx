@@ -148,6 +148,7 @@ function AdminApp() {
       <div className="a-header">
         <h1>Live Score Admin</h1>
         <div className="a-actions">
+          <a className="a-guide-link" href="/td-guide">Guide</a>
           <button className="a-btn" onClick={() => load(auth)} disabled={busyId !== null}>Refresh</button>
           <button
             className="a-btn a-btn-danger"
@@ -246,6 +247,7 @@ function PinGate({ onSuccess }) {
           </button>
           {error && <p className="a-error">{error}</p>}
         </form>
+        <a className="a-guide-link a-guide-link-block" href="/td-guide">TD / ATD guide &rarr;</a>
       </div>
     </div>
   );
