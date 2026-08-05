@@ -35,11 +35,10 @@ const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 // worth 10, 8, 7, with "10 off" (a disc hanging past the line) costing the
 // shooting team 10. Order here maps onto a 2-column CSS grid as row 1
 // [8, 7], row 2 [10, -10], row 3 [+1, -1]. The +1/-1 pair isn't a real
-// shuffleboard value — it exists so a host can correct the board to match
-// whatever the chalkboard actually shows, including a total that "shouldn't"
-// be reachable from 7/8/10 zone values (e.g. the chalk got scored 6 instead
-// of 8 by mistake). This app always mirrors the physical scoreboard exactly,
-// mistakes included — it's not the source of truth.
+// shuffleboard value — it's a convenience nudge for keeping the running
+// total in sync with the physical chalkboard, including totals that
+// "shouldn't" be reachable from 7/8/10 zone values alone. The chalkboard,
+// not this app, is the source of truth.
 const MAX_UNDO = 5;
 // Matches play 16 regulation frames; a tie after 16 goes to extra frames in
 // pairs until someone's ahead. There's no fixed ceiling on those, so the

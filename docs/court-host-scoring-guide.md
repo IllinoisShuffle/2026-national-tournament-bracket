@@ -6,12 +6,12 @@ technical details, see the main [README](../README.md).
 
 **The short version:** the players keep score on the physical chalkboard at
 the court — that has not changed. This app is a convenience for spectators
-watching the Live Scoreboard, not the official scorekeeping record. Your job
-is to **mirror whatever the chalkboard shows**, tap for tap, even if you
-think the players got a number wrong — you're transcribing the board, not
-correcting it. When the match ends, you still fill out that match's **Match
-Report Sheet**, get it signed by the winning team, and bring it to the ATD
-in the DJ Booth, the same as always.
+watching the Live Scoreboard, not the official scorekeeping record. Keep it
+matching the chalkboard as the match goes, and if you notice an obvious
+mis-call in the moment ("that was an 8, not a 7"), it's fine to say
+something — that's not considered coaching. When the match ends, you still
+fill out that match's **Match Report Sheet**, get it signed by the winning
+team, and bring it to the ATD in the DJ Booth, the same as always.
 
 ## Getting the link
 
@@ -67,7 +67,11 @@ You'll see both teams' names with a disc-color dot, the running score, and a
 | **+7** | Disc landed in the 7 zone |
 | **+10** | Disc landed in the 10 zone |
 | **−10** | "10 off" — a disc hanging past the line, which *costs* that team 10 |
-| **+1 / −1** | Manual correction — nudge a total up or down by one, for matching whatever the chalkboard actually shows |
+| **+1 / −1** | Convenience nudge — bump a total up or down by one to keep the app in sync with the board |
+
+Once a frame's been submitted and the next one's underway, that frame's
+number is considered locked in — so it's worth fixing a mis-tap before you
+move on. This is a rare edge case, not something you'll typically run into.
 
 **Tapping a button does not save immediately.** It stages a pick for the
 frame currently in progress — you'll see a **"pending"** total appear under
@@ -167,7 +171,7 @@ attention to before you start.
 |---|---|
 | Log in | Enter the name + PIN your ATD gave you |
 | Find your match | "Pick your match" list, filter by court if needed |
-| Score a point | Tap +8 / +7 / +10 / −10 (or +1/−1 to correct) — stages it, doesn't save yet |
+| Score a point | Tap +8 / +7 / +10 / −10 (or +1/−1 to nudge) — stages it, doesn't save yet |
 | Undo a single tap | "Undo last pick" |
 | Clear the whole current frame | "Reset Frame" |
 | Move to the next frame | "Submit Frame N & Start Frame N+1" |
