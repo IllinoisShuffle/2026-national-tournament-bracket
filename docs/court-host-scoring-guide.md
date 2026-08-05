@@ -84,16 +84,13 @@ Tap **Reset Frame.**
 
 ### Ending the frame
 
-When play for that frame is actually done, tap the big button at the
-bottom — normally labeled **"Submit Frame N & Start Frame N+1,"** which
-records whatever you staged and moves on to the next frame.
+Tap the big button at the bottom when the frame's done. It's normally
+labeled **"Submit Frame N & Start Frame N+1."** On a frame that ends the
+match, it relabels to **"...& Complete Match"** and finishes the match in
+the same tap.
 
-When the match actually ends, the button automatically switches to
-**"Submit Frame N & Complete Match"** instead — one tap both records the
-frame and finishes the match.
-
-If nothing landed for either team that frame (a "wash"), you can still tap
-Submit — it just advances to the next frame with no score change.
+Nothing landed for either team that frame (a "wash")? Submit still
+advances, with no score change.
 
 A hint line right above the button tells you exactly what tapping it will
 do (e.g. "Submit records +8 for Yellow, and will start Frame 10"), so you
