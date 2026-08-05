@@ -269,23 +269,20 @@ function Poster() {
 
     let id = setInterval(tick, KIOSK_HOLD_MS);
 
-    // An embedding page can ask us to jump back to the first view and
-    // restart the dwell timer from scratch — used when it reveals this
-    // iframe after keeping it hidden (and running) behind something else,
-    // so viewers always see a fresh lap start rather than wherever the
-    // rotation silently drifted to while off-screen.
-    function handleMessage(event) {
-      const msg = event.data;
-      if (!msg || msg.source !== 'ilsa-kiosk-host' || msg.type !== 'reset' || event.source !== window.parent) return;
+    // A same-origin embedding page can call this directly to jump back to
+    // the first view and restart the dwell timer from scratch — used when
+    // it reveals this iframe after keeping it hidden (and running) behind
+    // something else, so viewers see a fresh lap start rather than wherever
+    // the rotation silently drifted to while off-screen.
+    window.__ilsaKioskReset = function () {
       setKioskIndex(0);
       clearInterval(id);
       id = setInterval(tick, KIOSK_HOLD_MS);
-    }
-    window.addEventListener('message', handleMessage);
+    };
 
     return () => {
       clearInterval(id);
-      window.removeEventListener('message', handleMessage);
+      delete window.__ilsaKioskReset;
     };
   }, [isKiosk]);
 

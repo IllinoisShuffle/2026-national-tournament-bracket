@@ -57,9 +57,13 @@
       // The bracket's rotation kept running while it was hidden, so it's
       // sitting on whatever view it silently drifted to — snap it back to
       // the first view and restart its dwell timer so a fresh lap starts now.
+      // Same-origin, so call straight into the iframe rather than round-
+      // tripping through postMessage.
       try {
-        bracketFrame.contentWindow.postMessage({ source: 'ilsa-kiosk-host', type: 'reset' }, '*');
-      } catch (e) { /* ignore */ }
+        if (bracketFrame.contentWindow && typeof bracketFrame.contentWindow.__ilsaKioskReset === 'function') {
+          bracketFrame.contentWindow.__ilsaKioskReset();
+        }
+      } catch (e) { /* ignore cross-origin/load-order edge cases */ }
       bracketFallbackTimer = setTimeout(showScoreboard, BRACKET_FALLBACK_MS);
     }
 
