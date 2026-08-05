@@ -69,9 +69,10 @@ You'll see both teams' names with a disc-color dot, the running score, and a
 | **−10** | "10 off" — a disc hanging past the line, which *costs* that team 10 |
 | **+1 / −1** | Convenience nudge — bump a total up or down by one to keep the app in sync with the board |
 
-Once a frame's been submitted and the next one's underway, that frame's
-number is considered locked in — so it's worth fixing a mis-tap before you
-move on. This is a rare edge case, not something you'll typically run into.
+If a frame's number is wrong and the *following* frame gets completed
+before it's caught, that earlier number stands — so it's worth fixing a
+mistake before the next frame wraps up. This is a rare edge case, not
+something you'll typically run into.
 
 **Tapping a button does not save immediately.** It stages a pick for the
 frame currently in progress — you'll see a **"pending"** total appear under
