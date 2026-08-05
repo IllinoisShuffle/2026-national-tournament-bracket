@@ -114,10 +114,10 @@ function Poster() {
   const mainMidY = (MAIN_Y0 + MAIN_Y1) / 2;
   const MAIN_GAPS = [305, 295, 285, 255];
   const MAIN_HALF_GAP = 260;
-  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1), roundWinners: mainResolved[qLT.id].roundWinners, roundLive: mainResolved[qLT.id].roundLive });
-  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17), roundWinners: mainResolved[qLB.id].roundWinners, roundLive: mainResolved[qLB.id].roundLive });
-  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33), roundWinners: mainResolved[qRT.id].roundWinners, roundLive: mainResolved[qRT.id].roundLive });
-  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49), roundWinners: mainResolved[qRB.id].roundWinners, roundLive: mainResolved[qRB.id].roundLive });
+  const regLT = buildRegion({ key: 'm-lt', quarter: qLT, teams: quarterTeams[qLT.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+1), roundWinners: mainResolved[qLT.id].roundWinners });
+  const regLB = buildRegion({ key: 'm-lb', quarter: qLB, teams: quarterTeams[qLB.id], x0: 100, gaps: MAIN_GAPS, dir: 1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+17), roundWinners: mainResolved[qLB.id].roundWinners });
+  const regRT = buildRegion({ key: 'm-rt', quarter: qRT, teams: quarterTeams[qRT.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: MAIN_Y0 + 68, y1: mainMidY - 10, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+33), roundWinners: mainResolved[qRT.id].roundWinners });
+  const regRB = buildRegion({ key: 'm-rb', quarter: qRB, teams: quarterTeams[qRB.id], x0: POSTER_W - 100, gaps: MAIN_GAPS, dir: -1, y0: mainMidY + 58, y1: MAIN_Y1 - 20, style: 'train', showLabels: t.showTeamNames, showResults: t.showResults, slotNumbers: Array.from({length:16},(_,i)=>i+49), roundWinners: mainResolved[qRB.id].roundWinners });
 
   const mainGapSum = MAIN_GAPS.reduce((a, b) => a + b, 0);
   const leftHalfX = 100 + mainGapSum + MAIN_HALF_GAP;
@@ -163,10 +163,10 @@ function Poster() {
   const consolMidY = (CONSOL_Y0 + CONSOL_Y1) / 2;
   const CONSOL_GAPS = [420, 400, 300];
   const CONSOL_HALF_GAP = 230;
-  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLT.id].roundWinners, roundLive: consolResolved[qLT.id].roundLive });
-  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLB.id].roundWinners, roundLive: consolResolved[qLB.id].roundLive });
-  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRT.id].roundWinners, roundLive: consolResolved[qRT.id].roundLive });
-  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRB.id].roundWinners, roundLive: consolResolved[qRB.id].roundLive });
+  const cLT = buildRegion({ key: 'c-lt', quarter: qLT, teams: quarterConsolTeams[qLT.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLT.id].roundWinners });
+  const cLB = buildRegion({ key: 'c-lb', quarter: qLB, teams: quarterConsolTeams[qLB.id], x0: 100, gaps: CONSOL_GAPS, dir: 1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qLB.id].roundWinners });
+  const cRT = buildRegion({ key: 'c-rt', quarter: qRT, teams: quarterConsolTeams[qRT.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: CONSOL_Y0 + 58, y1: consolMidY - 10, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRT.id].roundWinners });
+  const cRB = buildRegion({ key: 'c-rb', quarter: qRB, teams: quarterConsolTeams[qRB.id], x0: POSTER_W - 100, gaps: CONSOL_GAPS, dir: -1, y0: consolMidY + 68, y1: CONSOL_Y1 - 30, style: 'bus', showLabels: t.showTeamNames, showResults: t.showResults, roundWinners: consolResolved[qRB.id].roundWinners });
 
   const consolGapSum = CONSOL_GAPS.reduce((a, b) => a + b, 0);
   const cLeftHalfX = 100 + consolGapSum + CONSOL_HALF_GAP;
@@ -339,8 +339,8 @@ function Poster() {
           <JunctionNode x={CHAMPION_X} y={thirdY} size={20} />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} title="CHAMPIONSHIP GAME" liveScore={!champMatch?.winner ? champMatch?.liveScore : null} />
-              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} title="3RD PLACE GAME" liveScore={!thirdMatch?.winner ? thirdMatch?.liveScore : null} />
+              <MatchupLabel x={CHAMPION_X} bottomY={champY - 46 - 10} teamA={leftHalfWinner} teamB={rightHalfWinner} title="CHAMPIONSHIP GAME" />
+              <MatchupLabel x={CHAMPION_X} bottomY={thirdY - 20 - 10} teamA={leftHalfLoser} teamB={rightHalfLoser} title="3RD PLACE GAME" />
             </>
           )}
 
@@ -373,8 +373,8 @@ function Poster() {
           <JunctionNode x={CHAMPION_X} y={cThirdY} size={14} dashed />
           {t.showResults && t.showTeamNames && (
             <>
-              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} title="CHAMPIONSHIP GAME" small liveScore={!cChampMatch?.winner ? cChampMatch?.liveScore : null} />
-              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} title="3RD PLACE GAME" small liveScore={!cThirdMatch?.winner ? cThirdMatch?.liveScore : null} />
+              <MatchupLabel x={CHAMPION_X} bottomY={cChampY - 32 - 8} teamA={cLeftHalfWinner} teamB={cRightHalfWinner} title="CHAMPIONSHIP GAME" small />
+              <MatchupLabel x={CHAMPION_X} bottomY={cThirdY - 14 - 8} teamA={cLeftHalfLoser} teamB={cRightHalfLoser} title="3RD PLACE GAME" small />
             </>
           )}
 
@@ -507,7 +507,7 @@ function ChampionNode({ x, y, label1, label2, sub, size, dashed }) {
   );
 }
 
-function MatchupLabel({ x, bottomY, teamA, teamB, title, small, liveScore }) {
+function MatchupLabel({ x, bottomY, teamA, teamB, title, small }) {
   const lh = small ? 15 : 18;
   const fsTeam = small ? 12 : 15;
   const fsVs = small ? 8.5 : 10;
@@ -523,11 +523,6 @@ function MatchupLabel({ x, bottomY, teamA, teamB, title, small, liveScore }) {
       <text x={x} y={yA} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamA}</text>
       <text x={x} y={yVs} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize={fsVs} letterSpacing="1.5" fill="var(--ink-dim)">VS</text>
       <text x={x} y={yB} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="800" fontSize={fsTeam} letterSpacing="0.3" fill="var(--ink)">{teamB}</text>
-      {liveScore && (
-        <text x={x} y={yB + lh} textAnchor="middle" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontWeight="700" fontSize={small ? 9 : 10.5} letterSpacing="0.5" fill="#c0392b">
-          {`${liveScore.yellowScore}–${liveScore.blackScore} ● LIVE`}
-        </text>
-      )}
     </g>
   );
 }
