@@ -14,7 +14,7 @@
       }
       if (/[?&](full|choose)\b/.test(location.search)) return;
       var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-      if (isNarrow) location.replace('mobile-bracket.html');
+      if (isNarrow) location.replace('/mobile-bracket');
     })();
   </script>
   <style>
@@ -157,7 +157,7 @@
   </style>
 </head>
 <body>
-  <a class="all-views-link" href="index.html?choose">All views ↗</a>
+  <a class="all-views-link" href="/?choose">All views ↗</a>
   <div id="root"></div>
 
   <!-- React + Babel -->

@@ -14,7 +14,7 @@ for the ATD, not something to troubleshoot solo.
 ## The one rule that matters
 
 **The Matches Google Sheet is the only source of truth. Nothing on
-`score.html` or the Live Scoreboard is ever official.**
+`/score` or the Live Scoreboard is ever official.**
 
 Court hosts scoring a match on their phones write to a separate, low-stakes
 holding area (not the sheet). That data only exists to give spectators and
@@ -39,7 +39,7 @@ Concretely:
 
 ## What court hosts are actually doing
 
-Court hosts log into `score.html` (see the companion Court Host guide) and
+Court hosts log into `/score` (see the companion Court Host guide) and
 tap in points as they happen, frame by frame. When they finish a match they
 tap "Complete Match" and — this is the important part — **fill out that
 match's Match Report Sheet, get it signed by the winning team, and bring it
@@ -55,9 +55,9 @@ Match Report Sheet, exactly as before.
 Once a match has no winner recorded in the sheet yet, its court-reported
 score becomes eligible to show up in two places:
 
-- **Bracket pages** (`web-bracket.html`, `mobile-bracket.html`) show a small
+- **Bracket pages** (`/web-bracket`, `/mobile-bracket`) show a small
   live-score badge next to that match instead of "TBD."
-- **The Live Scoreboard** (`scoreboard.html`) lists it under **"On the
+- **The Live Scoreboard** (`/scoreboard`) lists it under **"On the
   Courts"** with the running score, current frame ("Playing Frame 9 of 16,"
   etc.), and which team is which disc color.
 
@@ -89,22 +89,22 @@ filled out correctly and signed by the winning team before you enter it —
 not from what a court host tapped into the app. The host's app is a
 convenience, not a substitute for the paper record.
 
-## The admin page (`admin.html`)
+## The admin page (`/admin`)
 
-`admin.html` is a companion tool for inspecting and clearing out the
+`/admin` is a companion tool for inspecting and clearing out the
 in-progress court-score data directly — the same data that feeds "On the
 Courts." It exists so you (or the ATD) can clean up test entries, a
 mis-scored match, or a match where the host never tapped "Complete" and it's
 stuck showing stale data — without needing any technical/CLI access.
 
 **It is unlinked from the public site on purpose.** It won't appear on the
-picker page (`index.html?choose`) or anywhere a spectator could stumble into
+picker page (`/?choose`) or anywhere a spectator could stumble into
 it. Only reachable if you go to the URL directly — bookmark it, or keep the
 link somewhere private.
 
 ### Getting in
 
-1. Go to `admin.html` directly.
+1. Go to `/admin` directly.
 2. Enter the **admin PIN** — a single shared PIN known only to the TD/ATD
    (set up in advance as a Netlify environment variable, separate from the
    individual court-host PINs). This is not per-person; anyone with the PIN
@@ -153,6 +153,6 @@ link somewhere private.
 | Does a court host finishing a match on their phone update the sheet? | No. They still bring the signed Match Report Sheet to the ATD in the DJ Booth. |
 | What does "Just Finished · awaiting official score" mean? | The court host tapped "Complete," but you haven't entered the result in the sheet yet. It's a to-do reminder, not an official result. |
 | Can a live score ever override or contest the sheet? | No — the sheet always wins the instant you fill it in. |
-| What does `admin.html` change on the actual bracket? | Nothing. It only clears the supplementary live/in-progress score feed. |
-| Where do I go to fix a wrong or stuck live score? | `admin.html`, with the TD/ATD admin PIN. |
+| What does `/admin` change on the actual bracket? | Nothing. It only clears the supplementary live/in-progress score feed. |
+| Where do I go to fix a wrong or stuck live score? | `/admin`, with the TD/ATD admin PIN. |
 | Something with the app is broken — who do I ask? | The ATD — they're the technical point of contact for this whole system. |

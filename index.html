@@ -12,7 +12,7 @@
   (function () {
     if (/[?&]choose\b/.test(location.search)) return;
     var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-    location.replace(isNarrow ? 'mobile-bracket.html' : 'web-bracket.html');
+    location.replace(isNarrow ? '/mobile-bracket' : '/web-bracket');
   })();
 </script>
 <style>
@@ -52,27 +52,27 @@
     <p class="venue">ROYAL PALMS · CHICAGO IL · AUGUST 8&ndash;9 2026</p>
 
     <div class="cards">
-      <a class="card" href="web-bracket.html?full">
+      <a class="card" href="/web-bracket?full">
         <div class="kicker">Desktop / Zoomable</div>
         <div class="title">Web Bracket</div>
         <div class="desc">Full 64-team subway &amp; bus-route bracket poster. Pinch/scroll to zoom, pan around the board.</div>
       </a>
-      <a class="card" href="mobile-bracket.html">
+      <a class="card" href="/mobile-bracket">
         <div class="kicker">Phone-friendly</div>
         <div class="title">Mobile Bracket</div>
         <div class="desc">Vertical, single-column layout for checking results on the go at the venue.</div>
       </a>
-      <a class="card" href="scoreboard.html">
+      <a class="card" href="/scoreboard">
         <div class="kicker">Live / Auto-refreshing</div>
         <div class="title">Live Scoreboard</div>
         <div class="desc">What's on the courts right now, with scores, plus what's up next.</div>
       </a>
-      <a class="card" href="web-bracket.html?kiosk&full">
+      <a class="card" href="/web-bracket?kiosk&full">
         <div class="kicker">Unattended Display</div>
         <div class="title">TV / Kiosk Mode</div>
         <div class="desc">No mouse needed &mdash; auto-cycles through the bracket on a timer. Built for a lobby TV or venue monitor.</div>
       </a>
-      <a class="card" href="kiosk-scoreboard.html">
+      <a class="card" href="/kiosk-scoreboard">
         <div class="kicker">Single-Screen Combo</div>
         <div class="title">Kiosk + Scoreboard</div>
         <div class="desc">For one lobby TV instead of two &mdash; cycles the bracket kiosk, then holds on the live scoreboard, on repeat.</div>
