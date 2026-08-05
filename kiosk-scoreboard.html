@@ -30,15 +30,22 @@
 
   <script>
     // Two full-screen iframes stay mounted the whole time and just cross-fade
-    // on a timer, so each keeps polling live-data in the background instead
-    // of reloading (and re-fetching) every time it comes back on screen.
-    var BRACKET_HOLD_MS = 60000;   // let the bracket kiosk rotation run for a while
-    var SCOREBOARD_HOLD_MS = 20000; // then hold on the live scoreboard
+    // instead of reloading (and re-fetching) every time one comes back on
+    // screen. How many stops the bracket kiosk rotation has varies as
+    // consolation sections unlock mid-tournament, so we can't just hold on it
+    // for a fixed duration — that either cuts a view short or leaves it
+    // sitting on "FULL BRACKET" long after a full lap finished. Instead
+    // app.jsx posts a message when its rotation completes one full lap, and
+    // we switch to the scoreboard on that signal.
+    var SCOREBOARD_HOLD_MS = 20000;
+    var BRACKET_FALLBACK_MS = 180000; // safety net if the lap-complete signal is ever missed
 
     var bracketFrame = document.getElementById('frame-bracket');
     var scoreboardFrame = document.getElementById('frame-scoreboard');
+    var bracketFallbackTimer = null;
 
     function showScoreboard() {
+      clearTimeout(bracketFallbackTimer);
       bracketFrame.classList.remove('active');
       scoreboardFrame.classList.add('active');
       setTimeout(showBracket, SCOREBOARD_HOLD_MS);
@@ -47,8 +54,15 @@
     function showBracket() {
       scoreboardFrame.classList.remove('active');
       bracketFrame.classList.add('active');
-      setTimeout(showScoreboard, BRACKET_HOLD_MS);
+      bracketFallbackTimer = setTimeout(showScoreboard, BRACKET_FALLBACK_MS);
     }
+
+    window.addEventListener('message', function (event) {
+      var msg = event.data;
+      if (!msg || msg.source !== 'ilsa-kiosk' || msg.type !== 'lap-complete') return;
+      if (event.source !== bracketFrame.contentWindow) return;
+      if (bracketFrame.classList.contains('active')) showScoreboard();
+    });
 
     // Hide the scoreboard's own "All views" link once it loads — it's
     // same-origin, so we can reach into the iframe, and it's redundant chrome
@@ -60,7 +74,7 @@
       } catch (e) { /* ignore cross-origin/load-order edge cases */ }
     });
 
-    setTimeout(showScoreboard, BRACKET_HOLD_MS);
+    showBracket();
   </script>
 </body>
 </html>

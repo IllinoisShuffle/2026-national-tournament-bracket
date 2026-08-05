@@ -253,7 +253,17 @@ function Poster() {
   React.useEffect(() => {
     if (!isKiosk) return;
     const id = setInterval(() => {
-      setKioskIndex((i) => (i + 1) % kioskViewsRef.current.length);
+      setKioskIndex((i) => {
+        const next = (i + 1) % kioskViewsRef.current.length;
+        // Let an embedding page (e.g. the combined kiosk+scoreboard view) know
+        // a full rotation just finished, since how many views that takes
+        // varies as consolation sections come online — a fixed-duration timer
+        // on the outside can't track that on its own.
+        if (next === 0 && window.parent !== window) {
+          window.parent.postMessage({ source: 'ilsa-kiosk', type: 'lap-complete' }, '*');
+        }
+        return next;
+      });
     }, KIOSK_HOLD_MS);
     return () => clearInterval(id);
   }, [isKiosk]);
