@@ -13,10 +13,10 @@ const MATCH_ID_RE = /^([MC])(\d+)-(\d+)$/i;
 // number past this just reads as "Overtime" rather than "of 16".
 const REGULATION_FRAMES = 16;
 // Teams play frames 1-8 on the color the sheet lists them under, then swap
-// to the other physical puck color for frame 9 onward — including overtime,
+// to the other physical disc color for frame 9 onward — including overtime,
 // which stays on the post-swap color rather than flipping back. The sheet's
 // yellow/black columns always identify the same two teams throughout (that's
-// where names and scores come from); only which puck color is drawn next to
+// where names and scores come from); only which disc color is drawn next to
 // them changes.
 const COLOR_FLIP_FRAME = 8;
 
@@ -265,7 +265,7 @@ function MatchCard({ m }) {
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
-  // Once a match is finished, the yellow/black puck colors are no longer
+  // Once a match is finished, the yellow/black disc colors are no longer
   // meaningful — a team plays both colors over the course of a match (see
   // COLOR_FLIP_FRAME) — so swap them for a win/loss tag based on the score
   // the host reported. A tie (shouldn't happen — overtime frames keep
@@ -286,8 +286,8 @@ function MatchCard({ m }) {
         </span>
       </div>
       <div className="sb-round">{m.roundLabel}{frameLabel ? ` · ${frameLabel}` : ''}</div>
-      <TeamRow puck={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={yellowScore} finished={finished} result={yellowResult} />
-      <TeamRow puck={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={blackScore} finished={finished} result={blackResult} />
+      <TeamRow disc={colorsFlipped ? 'black' : 'yellow'} name={m.yellow} score={yellowScore} finished={finished} result={yellowResult} />
+      <TeamRow disc={colorsFlipped ? 'yellow' : 'black'} name={m.black} score={blackScore} finished={finished} result={blackResult} />
       {(finished || m.time || m.approxEnd) && (
         <div className="sb-card-foot">
           {finished
@@ -299,13 +299,13 @@ function MatchCard({ m }) {
   );
 }
 
-function TeamRow({ puck, name, score, finished, result }) {
+function TeamRow({ disc, name, score, finished, result }) {
   return (
     <div className="sb-team-row">
       <span className="sb-team-name">
         {finished
           ? (result && <span className={`sb-result-tag sb-result-tag-${result}`}>{result === 'win' ? 'W' : 'L'}</span>)
-          : <span className={`sb-puck sb-puck-${puck}`} />}
+          : <span className={`sb-disc sb-disc-${disc}`} />}
         <span className="name">{name || 'TBD'}</span>
       </span>
       <span className="sb-score">{score != null ? score : '–'}</span>

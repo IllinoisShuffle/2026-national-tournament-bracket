@@ -8,9 +8,10 @@
 //
 // This page never writes to the Matches Google Sheet. It POSTs to
 // netlify/functions/live-score.js, which stores in-progress scores in
-// Netlify Blobs, keyed by match ID. The TD/ATD still manually transcribes
-// the final score/winner into the Matches tab — this page's "Match
-// complete" button just freezes the display and asks the host to tell them.
+// Netlify Blobs, keyed by match ID. The ATD still manually transcribes the
+// final score/winner into the Matches tab from the signed Match Report
+// Sheet — this page's "Match complete" button just freezes the display and
+// reminds the host to bring that sheet in.
 
 const AUTH_ENDPOINT = '/.netlify/functions/score-auth';
 const SCORE_ENDPOINT = '/.netlify/functions/live-score';
@@ -31,24 +32,23 @@ const AUTH_KEY = 'scoreAuth';
 const ACTIVE_THRESHOLD_MS = 5 * 60 * 1000;
 
 // Shuffleboard doesn't score in single points — the triangle's zones are
-// worth 10, 8, 7, with "10 off" (a puck hanging past the line) costing the
+// worth 10, 8, 7, with "10 off" (a disc hanging past the line) costing the
 // shooting team 10. Order here maps onto a 2-column CSS grid as row 1
 // [8, 7], row 2 [10, -10], row 3 [+1, -1]. The +1/-1 pair isn't a real
-// shuffleboard value — it exists so a host can correct the board to match
-// whatever the chalkboard actually shows, including a total that "shouldn't"
-// be reachable from 7/8/10 zone values (e.g. the chalk got scored 6 instead
-// of 8 by mistake). This app always mirrors the physical scoreboard exactly,
-// mistakes included — it's not the source of truth.
+// shuffleboard value — it's a convenience nudge for keeping the running
+// total in sync with the physical chalkboard, including totals that
+// "shouldn't" be reachable from 7/8/10 zone values alone. The chalkboard,
+// not this app, is the source of truth.
 const MAX_UNDO = 5;
 // Matches play 16 regulation frames; a tie after 16 goes to extra frames in
 // pairs until someone's ahead. There's no fixed ceiling on those, so the
 // frame counter just keeps climbing past 16 rather than wrapping/resetting.
 const REGULATION_FRAMES = 16;
 // Teams play frames 1-8 on the color the sheet lists them under, then swap
-// to the other physical puck color for frame 9 onward — including overtime,
+// to the other physical disc color for frame 9 onward — including overtime,
 // which stays on the post-swap color rather than flipping back. match.yellow
 // / match.black (and their scores) always identify the same two teams
-// throughout; only which puck color is shown for them changes. Mirrors
+// throughout; only which disc color is shown for them changes. Mirrors
 // COLOR_FLIP_FRAME in app-scoreboard.jsx.
 const COLOR_FLIP_FRAME = 8;
 const SCORE_INCREMENTS = [
@@ -416,7 +416,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
   // Staged, not-yet-saved taps for the frame in progress. A shuffleboard
-  // frame can score up to 4 discs per side (8 total) — more than one puck
+  // frame can score up to 4 discs per side (8 total) — more than one disc
   // landing for a side, or for both sides, in the same frame is normal —
   // so this is a list of {side, delta} taps rather than a single pick.
   // Applied to the running total only once the host taps "Next Frame".
@@ -667,14 +667,14 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
         <div className="s-done">
           <p className="s-done-title">Marked complete</p>
           <p className="s-done-score">{match.yellow || 'Yellow'} {yellowScore} &ndash; {blackScore} {match.black || 'Black'}</p>
-          <p className="s-done-note">Tell the TD/ATD so they can enter the final score into the Matches sheet.</p>
+          <p className="s-done-note">Fill out the Match Report Sheet, get it signed by the winning team, and bring it to the ATD in the DJ Booth.</p>
           <button className="s-reopen" onClick={reopen} disabled={locked}>Reopen (mis-tap)</button>
         </div>
       ) : (
         <div className="s-score">
-          <ScoreSide puck={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
+          <ScoreSide disc={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
           <div className="s-dash">&ndash;</div>
-          <ScoreSide puck={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
+          <ScoreSide disc={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
         </div>
       )}
 
@@ -745,10 +745,10 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
   );
 }
 
-function ScoreSide({ label, score, stagedTotal, taps, onTap, disabled, puck }) {
+function ScoreSide({ label, score, stagedTotal, taps, onTap, disabled, disc }) {
   return (
     <div className="s-side">
-      <span className={`s-puck s-puck-${puck}`} aria-hidden="true" />
+      <span className={`s-disc s-disc-${disc}`} aria-hidden="true" />
       <div className="s-side-label">{label}</div>
       <div className="s-score-value">{score}</div>
       {/* Always mounted, just hidden when empty — reserves its height so
