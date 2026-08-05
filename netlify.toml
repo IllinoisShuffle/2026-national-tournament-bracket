@@ -5,6 +5,38 @@
 [functions]
   node_bundler = "esbuild"
 
+# Rewrites (status 200) so pages are reachable at clean paths without the
+# .html extension while the underlying static files keep their names.
+[[redirects]]
+  from = "/score"
+  to = "/score.html"
+  status = 200
+
+[[redirects]]
+  from = "/web-bracket"
+  to = "/web-bracket.html"
+  status = 200
+
+[[redirects]]
+  from = "/mobile-bracket"
+  to = "/mobile-bracket.html"
+  status = 200
+
+[[redirects]]
+  from = "/scoreboard"
+  to = "/scoreboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/print-poster"
+  to = "/print-poster.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
 # Cache-Control/Netlify-CDN-Cache-Control for /.netlify/functions/results are
 # set per-response in results.js (success vs. error need different caching),
 # so no blanket header override here.

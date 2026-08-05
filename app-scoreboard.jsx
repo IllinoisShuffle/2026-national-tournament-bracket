@@ -170,8 +170,8 @@ function Scoreboard() {
               {window.QUARTERS.map((q) => <span key={q.id} style={{ background: q.color }} />)}
             </div>
             <nav className="sb-nav">
-              <a href="web-bracket.html?full">Full Bracket ↗</a>
-              <a href="mobile-bracket.html">Mobile Bracket ↗</a>
+              <a href="/web-bracket?full">Full Bracket ↗</a>
+              <a href="/mobile-bracket">Mobile Bracket ↗</a>
             </nav>
           </div>
           <div className="sb-meta">
