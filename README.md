@@ -12,33 +12,34 @@ implementation notes below:
 - [TD/ATD guide](docs/td-live-scoring-guide.md) — how live scoring and the
   admin page work, and why the Matches sheet is always the official record.
 - [Court host / court manager guide](docs/court-host-scoring-guide.md) — how
-  to log into `score.html` and keep score during a match.
+  to log into `/score` and keep score during a match.
 
 ## Views
 
 | Page | URL | Purpose |
 |---|---|---|
-| Auto-redirect | `index.html` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
-| Web Bracket | `web-bracket.html` | Full 64-team zoomable/pannable poster. |
-| TV / Kiosk Mode | `web-bracket.html?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
-| Mobile Bracket | `mobile-bracket.html` | Vertical, single-column layout for checking results on a phone. |
-| Live Scoreboard | `scoreboard.html` | Matches currently on the court — scores, court number, and what's up next. |
-| Court Scorekeeping | `score.html` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. |
-| Print Poster | `print-poster.html` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
+| Auto-redirect | `/` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
+| Web Bracket | `/web-bracket` | Full 64-team zoomable/pannable poster. |
+| TV / Kiosk Mode | `/web-bracket?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
+| Mobile Bracket | `/mobile-bracket` | Vertical, single-column layout for checking results on a phone. |
+| Live Scoreboard | `/scoreboard` | Matches currently on the court — scores, court number, and what's up next. |
+| Court Scorekeeping | `/score` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. |
+| Print Poster | `/print-poster` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
+| Kiosk + Scoreboard | `/kiosk-scoreboard` | Single-screen combo for one lobby TV — cycles the bracket kiosk, then holds on the live scoreboard. |
 
-Both `web-bracket.html` and `mobile-bracket.html` link back to the picker via
+Both `/web-bracket` and `/mobile-bracket` link back to the picker via
 an "All views" link in the corner.
 
-`web-bracket.html` also redirects narrow viewports (≤700px) straight to the
-mobile layout, the same way `index.html` does — so a direct link, bookmark,
+`/web-bracket` also redirects narrow viewports (≤700px) straight to the
+mobile layout, the same way `/` does — so a direct link, bookmark,
 or QR code that happens to land there from a phone still gets the readable
 layout instead of a shrunk-down poster. Add `?full` to force the desktop
 poster on a small screen anyway.
 
 ### TV / kiosk mode
 
-Add `?kiosk` to `web-bracket.html` (e.g.
-`web-bracket.html?kiosk`) for unattended displays — a lobby TV, a monitor at
+Add `?kiosk` to `/web-bracket` (e.g.
+`/web-bracket?kiosk`) for unattended displays — a lobby TV, a monitor at
 the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
 
 - Hides the tweaks panel, zoom toolbar, and "All views" link.
@@ -66,7 +67,7 @@ the venue, etc. — where there's no mouse or touchscreen to pan/zoom:
 
 ## Live results
 
-`web-bracket.html`, `mobile-bracket.html`, and `scoreboard.html` poll a
+`/web-bracket`, `/mobile-bracket`, and `/scoreboard` poll a
 Netlify Function (`netlify/functions/results.js`) every 15 seconds, which
 reads the "Matches" tab of the tournament Google Sheet and returns each
 match's teams, scores, court, and winner as JSON.
@@ -74,14 +75,14 @@ match's teams, scores, court, and winner as JSON.
 - If the function is unreachable (not deployed yet, offline, etc.), the
   bracket pages fall back to the original demo behavior — mock teams with a
   deterministic simulated winner — so the site still works without any
-  backend configured. `scoreboard.html` falls back to a small labeled set of
+  backend configured. `/scoreboard` falls back to a small labeled set of
   demo matches instead, since it has no bracket to derive results from.
 - Once live, matches without a result yet render as `TBD` rather than a
   guessed winner.
 - Winners always come from the Matches sheet. In-progress scores are a
   separate, supplementary feed — see "In-progress court scores" below — so
-  the bracket views (`web-bracket.html`, `mobile-bracket.html`) can now show
-  a small live-score badge next to an undecided match, and `scoreboard.html`
+  the bracket views (`/web-bracket`, `/mobile-bracket`) can now show
+  a small live-score badge next to an undecided match, and `/scoreboard`
   lists actively-scored matches under "On the Courts" with their running
   score, and everything else with a court/time assigned under "Up Next".
 
@@ -116,9 +117,9 @@ for both data-integrity and concurrent-editing reasons).
 
 Instead, in-progress scores are tracked in **Netlify Blobs** — a separate,
 low-stakes store, keyed by match ID (e.g. `M32-07`), written by court hosts
-via `score.html` and the `live-score` function:
+via `/score` and the `live-score` function:
 
-- **`score.html`** — a single URL for every court host, nothing to
+- **`/score`** — a single URL for every court host, nothing to
   distribute per-court. A host logs in once with their name and a PIN (see
   "Court host login" below), then sees the same match feed as everything
   else (`/.netlify/functions/results`), lists every unfinished match, and
@@ -126,7 +127,7 @@ via `score.html` and the `live-score` function:
   the page narrows the list — it's a convenience filter against the sheet's
   `Court` column, remembered per-device via `localStorage`, not an access
   restriction (a logged-in host can score any match, any court).
-- **`netlify/functions/live-score.js`** — the write endpoint `score.html`
+- **`netlify/functions/live-score.js`** — the write endpoint `/score`
   POSTs to. Requires a valid auth token (see below), validates the match ID,
   score values, and frame number, then stores
   `{ matchId, court, yellowScore, blackScore, status, scorer, frame, updatedAt }`
@@ -134,13 +135,13 @@ via `score.html` and the `live-score` function:
   comes from the verified token, never from the request body. It never
   touches the Google Sheets credentials — this endpoint can only ever affect
   the supplementary live feed, never the Matches tab itself. `frame` is
-  host-advanced (an "End Frame" +/- control on `score.html`), not derived
+  host-advanced (an "End Frame" +/- control on `/score`), not derived
   from the score — there's no reliable way to infer a frame boundary from
   point taps alone. Matches play 16 regulation frames; a tie after 16 goes
   to extra frames in pairs with no fixed cap, so the scoreboard shows
   "Playing Frame N of 16" or "Playing Frame N · Overtime" past that — the
   "Playing" makes clear frame N is in progress and the score reflects the
-  frames before it, not that frame N just finished. `score.html` shows the
+  frames before it, not that frame N just finished. `/score` shows the
   same wording, plus a hint under the +/- control telling the host exactly
   when to tap it ("Tap + once Frame N ends, to start Frame N+1"). Teams play frames 1-8 on
   the color the sheet lists them under, then swap physical disc color for
@@ -160,7 +161,7 @@ via `score.html` and the `live-score` function:
 Only known court hosts can record scores, and every score update is tied to
 a real, server-verified name (not free-text):
 
-- **`netlify/functions/score-auth.js`** — `score.html`'s login screen POSTs
+- **`netlify/functions/score-auth.js`** — `/score`'s login screen POSTs
   `{ name, pin }` here. It's checked against a **"Hosts" tab** on the same
   tournament Google Sheet (columns `Name | Court | PIN`), which the TD
   manages by hand the same way they already manage the Matches tab — adding,
@@ -168,7 +169,7 @@ a real, server-verified name (not free-text):
   only (it prefills the host's court filter after login), not an access
   restriction. On a match, the function signs a token embedding the host's
   name and an expiry (`SCORE_AUTH_TTL_HOURS`, default 18h — long enough to
-  cover a full tournament day) and returns it to `score.html`, which stores
+  cover a full tournament day) and returns it to `/score`, which stores
   it in `localStorage` and attaches it as `Authorization: Bearer <token>` on
   every write to `live-score.js`.
 - The token is a minimal HMAC-signed value (Node's built-in `crypto`, no JWT
@@ -193,18 +194,18 @@ a real, server-verified name (not free-text):
 both trying to record scores is a real scenario at a live event, so a write
 from a different verified host than whoever most recently updated an
 in-progress match (within the last 5 minutes) is rejected with `409` instead
-of silently overwriting. `score.html` shows a "`<name>` is currently scoring
+of silently overwriting. `/score` shows a "`<name>` is currently scoring
 this — take over?" prompt; confirming retries the same write with an
 explicit override flag. The check uses Netlify Blobs' conditional-write
 primitives (`getWithMetadata`/`setJSON`'s `onlyIfMatch`) rather than a
 read-then-blind-write, so a genuine race between two near-simultaneous
 writes is also caught rather than silently letting the second one win.
 
-`score.html` is deliberately **not** linked from the public `index.html?choose`
+`/score` is deliberately **not** linked from the public `/?choose`
 picker — share the single link directly (text message, printed QR code)
 rather than publishing it.
 
-**`admin.html`** is a companion page (also unlinked, direct-URL-only) for
+**`/admin`** is a companion page (also unlinked, direct-URL-only) for
 inspecting and purging the `live-scores` store itself — the in-app
 replacement for running `netlify blobs:list`/`netlify blobs:delete` by hand
 to clean up test entries. It reads/writes via a new
@@ -216,7 +217,7 @@ either a single entry (`{ matchId }`) or every entry at once
 Gated by a single **admin PIN** (`ADMIN_PIN` env var) — a static secret known
 only to the TD/ATD, not a per-person login like court hosts get, since
 there's no need to know *who* purged an entry, only that it was authorized.
-Like the court-host login, the raw PIN is only ever sent once: `admin.html`'s
+Like the court-host login, the raw PIN is only ever sent once: `/admin`'s
 PIN prompt POSTs it to `netlify/functions/admin-auth.js`, which checks it
 with a constant-time comparison and — on a match — signs a short-lived token
 (same HMAC mechanism as the court-host token, `_shared/hmacToken.js`, keyed
@@ -255,14 +256,19 @@ Babel, so any static file server works.
 
 ```bash
 python3 -m http.server 8000
-open http://localhost:8000/index.html
+open http://localhost:8000/
 ```
 
-`index.html` auto-redirects to the mobile or web layout based on window
+`/` auto-redirects to the mobile or web layout based on window
 width — add `?choose` to the URL to see the manual picker instead. Since
 there's no backend here, the pages fall back to the built-in demo bracket
 (mock teams, simulated winners) automatically. That's expected — no errors,
 no live data.
+
+Plain `http.server` has no rewrite engine, so the clean paths in the Views
+table above (`/score`, `/web-bracket`, etc.) only work under Netlify (Option
+B below, or the deployed site) — here, use the actual filename instead (e.g.
+`http://localhost:8000/score.html`).
 
 ### Option B: Netlify CLI (matches production, includes live data)
 
@@ -295,12 +301,12 @@ it.
      "Hosts" tab to the same spreadsheet with columns `Name | Court | PIN`
      (see "Court host login" above).
    - `SCORE_AUTH_SECRET` — any long random string, used to sign court-host
-     login tokens. Required for `score.html` logins to work at all; treat it
+     login tokens. Required for `/score` logins to work at all; treat it
      like a password (don't commit it).
    - `SCORE_AUTH_TTL_HOURS` (optional) — defaults to `18`. How long a
      court-host login stays valid before they need to log in again.
    - `ADMIN_PIN` — any PIN/passphrase known only to the TD/ATD, required for
-     `admin.html` to work at all. Unlike the court-host PINs, this isn't
+     `/admin` to work at all. Unlike the court-host PINs, this isn't
      stored in the spreadsheet — set it directly as a Netlify env var. It
      also doubles as the signing secret for admin login tokens, so treat it
      like a password (don't commit it).

@@ -1,6 +1,6 @@
 # Court Host / Court Manager Guide — Scoring a Match
 
-This is a plain-language walkthrough of `score.html`, the page court hosts
+This is a plain-language walkthrough of `/score`, the page court hosts
 and court managers use to keep a live running score during a match. For the
 technical details, see the main [README](../README.md).
 
