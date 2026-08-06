@@ -25,7 +25,8 @@ function MobilePoster() {
   const isLive = !!liveData;
   const liveMatches = liveData ? liveData.matches : {};
   // Before the first fetch resolves, render the bracket as "live with no
-  // results yet" (all blank) instead of the mock demo teams, so a connected
+  // results yet" (blank slots, TBD in the Final Four/Rankings) instead of
+  // the mock demo teams, so a connected
   // backend's real data pops into an empty bracket rather than visibly
   // overwriting fake sample names. Only show the demo/mock bracket once
   // we've confirmed there's genuinely no backend to talk to.
@@ -96,28 +97,28 @@ function MobilePoster() {
   const champMatch = useLiveShape ? (liveMatches['M2-01'] || {}) : null;
   const thirdMatch = useLiveShape ? (liveMatches['M2-02'] || {}) : null;
 
-  const mainChampsPairA = useLiveShape ? (finalA.winner || '') : window.pickWinnerM(regions[0].r.champTeam, regions[1].r.champTeam);
-  const mainChampsPairB = useLiveShape ? (finalB.winner || '') : window.pickWinnerM(regions[2].r.champTeam, regions[3].r.champTeam);
-  const mainLoserA = useLiveShape ? (finalA.loser || '') : (mainChampsPairA === regions[0].r.champTeam ? regions[1].r.champTeam : regions[0].r.champTeam);
-  const mainLoserB = useLiveShape ? (finalB.loser || '') : (mainChampsPairB === regions[2].r.champTeam ? regions[3].r.champTeam : regions[2].r.champTeam);
-  const mainChampion = useLiveShape ? (champMatch.winner || '') : window.pickWinnerM(mainChampsPairA, mainChampsPairB);
-  const mainRunnerUp = useLiveShape ? (champMatch.loser || '') : (mainChampion === mainChampsPairA ? mainChampsPairB : mainChampsPairA);
-  const mainThird = useLiveShape ? (thirdMatch.winner || '') : window.pickWinnerM(mainLoserA, mainLoserB);
-  const mainFourth = useLiveShape ? (thirdMatch.loser || '') : (mainThird === mainLoserA ? mainLoserB : mainLoserA);
+  const mainChampsPairA = useLiveShape ? (finalA.winner || 'TBD') : window.pickWinnerM(regions[0].r.champTeam, regions[1].r.champTeam);
+  const mainChampsPairB = useLiveShape ? (finalB.winner || 'TBD') : window.pickWinnerM(regions[2].r.champTeam, regions[3].r.champTeam);
+  const mainLoserA = useLiveShape ? (finalA.loser || 'TBD') : (mainChampsPairA === regions[0].r.champTeam ? regions[1].r.champTeam : regions[0].r.champTeam);
+  const mainLoserB = useLiveShape ? (finalB.loser || 'TBD') : (mainChampsPairB === regions[2].r.champTeam ? regions[3].r.champTeam : regions[2].r.champTeam);
+  const mainChampion = useLiveShape ? (champMatch.winner || 'TBD') : window.pickWinnerM(mainChampsPairA, mainChampsPairB);
+  const mainRunnerUp = useLiveShape ? (champMatch.loser || 'TBD') : (mainChampion === mainChampsPairA ? mainChampsPairB : mainChampsPairA);
+  const mainThird = useLiveShape ? (thirdMatch.winner || 'TBD') : window.pickWinnerM(mainLoserA, mainLoserB);
+  const mainFourth = useLiveShape ? (thirdMatch.loser || 'TBD') : (mainThird === mainLoserA ? mainLoserB : mainLoserA);
 
   const cFinalA = useLiveShape ? (liveMatches['C4-01'] || {}) : null;
   const cFinalB = useLiveShape ? (liveMatches['C4-02'] || {}) : null;
   const cChampMatch = useLiveShape ? (liveMatches['C2-01'] || {}) : null;
   const cThirdMatch = useLiveShape ? (liveMatches['C2-02'] || {}) : null;
 
-  const cChampsPairA = useLiveShape ? (cFinalA.winner || '') : window.pickWinnerM(consolRegions[0].r.champTeam, consolRegions[1].r.champTeam);
-  const cChampsPairB = useLiveShape ? (cFinalB.winner || '') : window.pickWinnerM(consolRegions[2].r.champTeam, consolRegions[3].r.champTeam);
-  const cLoserA = useLiveShape ? (cFinalA.loser || '') : (cChampsPairA === consolRegions[0].r.champTeam ? consolRegions[1].r.champTeam : consolRegions[0].r.champTeam);
-  const cLoserB = useLiveShape ? (cFinalB.loser || '') : (cChampsPairB === consolRegions[2].r.champTeam ? consolRegions[3].r.champTeam : consolRegions[2].r.champTeam);
-  const cChampion = useLiveShape ? (cChampMatch.winner || '') : window.pickWinnerM(cChampsPairA, cChampsPairB);
-  const cRunnerUp = useLiveShape ? (cChampMatch.loser || '') : (cChampion === cChampsPairA ? cChampsPairB : cChampsPairA);
-  const cThird = useLiveShape ? (cThirdMatch.winner || '') : window.pickWinnerM(cLoserA, cLoserB);
-  const cFourth = useLiveShape ? (cThirdMatch.loser || '') : (cThird === cLoserA ? cLoserB : cLoserA);
+  const cChampsPairA = useLiveShape ? (cFinalA.winner || 'TBD') : window.pickWinnerM(consolRegions[0].r.champTeam, consolRegions[1].r.champTeam);
+  const cChampsPairB = useLiveShape ? (cFinalB.winner || 'TBD') : window.pickWinnerM(consolRegions[2].r.champTeam, consolRegions[3].r.champTeam);
+  const cLoserA = useLiveShape ? (cFinalA.loser || 'TBD') : (cChampsPairA === consolRegions[0].r.champTeam ? consolRegions[1].r.champTeam : consolRegions[0].r.champTeam);
+  const cLoserB = useLiveShape ? (cFinalB.loser || 'TBD') : (cChampsPairB === consolRegions[2].r.champTeam ? consolRegions[3].r.champTeam : consolRegions[2].r.champTeam);
+  const cChampion = useLiveShape ? (cChampMatch.winner || 'TBD') : window.pickWinnerM(cChampsPairA, cChampsPairB);
+  const cRunnerUp = useLiveShape ? (cChampMatch.loser || 'TBD') : (cChampion === cChampsPairA ? cChampsPairB : cChampsPairA);
+  const cThird = useLiveShape ? (cThirdMatch.winner || 'TBD') : window.pickWinnerM(cLoserA, cLoserB);
+  const cFourth = useLiveShape ? (cThirdMatch.loser || 'TBD') : (cThird === cLoserA ? cLoserB : cLoserA);
 
   const regionH = LEAF_Y0 + GAPS4.reduce((a, b) => a + b, 0) + 20;
   const consolRegionH = LEAF_Y0 + GAPS3.reduce((a, b) => a + b, 0) + 20;
