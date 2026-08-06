@@ -229,20 +229,30 @@ function ScoreApp() {
     }
   }
 
+  // Every login re-applies the Hosts sheet's current Default Filter,
+  // overriding whatever chip was left selected by whoever used this device
+  // before — a TD reassigning someone's courts mid-tournament just edits the
+  // sheet, and it takes effect the next time that host logs in. A chip a
+  // host taps mid-session still survives a plain page reload (courtFilter's
+  // initial state comes from localStorage and this only runs on a fresh
+  // login, not on every mount), it just doesn't survive a log out/back in.
   function handleLogin(nextAuth) {
     storeAuth(nextAuth);
     setAuth(nextAuth);
-    if (courtFilter) return;
     const courts = parseDefaultFilterCourts(nextAuth.defaultFilter);
     if (courts.length === 1) {
       updateCourtFilter(courts[0]);
-    } else if (courts.length > 1) {
+      return;
+    }
+    if (courts.length > 1) {
       const sorted = [...courts].sort((a, b) => Number(a) - Number(b)).join(',');
       const preset = COURT_FILTER_PRESETS.find((p) => p.courts.join(',') === sorted);
-      // A set of courts that doesn't exactly match a known chip is left
-      // unfiltered ('All') rather than guessed at.
-      if (preset) updateCourtFilter(preset.key);
+      // A set of courts that doesn't exactly match a known chip falls back
+      // to unfiltered ('All') rather than guessing.
+      updateCourtFilter(preset ? preset.key : '');
+      return;
     }
+    updateCourtFilter('');
   }
 
   function handleLogout() {

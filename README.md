@@ -134,10 +134,13 @@ via `/score` and the `live-score` function:
   "All" / "My Games" / building halves ("Courts 1–5", "Courts 6–10", for
   court managers) / host pairs ("Courts 1–2", "3–4", "5–6", "7–8", "9–10",
   matching how each court host scores two adjacent courts at once) /
-  individual courts. It's a convenience filter, pre-selected from the
-  sheet's `Default Filter` column and remembered per-device via
-  `localStorage` after that, not an access restriction (a logged-in host
-  can score any match, any court).
+  individual courts. It's a convenience filter, not an access restriction
+  (a logged-in host can score any match, any court). Every login re-applies
+  the sheet's `Default Filter` for that host, overriding whatever was
+  selected before on that device — so a TD reassigning someone's courts
+  just edits the sheet, and it takes effect next time they log in. A chip
+  tapped mid-session is remembered via `localStorage` across a page reload,
+  but not across a log out/back in.
 - **`netlify/functions/live-score.js`** — the write endpoint `/score`
   POSTs to. Requires a valid auth token (see below), validates the match ID,
   score values, and frame number, then stores
