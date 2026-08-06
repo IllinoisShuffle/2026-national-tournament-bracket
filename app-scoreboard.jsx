@@ -10,7 +10,7 @@ const SCOREBOARD_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 const MATCH_ID_RE = /^([MC])(\d+)-(\d+)$/i;
 // Regulation is 16 frames; a tie goes to extra frames in pairs, so a frame
-// number past this just reads as "Overtime" rather than "of 16".
+// number past this reads as "Overtime" rather than a plain frame number.
 const REGULATION_FRAMES = 16;
 // Teams play frames 1-8 on the color the sheet lists them under, then swap
 // to the other physical disc color for frame 9 onward — including overtime,
@@ -261,7 +261,7 @@ function MatchCard({ m }) {
   // hosts and viewers read the same number the same way. Once the host has
   // marked the match complete there's no "playing" to report anymore.
   const frameLabel = !finished && frame
-    ? (frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`)
+    ? (frame <= REGULATION_FRAMES ? `Playing Frame ${frame}` : `Playing Frame ${frame} · Overtime`)
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
