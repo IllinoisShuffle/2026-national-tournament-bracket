@@ -286,13 +286,26 @@ npm install -g netlify-cli
 netlify login
 netlify link          # connect this folder to the Netlify site
 netlify env:pull      # pulls GOOGLE_*/SHEETS_* env vars into .env
-netlify dev
+npm run dev            # = netlify dev -d . -f netlify/functions
 ```
 
 `netlify dev` serves the static files *and* runs the results function
 locally at `/.netlify/functions/results`, so the bracket pages show real
 data exactly like the deployed site. `.env` is git-ignored — never commit
 it.
+
+**Always pass `-d . -f netlify/functions` (or `--dir` / `--functions`),
+especially when working in a git worktree** (e.g. `.claude/worktrees/*`).
+Without them, `netlify dev` finds its "repository root" by walking up
+parent directories looking for a directory literally named `.git` — but a
+worktree's `.git` is a *file*, not a directory, so the search skips right
+past it and keeps climbing until it hits the real `.git` directory in the
+main checkout. It then serves files and functions from *that* directory
+instead of the worktree, silently showing you main's content while you
+think you're testing your branch. Passing `-d`/`-f` pins the static and
+functions directories to the current working directory and bypasses that
+lookup entirely — this is a netlify-cli bug independent of this repo, so
+the flags are the fix, not a config change.
 
 ## Deployment (Netlify)
 

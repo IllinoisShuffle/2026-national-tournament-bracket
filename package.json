@@ -2,6 +2,9 @@
   "name": "national-tournament-bracket",
   "private": true,
   "description": "2026 Chicago National tournament bracket site + live-results Netlify Function",
+  "scripts": {
+    "dev": "netlify dev -d . -f netlify/functions"
+  },
   "dependencies": {
     "google-auth-library": "^9.0.0",
     "@netlify/blobs": "^10.7.11"
