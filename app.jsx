@@ -36,7 +36,7 @@ function Poster() {
   const isLive = !!liveData;
   const liveMatches = liveData ? liveData.matches : {};
   // Before the first fetch resolves, render the bracket as "live with no
-  // results yet" (all TBD) instead of the mock demo teams, so a connected
+  // results yet" (all blank) instead of the mock demo teams, so a connected
   // backend's real data pops into an empty bracket rather than visibly
   // overwriting fake sample names. Only show the demo/mock bracket once
   // we've confirmed there's genuinely no backend to talk to.
@@ -115,7 +115,7 @@ function Poster() {
   // null until that match has a recorded winner — never a live/in-progress
   // guess.
   const scoreFor = (match, teamName) => {
-    if (!match || !match.winner || !teamName || teamName === 'TBD') return null;
+    if (!match || !match.winner || !teamName || teamName === '') return null;
     if (match.yellow === teamName) return match.yellowScore || null;
     if (match.black === teamName) return match.blackScore || null;
     return null;
@@ -168,14 +168,14 @@ function Poster() {
     ...window.twinBend('m6', rightHalfX, rightHalfY, CHAMPION_X, champY, qRT.color, qRB.color, 4.5),
   ];
 
-  const leftHalfWinner = useLiveShape ? (finalA.winner || 'TBD') : window.pickWinner(regLT.champTeam, regLB.champTeam);
-  const rightHalfWinner = useLiveShape ? (finalB.winner || 'TBD') : window.pickWinner(regRT.champTeam, regRB.champTeam);
-  const leftHalfLoser = useLiveShape ? (finalA.loser || 'TBD') : (leftHalfWinner === regLT.champTeam ? regLB.champTeam : regLT.champTeam);
-  const rightHalfLoser = useLiveShape ? (finalB.loser || 'TBD') : (rightHalfWinner === regRT.champTeam ? regRB.champTeam : regRT.champTeam);
-  const mainChampion = useLiveShape ? (champMatch.winner || 'TBD') : window.pickWinner(leftHalfWinner, rightHalfWinner);
-  const runnerUp = useLiveShape ? (champMatch.loser || 'TBD') : (mainChampion === leftHalfWinner ? rightHalfWinner : leftHalfWinner);
-  const thirdPlace = useLiveShape ? (thirdMatch.winner || 'TBD') : window.pickWinner(leftHalfLoser, rightHalfLoser);
-  const fourthPlace = useLiveShape ? (thirdMatch.loser || 'TBD') : (thirdPlace === leftHalfLoser ? rightHalfLoser : leftHalfLoser);
+  const leftHalfWinner = useLiveShape ? (finalA.winner || '') : window.pickWinner(regLT.champTeam, regLB.champTeam);
+  const rightHalfWinner = useLiveShape ? (finalB.winner || '') : window.pickWinner(regRT.champTeam, regRB.champTeam);
+  const leftHalfLoser = useLiveShape ? (finalA.loser || '') : (leftHalfWinner === regLT.champTeam ? regLB.champTeam : regLT.champTeam);
+  const rightHalfLoser = useLiveShape ? (finalB.loser || '') : (rightHalfWinner === regRT.champTeam ? regRB.champTeam : regRT.champTeam);
+  const mainChampion = useLiveShape ? (champMatch.winner || '') : window.pickWinner(leftHalfWinner, rightHalfWinner);
+  const runnerUp = useLiveShape ? (champMatch.loser || '') : (mainChampion === leftHalfWinner ? rightHalfWinner : leftHalfWinner);
+  const thirdPlace = useLiveShape ? (thirdMatch.winner || '') : window.pickWinner(leftHalfLoser, rightHalfLoser);
+  const fourthPlace = useLiveShape ? (thirdMatch.loser || '') : (thirdPlace === leftHalfLoser ? rightHalfLoser : leftHalfLoser);
   const thirdY = champY + 210;
   const thirdPlaceMerges = [
     ...window.twinDrop('tp1', leftHalfX + 15, leftHalfY, CHAMPION_X, thirdY, qLT.color, qLB.color, 4.5, '9,7'),
@@ -223,14 +223,14 @@ function Poster() {
     ...window.twinBend('c6', cRightHalfX, cRightHalfY, CHAMPION_X, cChampY, qRT.color, qRB.color, 2.25, '7,6'),
   ];
 
-  const cLeftHalfWinner = useLiveShape ? (cFinalA.winner || 'TBD') : window.pickWinner(cLT.champTeam, cLB.champTeam);
-  const cRightHalfWinner = useLiveShape ? (cFinalB.winner || 'TBD') : window.pickWinner(cRT.champTeam, cRB.champTeam);
-  const cLeftHalfLoser = useLiveShape ? (cFinalA.loser || 'TBD') : (cLeftHalfWinner === cLT.champTeam ? cLB.champTeam : cLT.champTeam);
-  const cRightHalfLoser = useLiveShape ? (cFinalB.loser || 'TBD') : (cRightHalfWinner === cRT.champTeam ? cRB.champTeam : cRT.champTeam);
-  const consolChampion = useLiveShape ? (cChampMatch.winner || 'TBD') : window.pickWinner(cLeftHalfWinner, cRightHalfWinner);
-  const consolRunnerUp = useLiveShape ? (cChampMatch.loser || 'TBD') : (consolChampion === cLeftHalfWinner ? cRightHalfWinner : cLeftHalfWinner);
-  const consolThird = useLiveShape ? (cThirdMatch.winner || 'TBD') : window.pickWinner(cLeftHalfLoser, cRightHalfLoser);
-  const consolFourth = useLiveShape ? (cThirdMatch.loser || 'TBD') : (consolThird === cLeftHalfLoser ? cRightHalfLoser : cLeftHalfLoser);
+  const cLeftHalfWinner = useLiveShape ? (cFinalA.winner || '') : window.pickWinner(cLT.champTeam, cLB.champTeam);
+  const cRightHalfWinner = useLiveShape ? (cFinalB.winner || '') : window.pickWinner(cRT.champTeam, cRB.champTeam);
+  const cLeftHalfLoser = useLiveShape ? (cFinalA.loser || '') : (cLeftHalfWinner === cLT.champTeam ? cLB.champTeam : cLT.champTeam);
+  const cRightHalfLoser = useLiveShape ? (cFinalB.loser || '') : (cRightHalfWinner === cRT.champTeam ? cRB.champTeam : cRT.champTeam);
+  const consolChampion = useLiveShape ? (cChampMatch.winner || '') : window.pickWinner(cLeftHalfWinner, cRightHalfWinner);
+  const consolRunnerUp = useLiveShape ? (cChampMatch.loser || '') : (consolChampion === cLeftHalfWinner ? cRightHalfWinner : cLeftHalfWinner);
+  const consolThird = useLiveShape ? (cThirdMatch.winner || '') : window.pickWinner(cLeftHalfLoser, cRightHalfLoser);
+  const consolFourth = useLiveShape ? (cThirdMatch.loser || '') : (consolThird === cLeftHalfLoser ? cRightHalfLoser : cLeftHalfLoser);
   const cThirdY = cChampY + 150;
   const consolThirdPlaceMerges = [
     ...window.twinDrop('ctp1', cLeftHalfX + 10, cLeftHalfY, CHAMPION_X, cThirdY, qLT.color, qLB.color, 2, '7,6', 12),
@@ -252,13 +252,13 @@ function Poster() {
   };
 
   // Gate each "results" stop on how far the tournament has actually
-  // progressed, so kiosk mode never dwells on an empty crop full of TBD
-  // placeholders. Demo mode (no live backend) has no TBD state, so
+  // progressed, so kiosk mode never dwells on an empty crop full of blank
+  // placeholders. Demo mode (no live backend) has no blank-placeholder state, so
   // everything is always ready there.
-  const mainLoopReady = !useLiveShape || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
-  const mainRankingsReady = !useLiveShape || [mainChampion, runnerUp, thirdPlace, fourthPlace].every((t) => t !== 'TBD');
-  const consolFinalFourReady = !useLiveShape || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
-  const consolRankingsReady = !useLiveShape || [consolChampion, consolRunnerUp, consolThird, consolFourth].every((t) => t !== 'TBD');
+  const mainLoopReady = !useLiveShape || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== '');
+  const mainRankingsReady = !useLiveShape || [mainChampion, runnerUp, thirdPlace, fourthPlace].every((t) => t !== '');
+  const consolFinalFourReady = !useLiveShape || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== '');
+  const consolRankingsReady = !useLiveShape || [consolChampion, consolRunnerUp, consolThird, consolFourth].every((t) => t !== '');
 
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },

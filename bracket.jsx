@@ -60,7 +60,7 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
       if (roundWinners) {
         const winner = (liveWinners && liveWinners[k]) || null;
         const m = (liveMatches && liveMatches[k]) || {};
-        cur.push(winner || 'TBD');
+        cur.push(winner || '');
         // aScore/bScore keyed by slot position (a = top/prev[j], b = bottom/prev[j+1]),
         // matched against the sheet's yellow/black names rather than assumed order.
         recs.push({
