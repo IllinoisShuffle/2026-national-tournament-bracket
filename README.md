@@ -130,10 +130,17 @@ via `/score` and the `live-score` function:
   distribute per-court. A host logs in once with their name and a PIN (see
   "Court host login" below), then sees the same match feed as everything
   else (`/.netlify/functions/results`), lists every unfinished match, and
-  taps into one to start scoring. An "All / Court 1 / Court 2 / …" toggle on
-  the page narrows the list — it's a convenience filter against the sheet's
-  `Court` column, remembered per-device via `localStorage`, not an access
-  restriction (a logged-in host can score any match, any court).
+  taps into one to start scoring. A toggle on the page narrows the list —
+  "All" / "My Games" / building halves ("Courts 1–5", "Courts 6–10", for
+  court managers) / host pairs ("Courts 1–2", "3–4", "5–6", "7–8", "9–10",
+  matching how each court host scores two adjacent courts at once) /
+  individual courts. It's a convenience filter, not an access restriction
+  (a logged-in host can score any match, any court). Every login re-applies
+  the sheet's `Default Filter` for that host, overriding whatever was
+  selected before on that device — so a TD reassigning someone's courts
+  just edits the sheet, and it takes effect next time they log in. A chip
+  tapped mid-session is remembered via `localStorage` across a page reload,
+  but not across a log out/back in.
 - **`netlify/functions/live-score.js`** — the write endpoint `/score`
   POSTs to. Requires a valid auth token (see below), validates the match ID,
   score values, and frame number, then stores
@@ -170,15 +177,19 @@ a real, server-verified name (not free-text):
 
 - **`netlify/functions/score-auth.js`** — `/score`'s login screen POSTs
   `{ name, pin }` here. It's checked against a **"Hosts" tab** on the same
-  tournament Google Sheet (columns `Name | Court | PIN`), which the TD
-  manages by hand the same way they already manage the Matches tab — adding,
-  removing, or re-PINing a host needs no redeploy. `Court` is informational
-  only (it prefills the host's court filter after login), not an access
-  restriction. On a match, the function signs a token embedding the host's
-  name and an expiry (`SCORE_AUTH_TTL_HOURS`, default 18h — long enough to
-  cover a full tournament day) and returns it to `/score`, which stores
-  it in `localStorage` and attaches it as `Authorization: Bearer <token>` on
-  every write to `live-score.js`.
+  tournament Google Sheet (columns `Name | Default Filter | PIN`), which the
+  TD manages by hand the same way they already manage the Matches tab —
+  adding, removing, or re-PINing a host needs no redeploy. `Default Filter`
+  is informational only (it names which of `/score`'s filter chips that
+  host's login should land on), not an access restriction — a single court
+  (`5`) for a court manager, a range for their whole half (`1-5`), or a
+  range or comma list for a court host's pair (`1-2` / `1, 2`). A value that
+  doesn't exactly match a known chip (or a blank cell) just leaves the login
+  on "All" rather than guessing. On a match, the function signs a token
+  embedding the host's name and an expiry (`SCORE_AUTH_TTL_HOURS`, default
+  18h — long enough to cover a full tournament day) and returns it to
+  `/score`, which stores it in `localStorage` and attaches it as
+  `Authorization: Bearer <token>` on every write to `live-score.js`.
 - The token is a minimal HMAC-signed value (Node's built-in `crypto`, no JWT
   library) signed with `SCORE_AUTH_SECRET`. `live-score.js` verifies the
   signature and expiry on every write and derives `scorer` from it — a host
@@ -318,8 +329,8 @@ the flags are the fix, not a config change.
    - `SHEETS_SPREADSHEET_ID` — the ID from the sheet's URL.
    - `SHEETS_MATCHES_RANGE` (optional) — defaults to `Matches!A:L`.
    - `SHEETS_HOSTS_RANGE` (optional) — defaults to `Hosts!A:C`. Add a
-     "Hosts" tab to the same spreadsheet with columns `Name | Court | PIN`
-     (see "Court host login" above).
+     "Hosts" tab to the same spreadsheet with columns
+     `Name | Default Filter | PIN` (see "Court host login" above).
    - `SCORE_AUTH_SECRET` — any long random string, used to sign court-host
      login tokens. Required for `/score` logins to work at all; treat it
      like a password (don't commit it).

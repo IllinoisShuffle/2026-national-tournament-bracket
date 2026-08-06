@@ -5,9 +5,16 @@
 // checked — live-score.js only ever verifies the token's signature, it never
 // touches Sheets credentials itself.
 //
-// Expected "Hosts" tab columns, in this order: Name | Court | PIN. Court is
-// informational only (used to prefill score.jsx's court filter after login),
-// never an access restriction — any verified host can score any match.
+// Expected "Hosts" tab columns, in this order: Name | Default Filter | PIN.
+// Default Filter is informational only (used to prefill score.jsx's court
+// filter after login), never an access restriction — any verified host can
+// score any match. It names whichever of /score's filter chips that host's
+// login should land on: a single court ("5") for a court manager, an
+// inclusive range ("1-5") for a manager's whole half, or a comma/space
+// list or adjacent range ("1, 2" / "1-2") for a court host's pair of
+// courts. score.jsx matches it against its predefined chips exactly — an
+// unrecognized value (or a blank cell) just leaves the login on "All"
+// rather than guessing.
 //
 // Required environment variables: same Sheets credentials as results.js
 // (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, SHEETS_SPREADSHEET_ID),
@@ -38,10 +45,10 @@ function badRequest(message) {
 }
 
 function rowToHost(row) {
-  const [name, court, pin] = row;
+  const [name, defaultFilter, pin] = row;
   return {
     name: (name || '').trim(),
-    court: (court || '').trim(),
+    defaultFilter: (defaultFilter || '').trim(),
     pin: (pin || '').trim(),
   };
 }
@@ -97,7 +104,7 @@ exports.handler = async function (event) {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ token, name: host.name, court: host.court, exp }),
+      body: JSON.stringify({ token, name: host.name, defaultFilter: host.defaultFilter, exp }),
     };
   } catch (err) {
     return {

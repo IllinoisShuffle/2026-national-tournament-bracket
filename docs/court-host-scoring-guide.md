@@ -42,9 +42,11 @@ is attributed to a real, verified person.
 After logging in you'll see **"Pick your match"** — a list of every match
 that isn't finished yet, across all courts.
 
-- If your login was set up with a home court, the list is automatically
-  filtered to just that court. You'll see a row of pills at the top — **All
-  / Court 1 / Court 2 / …** — tap a different one any time.
+- If your login was set up with a home court (or, for most court hosts, a
+  pair of adjacent courts you score together), the list is automatically
+  filtered to it. You'll see a row of pills at the top — **All / My Games /
+  Courts 1–5 / Courts 6–10 / Courts 1–2 / Courts 3–4 / … / Court 1 / Court
+  2 / …** — tap a different one any time.
 - **This filter is just a convenience, not a restriction.** You can score
   any match on any court if you need to — say, covering for someone, or your
   match got moved.
