@@ -76,15 +76,6 @@ function normalizeCourt(v) {
   return m ? m[0].replace(/^0+(?=\d)/, '') : '';
 }
 
-// A court host's Hosts-sheet Court value can list two courts (e.g. "1, 2" or
-// "1-2") since each host scores a pair at once — unlike normalizeCourt above,
-// this pulls out every number rather than just the first, for matching
-// against COURT_PAIRS at login.
-function normalizeCourtList(v) {
-  const nums = String(v || '').match(/\d+/g) || [];
-  return nums.map((n) => n.replace(/^0+(?=\d)/, ''));
-}
-
 // courtFilter holds either a specific court number, one of the two
 // building-half shortcuts below, one of the court-pair shortcuts, 'my'
 // (games the logged-in host is the scorer of record on), or '' for all.
@@ -102,6 +93,37 @@ const COURT_PAIRS = [
   { key: 'courts-7-8', courts: ['7', '8'], label: 'Courts 7–8' },
   { key: 'courts-9-10', courts: ['9', '10'], label: 'Courts 9–10' },
 ];
+
+// Every chip a Hosts-sheet "Default Filter" value can resolve to besides a
+// single court — the two halves plus the five pairs above. Kept as one list
+// so login prefill (below) can match against halves and pairs the same way.
+const COURT_FILTER_PRESETS = [
+  { key: COURTS_1_5, courts: ['1', '2', '3', '4', '5'] },
+  { key: COURTS_6_10, courts: ['6', '7', '8', '9', '10'] },
+  ...COURT_PAIRS,
+];
+
+// Parses a Hosts-sheet "Default Filter" cell into the court numbers it
+// names, for matching against COURT_FILTER_PRESETS (or a single court) at
+// login. Two forms: an inclusive range ("1-5" → courts 1 through 5) or a
+// comma/space-separated list ("1, 2" → just those two) — a bare number is
+// just the one-element case of the list form. Anything else (blank,
+// unparseable) yields no courts, so login falls through to no default filter
+// rather than guessing.
+function parseDefaultFilterCourts(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return [];
+  const range = raw.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (range) {
+    const start = Number(range[1]);
+    const end = Number(range[2]);
+    if (!start || !end || start > end) return [];
+    const courts = [];
+    for (let n = start; n <= end; n++) courts.push(String(n));
+    return courts;
+  }
+  return (raw.match(/\d+/g) || []).map((n) => n.replace(/^0+(?=\d)/, ''));
+}
 
 function courtFilterLabel(courtFilter) {
   if (courtFilter === MY_GAMES) return ' you’re scoring';
@@ -211,15 +233,15 @@ function ScoreApp() {
     storeAuth(nextAuth);
     setAuth(nextAuth);
     if (courtFilter) return;
-    const courts = normalizeCourtList(nextAuth.court);
-    if (courts.length >= 2) {
-      const sorted = [...courts].sort((a, b) => Number(a) - Number(b));
-      const pair = COURT_PAIRS.find((p) => p.courts[0] === sorted[0] && p.courts[1] === sorted[1]);
-      // A pair that isn't one of the predefined host pairs is left
-      // unfiltered ('All') rather than guessed at.
-      if (pair) updateCourtFilter(pair.key);
-    } else if (courts.length === 1) {
+    const courts = parseDefaultFilterCourts(nextAuth.defaultFilter);
+    if (courts.length === 1) {
       updateCourtFilter(courts[0]);
+    } else if (courts.length > 1) {
+      const sorted = [...courts].sort((a, b) => Number(a) - Number(b)).join(',');
+      const preset = COURT_FILTER_PRESETS.find((p) => p.courts.join(',') === sorted);
+      // A set of courts that doesn't exactly match a known chip is left
+      // unfiltered ('All') rather than guessed at.
+      if (preset) updateCourtFilter(preset.key);
     }
   }
 
