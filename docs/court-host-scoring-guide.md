@@ -58,6 +58,18 @@ that isn't finished yet, across all courts.
 
 Tap a match to open it.
 
+## Before Frame 1: Start Match (optional)
+
+If you open a match before play actually begins, you'll see a **"Start
+Match"** button above the scoring grid. Tapping it puts the match on the
+Live Scoreboard as **"Warming Up"** right away, instead of waiting for a
+score — handy for letting spectators know a court has picked up. From
+there, tap **Start Frame 1** once play actually begins.
+
+This step is entirely optional. If you don't get to it before the teams are
+already playing, just score Frame 1 like normal below — submitting it adds
+the match to the board exactly like it always has.
+
 ## Scoring the match
 
 You'll see both teams' names with a disc-color dot, the running score, and a
@@ -114,6 +126,10 @@ can always double check before committing.
   color dot shows next to each team once you cross that line, so just keep
   tapping the same team's buttons regardless of which color disc they're
   currently shooting.
+- **Submitting Frame 8 moves the match to "Switching Colors"** instead of
+  straight into Frame 9 — this covers the practice shots teams take while
+  swapping disc colors. The Live Scoreboard shows "Switching Colors" during
+  this gap. Tap **Start Frame 9** once play resumes.
 
 ### If it goes to overtime
 

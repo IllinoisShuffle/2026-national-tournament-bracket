@@ -145,7 +145,11 @@ via `/score` and the `live-score` function:
   POSTs to. Requires a valid auth token (see below), validates the match ID,
   score values, and frame number, then stores
   `{ matchId, court, yellowScore, blackScore, status, scorer, frame, updatedAt }`
-  in the `live-scores` Blobs store, one entry per match ID. `scorer` always
+  in the `live-scores` Blobs store, one entry per match ID. `status` is one
+  of `in_progress`, `complete`, `warming_up` (match added to the board via
+  the optional "Start Match" button, before Frame 1 begins), or
+  `switching_colors` (the practice-shots interlude between Frames 8 and 9
+  while teams swap disc colors). `scorer` always
   comes from the verified token, never from the request body. It never
   touches the Google Sheets credentials — this endpoint can only ever affect
   the supplementary live feed, never the Matches tab itself. `frame` is

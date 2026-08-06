@@ -174,7 +174,7 @@ function clearAuth() {
 }
 
 function isRecentlyActive(liveScore) {
-  return !!liveScore && liveScore.status === 'in_progress' && Date.now() - liveScore.updatedAt < ACTIVE_THRESHOLD_MS;
+  return !!liveScore && liveScore.status !== 'complete' && Date.now() - liveScore.updatedAt < ACTIVE_THRESHOLD_MS;
 }
 
 function formatAgo(ts) {
@@ -186,7 +186,11 @@ function formatAgo(ts) {
 // "Playing" makes clear frame N is the one currently underway (score shown
 // reflects frames completed before it) rather than a frame that just
 // finished — court hosts and viewers were reading "Frame 8 of 16" both ways.
-function frameLabel(frame) {
+// `status` overrides the frame-number label for the two interstitial states
+// that aren't really "playing" a numbered frame at all.
+function frameLabel(frame, status) {
+  if (status === 'warming_up') return 'Warming Up';
+  if (status === 'switching_colors') return 'Switching Colors';
   return frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`;
 }
 
@@ -392,7 +396,7 @@ function ScoreApp() {
                 {m.id}
                 {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
                 {m.time ? ` · ${m.time}` : ''}
-                {!isComplete && m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame)}` : ''}
+                {!isComplete && m.liveScore && m.liveScore.frame ? ` · ${frameLabel(m.liveScore.frame, m.liveScore.status)}` : ''}
               </div>
               {isComplete && <div className="s-match-complete-tag">Complete &middot; awaiting TD</div>}
               <div className="s-match-teams">{m.yellow || 'TBD'}</div>
@@ -524,11 +528,19 @@ function CourtToggle({ courts, value, onChange }) {
 }
 
 function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
-  const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'in_progress' };
+  // 'not_started' is local-only — it means nothing has ever been posted for
+  // this match, so there's no liveScore entry yet. It's never sent to the
+  // server; the moment any scoring/start action fires, status moves to a
+  // real posted value ('warming_up' or 'in_progress').
+  const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'not_started', frame: 1 };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
   const [frame, setFrame] = React.useState(initial.frame || 1);
+  // The scoring grid + frame actions are only meaningful in these two
+  // states — 'warming_up' and 'switching_colors' show an interstitial
+  // instead (see render below), and 'complete' shows the done screen.
+  const scoringActive = status === 'not_started' || status === 'in_progress';
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
   // Staged, not-yet-saved taps for the frame in progress. A shuffleboard
@@ -661,7 +673,22 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
       stagedYellow, stagedBlack,
     }].slice(-MAX_UNDO));
     setFrame(nextFrame);
-    post(nextYellow, nextBlack, status, { frame: nextFrame });
+
+    // Frame 8 is the last frame before the color swap — route through the
+    // "Switching Colors" interstitial (practice shots) instead of straight
+    // into Frame 9, mirroring the "Warming Up" gap before Frame 1.
+    if (frame === COLOR_FLIP_FRAME) {
+      setStatus('switching_colors');
+      post(nextYellow, nextBlack, 'switching_colors', { frame: nextFrame });
+      return;
+    }
+
+    // A host who never tapped "Start Match" and just went straight to
+    // scoring lands here on their first submit — this is what makes that
+    // path behave exactly as it did before "Start Match" existed.
+    const nextStatus = status === 'not_started' ? 'in_progress' : status;
+    setStatus(nextStatus);
+    post(nextYellow, nextBlack, nextStatus, { frame: nextFrame });
   }
 
   // Undo always reverts the most recent action. If there's a staged
@@ -680,7 +707,12 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
     setBlackScore(last.prevBlack);
     setFrame(last.prevFrame);
     setUndoStack(undoStack.slice(0, -1));
-    post(last.prevYellow, last.prevBlack, status, { frame: last.prevFrame });
+    // Undoing a commit always lands back on "actively playing the previous
+    // frame" — the only way onto the undo stack is a commitFrame, and that
+    // only ever advances out of 'in_progress' (into 'switching_colors' or
+    // 'complete'), never out of 'not_started' or 'warming_up' directly.
+    setStatus('in_progress');
+    post(last.prevYellow, last.prevBlack, 'in_progress', { frame: last.prevFrame });
   }
 
   function markComplete() {
@@ -699,6 +731,25 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
     if (locked) return;
     setStatus('in_progress');
     post(yellowScore, blackScore, 'in_progress');
+  }
+
+  // Puts the match on the Live Scoreboard as "Warming Up" ahead of Frame 1 —
+  // for hosts who open the match before play actually starts. Entirely
+  // optional: a host who skips this and just scores Frame 1 directly still
+  // works exactly as before (see the 'not_started' branch in commitFrame).
+  function startMatch() {
+    if (locked) return;
+    setStatus('warming_up');
+    post(0, 0, 'warming_up', { frame: 1 });
+  }
+
+  // Advances out of an interstitial ('warming_up' -> Frame 1, or
+  // 'switching_colors' -> Frame 9) into active scoring. `frame` is already
+  // set to the right value by the time either interstitial is showing.
+  function beginFrame() {
+    if (locked) return;
+    setStatus('in_progress');
+    post(yellowScore, blackScore, 'in_progress', { frame });
   }
 
   function takeOver() {
@@ -756,7 +807,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
       </header>
 
       <div className="s-frame-bar">
-        <div className="s-frame-label">{frameLabel(frame)}</div>
+        <div className="s-frame-label">{frameLabel(frame, status)}</div>
       </div>
 
       {otherActive && saveState !== 'conflict' && (
@@ -786,12 +837,30 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
           <p className="s-done-note">Fill out the Match Report Sheet, get it signed by the winning team, and bring it to the ATD in the DJ Booth.</p>
           <button className="s-reopen" onClick={reopen} disabled={locked}>Reopen (mis-tap)</button>
         </div>
-      ) : (
-        <div className="s-score">
-          <ScoreSide disc={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
-          <div className="s-dash">&ndash;</div>
-          <ScoreSide disc={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
+      ) : status === 'warming_up' || status === 'switching_colors' ? (
+        <div className="s-done">
+          <p className="s-done-title">{status === 'warming_up' ? 'Warming Up' : 'Switching Colors'}</p>
+          <p className="s-done-note">
+            {status === 'warming_up'
+              ? `${match.yellow || 'Yellow'} vs ${match.black || 'Black'} is now on the Live Scoreboard. Tap Start Frame 1 once play begins.`
+              : 'Practice shots while teams swap disc colors. Tap Start Frame 9 once play resumes.'}
+          </p>
+          <button className="s-submit-frame" onClick={beginFrame} disabled={locked}>Start Frame {frame}</button>
         </div>
+      ) : (
+        <>
+          {status === 'not_started' && (
+            <div className="s-start-match-wrap">
+              <button className="s-submit-frame" onClick={startMatch} disabled={locked}>Start Match</button>
+              <p className="s-frame-hint">Marks this match "Warming Up" on the Live Scoreboard before Frame 1. Already playing? Just score below instead.</p>
+            </div>
+          )}
+          <div className="s-score">
+            <ScoreSide disc={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
+            <div className="s-dash">&ndash;</div>
+            <ScoreSide disc={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
+          </div>
+        </>
       )}
 
       {status !== 'complete' && (pendingTaps.length > 0 || undoStack.length > 0) && (() => {
@@ -823,23 +892,37 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
         );
       })()}
 
-      {status !== 'complete' && (
+      {scoringActive && (
         <div className="s-actions">
           {(() => {
             const parts = [];
             if (stagedYellow !== 0) parts.push(`${stagedYellow > 0 ? '+' : ''}${stagedYellow} for ${match.yellow || 'Yellow'}`);
             if (stagedBlack !== 0) parts.push(`${stagedBlack > 0 ? '+' : ''}${stagedBlack} for ${match.black || 'Black'}`);
-            const ending = willComplete ? 'complete the match' : `start Frame ${frame + 1}`;
+            const enteringColorSwitch = frame === COLOR_FLIP_FRAME;
+            const endingWill = willComplete
+              ? 'complete the match'
+              : enteringColorSwitch
+              ? 'move to Switching Colors before Frame 9'
+              : `start Frame ${frame + 1}`;
+            const endingStill = willComplete
+              ? 'completes the match'
+              : enteringColorSwitch
+              ? 'moves to Switching Colors before Frame 9'
+              : `starts Frame ${frame + 1}`;
             return (
               <div className="s-frame-hint">
                 {parts.length > 0
-                  ? `Submit records ${parts.join(' and ')}, and will ${ending}.`
-                  : `No score this frame? Submit still ${willComplete ? 'completes the match' : `starts Frame ${frame + 1}`}.`}
+                  ? `Submit records ${parts.join(' and ')}, and will ${endingWill}.`
+                  : `No score this frame? Submit still ${endingStill}.`}
               </div>
             );
           })()}
           <button className="s-submit-frame" onClick={commitFrame} disabled={locked}>
-            {willComplete ? 'Submit Frame & Complete Match' : `Submit Frame ${frame} & Start Frame ${frame + 1}`}
+            {willComplete
+              ? 'Submit Frame & Complete Match'
+              : frame === COLOR_FLIP_FRAME
+              ? `Submit Frame ${frame} & Switch Colors`
+              : `Submit Frame ${frame} & Start Frame ${frame + 1}`}
           </button>
           <div className="s-actions-row">
             <button className="s-reset-frame" onClick={resetFrame} disabled={locked || pendingTaps.length === 0}>Reset Frame</button>
@@ -848,7 +931,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
         </div>
       )}
 
-      {status !== 'complete' && (
+      {scoringActive && (
         <button className="s-complete" onClick={markComplete} disabled={locked}>Complete Match</button>
       )}
 

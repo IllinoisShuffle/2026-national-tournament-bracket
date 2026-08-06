@@ -60,6 +60,8 @@ function buildDemoData() {
     { id: 'C32-12', time: '2:05 PM', court: 'Court 7', yellow: window.TEAM_POOL[20], black: window.TEAM_POOL[21], liveScore: { yellowScore: 3, blackScore: 3, status: 'in_progress', frame: 17 }, approxEnd: '3:15 PM' },
     { id: 'C16-02', time: '2:05 PM', court: 'Court 1', yellow: window.TEAM_POOL[8], black: window.TEAM_POOL[9], liveScore: { yellowScore: 5, blackScore: 2, status: 'in_progress', frame: 5 }, approxEnd: '3:15 PM' },
     { id: 'C16-01', time: '2:05 PM', court: 'Court 4', yellow: window.TEAM_POOL[1], black: window.TEAM_POOL[2], liveScore: { yellowScore: 0, blackScore: 0, status: 'in_progress', frame: 1 }, approxEnd: '3:15 PM' },
+    { id: 'C16-03', time: '2:15 PM', court: 'Court 10', yellow: window.TEAM_POOL[14], black: window.TEAM_POOL[15], liveScore: { yellowScore: 0, blackScore: 0, status: 'warming_up', frame: 1 }, approxEnd: '3:20 PM' },
+    { id: 'C16-05', time: '2:00 PM', court: 'Court 6', yellow: window.TEAM_POOL[16], black: window.TEAM_POOL[17], liveScore: { yellowScore: 4, blackScore: 3, status: 'switching_colors', frame: 9 }, approxEnd: '3:10 PM' },
     { id: 'C32-08', time: '1:40 PM', court: 'Court 9', yellow: window.TEAM_POOL[24], black: window.TEAM_POOL[25], liveScore: { yellowScore: 6, blackScore: 5, status: 'complete', frame: 17 } },
     { id: 'M16-04', time: '2:35 PM', court: 'Court 5', yellow: window.TEAM_POOL[12], black: window.TEAM_POOL[13] },
     { id: 'C16-06', time: '2:40 PM', court: 'Court 2', yellow: window.TEAM_POOL[28], black: window.TEAM_POOL[29] },
@@ -131,17 +133,23 @@ function Scoreboard() {
   // gets a winner, results.js stops attaching liveScore to it at all (see
   // attachLiveScores), so it naturally falls out of this list and into Past
   // Results below with no extra bookkeeping here.
+  // 'warming_up' and 'switching_colors' are the two interstitials around
+  // Frame 1 and the Frame 8/9 color swap — a court host actively on either
+  // of them counts as "on the courts" just like 'in_progress', they just
+  // aren't playing a numbered frame at that instant.
+  const isLiveStatus = (s) => s === 'in_progress' || s === 'warming_up' || s === 'switching_colors';
+
   const activeMatches = allMatches
-    .filter((m) => m.liveScore && (m.liveScore.status === 'in_progress' || m.liveScore.status === 'complete') && !m.winner)
+    .filter((m) => m.liveScore && (isLiveStatus(m.liveScore.status) || m.liveScore.status === 'complete') && !m.winner)
     .sort((a, b) => {
-      const rank = (x) => (x.liveScore.status === 'in_progress' ? 0 : 1);
+      const rank = (x) => (x.liveScore.status === 'complete' ? 1 : 0);
       return rank(a) - rank(b) || courtNum(a) - courtNum(b) || a.id.localeCompare(b.id);
     });
 
-  const inProgressCount = activeMatches.filter((m) => m.liveScore.status === 'in_progress').length;
+  const inProgressCount = activeMatches.filter((m) => isLiveStatus(m.liveScore.status)).length;
 
   const upNext = allMatches
-    .filter((m) => !(m.liveScore && (m.liveScore.status === 'in_progress' || m.liveScore.status === 'complete')) && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
+    .filter((m) => !(m.liveScore && (isLiveStatus(m.liveScore.status) || m.liveScore.status === 'complete')) && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
     .sort((a, b) => timeMinutes(a) - timeMinutes(b) || courtNum(a) - courtNum(b));
 
   // Smaller round `size` = a later stage of the bracket, so it reads as more
@@ -273,8 +281,14 @@ function MatchCard({ m }) {
   // it) rather than just-finished — mirrors the wording on score.jsx so
   // hosts and viewers read the same number the same way. Once the host has
   // marked the match complete there's no "playing" to report anymore.
+  // 'warming_up'/'switching_colors' aren't a numbered frame at all, so they
+  // get their own label instead of "Playing Frame N" — mirrors score.jsx.
   const frameLabel = !finished && frame
-    ? (frame <= REGULATION_FRAMES ? `Playing Frame ${frame}` : `Playing Frame ${frame} · Overtime`)
+    ? m.liveScore.status === 'warming_up'
+      ? 'Warming Up'
+      : m.liveScore.status === 'switching_colors'
+      ? 'Switching Colors'
+      : (frame <= REGULATION_FRAMES ? `Playing Frame ${frame}` : `Playing Frame ${frame} · Overtime`)
     : null;
   const colorsFlipped = !!frame && frame > COLOR_FLIP_FRAME;
 
