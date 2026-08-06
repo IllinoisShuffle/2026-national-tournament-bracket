@@ -161,11 +161,48 @@ function ScoreApp() {
   const [auth, setAuth] = React.useState(readStoredAuth);
 
   const [liveData, setLiveData] = React.useState(null);
+  // Locally-confirmed writes (see handleSaved) not yet reflected in polled
+  // data, keyed by matchId. A ref, not state — read/written from the poll
+  // closure below without needing its own render. See mergePolledData for
+  // why a poll can't just be trusted the instant it lands.
+  const localOverridesRef = React.useRef({});
+
+  // results.js serves results with a 5s CDN cache (Netlify-CDN-Cache-Control:
+  // max-age=5) on top of Blobs' eventually-consistent read, so a poll that
+  // fires just after a save succeeds can resolve with a snapshot from
+  // *before* that save landed. Blindly replacing liveData with that snapshot
+  // would erase the optimistic update handleSaved just applied — the host's
+  // own just-submitted score would flash and then vanish, which is exactly
+  // what led hosts to re-enter scores they'd already saved. Instead, overlay
+  // any local override whose updatedAt is still ahead of what the poll
+  // reports; drop it once the poll catches up (or a newer write, e.g. from
+  // another host taking over, overtakes it).
+  function mergePolledData(data) {
+    const overrides = localOverridesRef.current;
+    const pendingIds = Object.keys(overrides);
+    if (pendingIds.length === 0) return data;
+
+    let matches = data.matches;
+    for (const matchId of pendingIds) {
+      const override = overrides[matchId];
+      const polledMatch = matches[matchId];
+      const polledScore = polledMatch && polledMatch.liveScore;
+      if (polledScore && polledScore.updatedAt >= override.updatedAt) {
+        delete overrides[matchId];
+        continue;
+      }
+      if (!polledMatch) continue;
+      if (matches === data.matches) matches = { ...data.matches };
+      matches[matchId] = { ...polledMatch, liveScore: override };
+    }
+    return matches === data.matches ? data : { ...data, matches };
+  }
+
   React.useEffect(() => {
     let cancelled = false;
     async function load() {
       const data = await window.LiveData.fetchLiveData();
-      if (!cancelled && data) setLiveData(data);
+      if (!cancelled && data) setLiveData(mergePolledData(data));
     }
     load();
     const interval = setInterval(load, SCORE_POLL_MS);
@@ -209,8 +246,12 @@ function ScoreApp() {
   // match list (and this match, if reopened) reflects it immediately —
   // otherwise a host bouncing right back after Submit Frame would see
   // whatever the last poll captured, up to SCORE_POLL_MS stale, and could
-  // easily mistake that lag for the write having been lost.
+  // easily mistake that lag for the write having been lost. Also records it
+  // as a local override (see mergePolledData) so the *next* poll or two,
+  // which may still be racing a CDN-cached snapshot from before this write,
+  // can't undo it.
   function handleSaved(matchId, entry) {
+    localOverridesRef.current[matchId] = entry;
     setLiveData((prev) => {
       if (!prev) return prev;
       const existing = prev.matches[matchId];
