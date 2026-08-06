@@ -130,9 +130,12 @@ via `/score` and the `live-score` function:
   distribute per-court. A host logs in once with their name and a PIN (see
   "Court host login" below), then sees the same match feed as everything
   else (`/.netlify/functions/results`), lists every unfinished match, and
-  taps into one to start scoring. An "All / Court 1 / Court 2 / …" toggle on
-  the page narrows the list — it's a convenience filter against the sheet's
-  `Court` column, remembered per-device via `localStorage`, not an access
+  taps into one to start scoring. A toggle on the page narrows the list —
+  "All" / "My Games" / building halves ("Courts 1–5", "Courts 6–10", for
+  court managers) / host pairs ("Courts 1–2", "3–4", "5–6", "7–8", "9–10",
+  matching how each court host scores two adjacent courts at once) /
+  individual courts. It's a convenience filter against the sheet's `Court`
+  column, remembered per-device via `localStorage`, not an access
   restriction (a logged-in host can score any match, any court).
 - **`netlify/functions/live-score.js`** — the write endpoint `/score`
   POSTs to. Requires a valid auth token (see below), validates the match ID,
@@ -174,7 +177,9 @@ a real, server-verified name (not free-text):
   manages by hand the same way they already manage the Matches tab — adding,
   removing, or re-PINing a host needs no redeploy. `Court` is informational
   only (it prefills the host's court filter after login), not an access
-  restriction. On a match, the function signs a token embedding the host's
+  restriction — it can list two courts (e.g. `1, 2`) for a court host who
+  scores a pair at once, matched against `/score`'s court-pair filter chips,
+  or a single court for a court manager. On a match, the function signs a token embedding the host's
   name and an expiry (`SCORE_AUTH_TTL_HOURS`, default 18h — long enough to
   cover a full tournament day) and returns it to `/score`, which stores
   it in `localStorage` and attaches it as `Authorization: Bearer <token>` on

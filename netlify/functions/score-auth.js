@@ -7,7 +7,11 @@
 //
 // Expected "Hosts" tab columns, in this order: Name | Court | PIN. Court is
 // informational only (used to prefill score.jsx's court filter after login),
-// never an access restriction — any verified host can score any match.
+// never an access restriction — any verified host can score any match. Most
+// court hosts score a pair of adjacent courts at once, so Court can list two
+// numbers (e.g. "1, 2" or "1-2") — score.jsx matches that against its
+// predefined court-pair filter chips. Court managers, who oversee one court
+// themselves plus two hosts, can just list their own single court (e.g. "5").
 //
 // Required environment variables: same Sheets credentials as results.js
 // (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, SHEETS_SPREADSHEET_ID),

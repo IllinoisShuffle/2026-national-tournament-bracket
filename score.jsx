@@ -76,18 +76,39 @@ function normalizeCourt(v) {
   return m ? m[0].replace(/^0+(?=\d)/, '') : '';
 }
 
-// courtFilter holds either a specific court number, one of these two
-// building-half shortcuts, 'my' (games the logged-in host is the scorer of
-// record on), or '' for all. The venue's 10 courts split into two halves of
-// 5 — court hosts/managers only need to watch their own half.
+// A court host's Hosts-sheet Court value can list two courts (e.g. "1, 2" or
+// "1-2") since each host scores a pair at once — unlike normalizeCourt above,
+// this pulls out every number rather than just the first, for matching
+// against COURT_PAIRS at login.
+function normalizeCourtList(v) {
+  const nums = String(v || '').match(/\d+/g) || [];
+  return nums.map((n) => n.replace(/^0+(?=\d)/, ''));
+}
+
+// courtFilter holds either a specific court number, one of the two
+// building-half shortcuts below, one of the court-pair shortcuts, 'my'
+// (games the logged-in host is the scorer of record on), or '' for all.
+// The venue's 10 courts split into two halves of 5 for court managers, each
+// overseeing one court themselves (5 or 6) plus two court hosts. Each of
+// those hosts scores a pair of adjacent courts at once (1&2, 3&4, 7&8,
+// 9&10), hence COURT_PAIRS below.
 const COURTS_1_5 = 'courts-1-5';
 const COURTS_6_10 = 'courts-6-10';
 const MY_GAMES = 'my';
+const COURT_PAIRS = [
+  { key: 'courts-1-2', courts: ['1', '2'], label: 'Courts 1–2' },
+  { key: 'courts-3-4', courts: ['3', '4'], label: 'Courts 3–4' },
+  { key: 'courts-5-6', courts: ['5', '6'], label: 'Courts 5–6' },
+  { key: 'courts-7-8', courts: ['7', '8'], label: 'Courts 7–8' },
+  { key: 'courts-9-10', courts: ['9', '10'], label: 'Courts 9–10' },
+];
 
 function courtFilterLabel(courtFilter) {
   if (courtFilter === MY_GAMES) return ' you’re scoring';
   if (courtFilter === COURTS_1_5) return ' on Courts 1–5';
   if (courtFilter === COURTS_6_10) return ' on Courts 6–10';
+  const pair = COURT_PAIRS.find((p) => p.key === courtFilter);
+  if (pair) return ` on ${pair.label}`;
   if (courtFilter) return ` at Court ${courtFilter}`;
   return '';
 }
@@ -189,8 +210,17 @@ function ScoreApp() {
   function handleLogin(nextAuth) {
     storeAuth(nextAuth);
     setAuth(nextAuth);
-    const court = normalizeCourt(nextAuth.court);
-    if (court && !courtFilter) updateCourtFilter(court);
+    if (courtFilter) return;
+    const courts = normalizeCourtList(nextAuth.court);
+    if (courts.length >= 2) {
+      const sorted = [...courts].sort((a, b) => Number(a) - Number(b));
+      const pair = COURT_PAIRS.find((p) => p.courts[0] === sorted[0] && p.courts[1] === sorted[1]);
+      // A pair that isn't one of the predefined host pairs is left
+      // unfiltered ('All') rather than guessed at.
+      if (pair) updateCourtFilter(pair.key);
+    } else if (courts.length === 1) {
+      updateCourtFilter(courts[0]);
+    }
   }
 
   function handleLogout() {
@@ -234,6 +264,8 @@ function ScoreApp() {
         if (!c) return false;
         return courtFilter === COURTS_1_5 ? c <= 5 : c >= 6;
       }
+      const pair = COURT_PAIRS.find((p) => p.key === courtFilter);
+      if (pair) return pair.courts.includes(normalizeCourt(m.court));
       if (courtFilter) return normalizeCourt(m.court) === courtFilter;
       return true;
     })
@@ -400,6 +432,11 @@ function CourtToggle({ courts, value, onChange }) {
       <button className={`s-court-chip${value === COURTS_6_10 ? ' s-court-chip-active' : ''}`} onClick={() => onChange(COURTS_6_10)}>
         Courts 6&ndash;10
       </button>
+      {COURT_PAIRS.map((p) => (
+        <button key={p.key} className={`s-court-chip${value === p.key ? ' s-court-chip-active' : ''}`} onClick={() => onChange(p.key)}>
+          {p.label}
+        </button>
+      ))}
       {courts.map((c) => (
         <button key={c} className={`s-court-chip${value === c ? ' s-court-chip-active' : ''}`} onClick={() => onChange(c)}>
           Court {c}
