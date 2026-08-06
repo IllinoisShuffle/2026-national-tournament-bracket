@@ -224,7 +224,11 @@ function ScoreApp() {
   }
 
   const matches = (liveData && liveData.matches) || {};
-  const unfinished = Object.values(matches).filter((m) => !m.winner);
+  // Early bracket rounds create match slots before either feeder match has a
+  // winner, so both teams read "TBD" for a while. Those slots have nothing a
+  // host could act on yet, so hide them until at least one side is set
+  // rather than cluttering the list with placeholder cards.
+  const unfinished = Object.values(matches).filter((m) => !m.winner && (m.yellow || m.black));
 
   const visibleMatches = unfinished
     .filter((m) => {
