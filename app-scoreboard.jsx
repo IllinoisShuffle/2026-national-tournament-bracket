@@ -199,7 +199,7 @@ function Scoreboard() {
             <div className="sb-upnext">
               {upNext.map((m) => (
                 <div className="sb-upnext-row" key={m.id}>
-                  <span className="sb-un-when">{m.time || 'TBD'}{m.court ? ` · ${m.court}` : ''}</span>
+                  <span className="sb-un-when">{m.time || 'TBD'} · {m.court || 'TBD'}</span>
                   <span className="sb-un-round">{m.bracketLabel} · {m.roundLabel}</span>
                   <span className="sb-un-teams">{m.yellow} vs {m.black}</span>
                 </div>
