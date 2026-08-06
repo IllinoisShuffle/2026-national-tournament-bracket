@@ -36,7 +36,8 @@ function Poster() {
   const isLive = !!liveData;
   const liveMatches = liveData ? liveData.matches : {};
   // Before the first fetch resolves, render the bracket as "live with no
-  // results yet" (all TBD) instead of the mock demo teams, so a connected
+  // results yet" (blank slots, TBD in the Final Four/Rankings) instead of
+  // the mock demo teams, so a connected
   // backend's real data pops into an empty bracket rather than visibly
   // overwriting fake sample names. Only show the demo/mock bracket once
   // we've confirmed there's genuinely no backend to talk to.
@@ -252,12 +253,12 @@ function Poster() {
   };
 
   // Gate each "results" stop on how far the tournament has actually
-  // progressed, so kiosk mode never dwells on an empty crop full of TBD
-  // placeholders. Demo mode (no live backend) has no TBD state, so
+  // progressed, so kiosk mode never dwells on an empty crop full of blank
+  // placeholders. Demo mode (no live backend) has no blank-placeholder state, so
   // everything is always ready there.
-  const mainLoopReady = !useLiveShape || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== 'TBD');
+  const mainLoopReady = !useLiveShape || [regLT, regLB, regRT, regRB].some((r) => r.champTeam !== '');
   const mainRankingsReady = !useLiveShape || [mainChampion, runnerUp, thirdPlace, fourthPlace].every((t) => t !== 'TBD');
-  const consolFinalFourReady = !useLiveShape || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== 'TBD');
+  const consolFinalFourReady = !useLiveShape || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== '');
   const consolRankingsReady = !useLiveShape || [consolChampion, consolRunnerUp, consolThird, consolFourth].every((t) => t !== 'TBD');
 
   const kioskViews = [

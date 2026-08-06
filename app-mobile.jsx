@@ -25,7 +25,8 @@ function MobilePoster() {
   const isLive = !!liveData;
   const liveMatches = liveData ? liveData.matches : {};
   // Before the first fetch resolves, render the bracket as "live with no
-  // results yet" (all TBD) instead of the mock demo teams, so a connected
+  // results yet" (blank slots, TBD in the Final Four/Rankings) instead of
+  // the mock demo teams, so a connected
   // backend's real data pops into an empty bracket rather than visibly
   // overwriting fake sample names. Only show the demo/mock bracket once
   // we've confirmed there's genuinely no backend to talk to.

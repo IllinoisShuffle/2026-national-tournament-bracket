@@ -56,8 +56,8 @@ function resolveRegion(liveData, prefix, sizes, quarterIndex) {
   const leafNames = [];
   leafIds.forEach((id) => {
     const m = get(id);
-    leafNames.push(m.yellow || 'TBD');
-    leafNames.push(m.black || 'TBD');
+    leafNames.push(m.yellow || '');
+    leafNames.push(m.black || '');
   });
 
   const roundWinners = sizes.map((size) => {

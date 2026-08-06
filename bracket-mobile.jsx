@@ -49,7 +49,7 @@ function buildRegionV({ quarter, teams, y0, gaps, x0, x1, style, showLabels, sho
     const decided = [];
     for (let j = 0, k = 0; j < prev.length; j += 2, k++) {
       const live = liveRound && liveRound[k];
-      cur.push(live || (roundWinners ? 'TBD' : pickWinner(prev[j], prev[j + 1])));
+      cur.push(live || (roundWinners ? '' : pickWinner(prev[j], prev[j + 1])));
       decided.push(roundWinners ? !!live : true);
     }
     roundTeams.push(cur);
