@@ -102,7 +102,20 @@ function Scoreboard() {
     [data]
   );
 
-  const courtNum = (m) => { const n = parseInt(m.court.replace("Court ",""), 10); return Number.isFinite(n) ? n : 999; };
+  const courtNum = (m) => { const n = parseInt(m.court.replace("Court ",""), 10); return Number.isFinite(n) ? n : Infinity; };
+
+  // Parses "H:MM AM/PM" (as the sheet formats it) into minutes-since-midnight
+  // so Up Next sorts chronologically instead of lexicographically — a plain
+  // string compare puts "10:05 AM" before "2:05 PM". Blank/unparseable times
+  // (TBD) sort last, matching how a missing court already sorts last via
+  // courtNum's Infinity fallback above.
+  const timeMinutes = (m) => {
+    const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((m.time || '').trim());
+    if (!match) return Infinity;
+    let h = parseInt(match[1], 10) % 12;
+    if (/pm/i.test(match[3])) h += 12;
+    return h * 60 + parseInt(match[2], 10);
+  };
 
   // "On the courts" is driven entirely by live-score.js's Blobs data (via
   // results.js's liveScore merge) — a court host actively scoring the match
@@ -129,7 +142,7 @@ function Scoreboard() {
 
   const upNext = allMatches
     .filter((m) => !(m.liveScore && (m.liveScore.status === 'in_progress' || m.liveScore.status === 'complete')) && !m.winner && m.yellow && m.black && m.yellow !== 'TBD' && m.black !== 'TBD' && (m.court || m.time))
-    .sort((a, b) => (a.time || '').localeCompare(b.time || '') || courtNum(a) - courtNum(b));
+    .sort((a, b) => timeMinutes(a) - timeMinutes(b) || courtNum(a) - courtNum(b));
 
   // Smaller round `size` = a later stage of the bracket, so it reads as more
   // recently completed than a larger one; `time` (start time) breaks ties
