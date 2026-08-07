@@ -258,7 +258,33 @@ function ScoreApp() {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  const [selectedId, setSelectedId] = React.useState(null);
+  // Tracked in history state (not just React state) so the device/browser
+  // back button backs out of a match to the list instead of leaving the
+  // page entirely — this is a single-page app with one URL, so without a
+  // pushed history entry per match there's nothing for "back" to land on.
+  const [selectedId, setSelectedIdState] = React.useState(() => (window.history.state || {}).selectedId || null);
+
+  function selectMatch(id) {
+    window.history.pushState({ selectedId: id }, '');
+    setSelectedIdState(id);
+  }
+
+  function backToMatches() {
+    if (window.history.state && window.history.state.selectedId) {
+      window.history.back();
+    } else {
+      setSelectedIdState(null);
+    }
+  }
+
+  React.useEffect(() => {
+    function onPopState(e) {
+      setSelectedIdState((e.state || {}).selectedId || null);
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   const [courtFilter, setCourtFilter] = React.useState(readStoredCourtFilter);
 
   function updateCourtFilter(next) {
@@ -301,13 +327,18 @@ function ScoreApp() {
   function handleLogout() {
     clearAuth();
     setAuth(null);
-    setSelectedId(null);
+    setSelectedIdState(null);
+    // Clears any pushed match selection out of the current history entry so
+    // a different host logging in on the same device can't hit "back" and
+    // land in the previous host's game.
+    window.history.replaceState(null, '');
   }
 
   function handleAuthExpired() {
     clearAuth();
     setAuth(null);
-    setSelectedId(null);
+    setSelectedIdState(null);
+    window.history.replaceState(null, '');
   }
 
   // Merges a just-confirmed write straight into the polled cache so the
@@ -368,7 +399,7 @@ function ScoreApp() {
       <ScoreKeeper
         match={selected}
         auth={auth}
-        onBack={() => setSelectedId(null)}
+        onBack={backToMatches}
         onAuthExpired={handleAuthExpired}
         onSaved={handleSaved}
       />
@@ -393,7 +424,7 @@ function ScoreApp() {
           const isComplete = m.liveScore && m.liveScore.status === 'complete';
           const beingScored = !isComplete && isRecentlyActive(m.liveScore) && m.liveScore.scorer && m.liveScore.scorer !== auth.name;
           return (
-            <button key={m.id} className={`s-match-card${isComplete ? ' s-match-card-complete' : ''}`} onClick={() => setSelectedId(m.id)}>
+            <button key={m.id} className={`s-match-card${isComplete ? ' s-match-card-complete' : ''}`} onClick={() => selectMatch(m.id)}>
               <div className="s-match-id">
                 {m.id}
                 {m.court ? ` · Court ${normalizeCourt(m.court) || m.court}` : ''}
