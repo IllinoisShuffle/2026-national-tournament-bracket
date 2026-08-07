@@ -358,7 +358,7 @@ function Poster() {
       let w = view.x1 - view.x0, h = view.y1 - view.y0;
       if (w / h < targetAspect) w = h * targetAspect; else h = w / targetAspect;
 
-      const F = 0.98; // small overscan margin so content never touches the physical screen edge
+      const F = 1.08; // slight overscan so content (and its text) reads larger on a projector
       // Matches the SVG's own default preserveAspectRatio="xMidYMid meet"
       // baseline fit of the 3300x3000 viewBox into the (now real-screen-
       // shaped) poster box, which our transform builds on top of.
