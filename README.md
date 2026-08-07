@@ -54,6 +54,13 @@ whether the page is reachable, so this is about reducing clutter for
 attendees, not an access-control boundary. Give volunteers a bookmark or a
 separate QR code for `/?staff` rather than the public one.
 
+The first time `&staff` shows up in the URL, it's remembered in
+`localStorage`, so it keeps working even after navigating to a plain
+`/?choose` (e.g. the "All views" link on the bracket pages) and even after
+installing the site as a home-screen app on Android — that install always
+launches `manifest.json`'s `start_url` (`/`, no query string), which would
+otherwise silently drop the flag on every launch.
+
 `/web-bracket` also redirects narrow viewports (≤700px) straight to the
 mobile layout, the same way `/` does — so a direct link, bookmark,
 or QR code that happens to land there from a phone still gets the readable
