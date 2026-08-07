@@ -123,8 +123,13 @@
     /* Kiosk / TV mode: no pointer, no chrome, just an auto-panning poster
        plus a caption telling a passerby what section is on screen. */
     .kiosk-mode .all-views-link { display: none; }
-    .kiosk-mode .poster-stage { padding: 10px; }
-    .kiosk-mode .poster { width: min(99vw, calc((100vh - 20px) * (3300 / 3000))); }
+    .kiosk-mode .poster-stage { padding: 0; }
+    /* Fill the real viewport at its own (often widescreen) aspect ratio
+       instead of the poster's print-shaped 3300x3000 box. The auto-pan
+       camera (app.jsx) pads each stop's crop to match this real aspect
+       ratio before applying one uniform zoom, so every stop fills the
+       screen edge-to-edge with no letterboxing *and* no distortion. */
+    .kiosk-mode .poster { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
     .kiosk-caption {
       position: fixed;
       left: 50%;

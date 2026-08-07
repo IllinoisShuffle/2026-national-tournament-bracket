@@ -243,7 +243,7 @@ function Poster() {
   // pointer is available to drive the view manually. Sized generously so
   // labels near the edges don't get clipped.
   const KIOSK_HOLD_MS = 9000;
-  const busPairLabel = (a, b) => `${a.busNum} ${a.busName} & ${b.busNum} ${b.busName}`;
+  const busLabel = (a) => `${a.busNum} ${a.busName}`;
 
   // Same boundary math as the (drawn) main-bracket `loopBounds`, but for the
   // consolation bracket, which has no visible loop rect of its own.
@@ -263,15 +263,23 @@ function Poster() {
 
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
-    { label: 'MAIN · BLUE & RED', x0: 20, y0: MAIN_Y0 - 50, x1: leftHalfX + 170, y1: MAIN_Y1 + 20 },
-    { label: 'MAIN · PINK & GREEN', x0: rightHalfX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
+    // One stop per quadrant (rather than a left-half/right-half pair) so a
+    // projector crop reads clearly — cropping to each region's own champX
+    // (where its train lines converge) instead of the full half-bracket
+    // width roughly doubles the effective zoom vs. the old paired view.
+    { label: `MAIN · ${qLT.name}`, x0: 20, y0: MAIN_Y0 - 50, x1: regLT.champX + 170, y1: mainMidY + 30 },
+    { label: `MAIN · ${qLB.name}`, x0: 20, y0: mainMidY - 30, x1: regLB.champX + 170, y1: MAIN_Y1 + 20 },
+    { label: `MAIN · ${qRT.name}`, x0: regRT.champX - 170, y0: MAIN_Y0 - 50, x1: POSTER_W - 20, y1: mainMidY + 30 },
+    { label: `MAIN · ${qRB.name}`, x0: regRB.champX - 170, y0: mainMidY - 30, x1: POSTER_W - 20, y1: MAIN_Y1 + 20 },
     // Semifinals + final + 3rd place game, matching the drawn "loop" rect
     // plus room above for the championship matchup label, which sits above it.
     ...(mainLoopReady ? [{ label: 'MAIN · THE LOOP', x0: loopBounds.x0, y0: Math.min(loopBounds.y0, champY - 150), x1: loopBounds.x1, y1: loopBounds.y1 }] : []),
     // The FinalRanking block sits just below the loop, centered on CHAMPION_X.
     ...(mainRankingsReady ? [{ label: 'MAIN · FINAL RANKINGS', x0: CHAMPION_X - 380, y0: loopBounds.y1 - 20, x1: CHAMPION_X + 380, y1: loopBounds.y1 + 380 }] : []),
-    { label: `CONSOLATION · ${busPairLabel(qLT, qLB)}`, x0: 20, y0: CONSOL_Y0 - 40, x1: cLeftHalfX + 150, y1: CONSOL_Y1 + 20 },
-    { label: `CONSOLATION · ${busPairLabel(qRT, qRB)}`, x0: cRightHalfX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
+    { label: `CONSOLATION · ${busLabel(qLT)}`, x0: 20, y0: CONSOL_Y0 - 40, x1: cLT.champX + 150, y1: consolMidY + 30 },
+    { label: `CONSOLATION · ${busLabel(qLB)}`, x0: 20, y0: consolMidY - 30, x1: cLB.champX + 150, y1: CONSOL_Y1 + 20 },
+    { label: `CONSOLATION · ${busLabel(qRT)}`, x0: cRT.champX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 20, y1: consolMidY + 30 },
+    { label: `CONSOLATION · ${busLabel(qRB)}`, x0: cRB.champX - 150, y0: consolMidY - 30, x1: POSTER_W - 20, y1: CONSOL_Y1 + 20 },
     ...(consolFinalFourReady ? [{ label: 'CONSOLATION · FINAL FOUR', x0: consolLoopBounds.x0, y0: Math.min(consolLoopBounds.y0, cChampY - 120), x1: consolLoopBounds.x1, y1: consolLoopBounds.y1 }] : []),
     ...(consolRankingsReady ? [{ label: 'CONSOLATION · FINAL RANKINGS', x0: CHAMPION_X - 320, y0: cThirdY + 20, x1: CHAMPION_X + 320, y1: cThirdY + 340 }] : []),
   ];
@@ -322,22 +330,43 @@ function Poster() {
     };
   }, [isKiosk]);
 
+  // Reserve room at the bottom of the screen for the fixed kiosk-caption
+  // pill (bottom: 26px, ~40px tall) so a bottom-row quadrant's champion
+  // marker never renders directly underneath it.
+  const KIOSK_CAPTION_SAFE_PX = 100;
+
   React.useEffect(() => {
     if (!isKiosk) return;
     function applyCamera() {
       const el = posterRef.current;
-      if (!el || !el.offsetWidth) return;
+      if (!el || !el.offsetWidth || !el.offsetHeight) return;
       const view = kioskViews[kioskIndex % kioskViews.length];
-      const w = view.x1 - view.x0, h = view.y1 - view.y0;
-      // Math.min ("contain") guarantees the whole region is visible, even if
-      // it leaves a bit of margin on one axis. Math.max ("cover") would zoom
-      // to fill both axes and crop whichever axis needed less zoom — which
-      // is exactly what was clipping the top/bottom of the old combined
-      // finals view.
-      const z = clampZoom(Math.min(POSTER_W / w, POSTER_H / h) * 0.94);
-      const k = el.offsetWidth / POSTER_W;
+      const frameW = el.offsetWidth, frameH = el.offsetHeight;
+      const targetH = Math.max(frameH - KIOSK_CAPTION_SAFE_PX, frameH * 0.6);
+      const targetAspect = frameW / targetH;
+
+      // Pad the view's box (symmetrically, around its own center) so its
+      // aspect ratio exactly matches the real screen's before computing a
+      // single uniform zoom — this is what lets a stop fill the screen on
+      // both axes with no letterboxing *and* no distortion. (A non-uniform
+      // per-axis scale would fill the screen too, but squashes circles/text
+      // to force-fit whatever the mismatch is — that's what made things look
+      // "smushed".) Padding that extends past the poster's own 3300x3000
+      // canvas just shows more of its plain paper background, which is
+      // seamless since .poster's own background is that same color.
       const cx = (view.x0 + view.x1) / 2, cy = (view.y0 + view.y1) / 2;
-      setKioskCam({ zoom: z, x: -z * k * (cx - POSTER_W / 2), y: -z * k * (cy - POSTER_H / 2) });
+      let w = view.x1 - view.x0, h = view.y1 - view.y0;
+      if (w / h < targetAspect) w = h * targetAspect; else h = w / targetAspect;
+
+      const F = 0.98; // small overscan margin so content never touches the physical screen edge
+      // Matches the SVG's own default preserveAspectRatio="xMidYMid meet"
+      // baseline fit of the 3300x3000 viewBox into the (now real-screen-
+      // shaped) poster box, which our transform builds on top of.
+      const meetK = Math.min(frameW / POSTER_W, frameH / POSTER_H);
+      const z = F * frameW / (meetK * w);
+      const x = -z * meetK * (cx - POSTER_W / 2);
+      const y = -KIOSK_CAPTION_SAFE_PX / 2 - z * meetK * (cy - POSTER_H / 2);
+      setKioskCam({ zoom: z, x, y });
     }
     applyCamera();
     window.addEventListener('resize', applyCamera);

@@ -30,11 +30,20 @@
 </head>
 <body>
   <div class="frame-stage">
-    <iframe id="frame-bracket" class="active" src="/web-bracket?kiosk&full" title="Bracket kiosk"></iframe>
-    <iframe id="frame-scoreboard" src="/scoreboard" title="Live scoreboard"></iframe>
+    <iframe id="frame-bracket" class="active" title="Bracket kiosk"></iframe>
+    <iframe id="frame-scoreboard" title="Live scoreboard"></iframe>
   </div>
 
   <script>
+    // ?demo on this wrapper page forces both embedded views into demo/mock
+    // data (see live-data.js) — for on-site testing against the real
+    // production URL without touching live match data. Set the iframe src
+    // here (rather than inline in the HTML above) so it can carry that flag
+    // through.
+    var isDemo = /[?&]demo\b/.test(location.search);
+    document.getElementById('frame-bracket').src = '/web-bracket?kiosk&full' + (isDemo ? '&demo' : '');
+    document.getElementById('frame-scoreboard').src = '/scoreboard' + (isDemo ? '?demo' : '');
+
     // Two full-screen iframes stay mounted the whole time and just cross-fade
     // instead of reloading (and re-fetching) every time one comes back on
     // screen. How many stops the bracket kiosk rotation has varies as

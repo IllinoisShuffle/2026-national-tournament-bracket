@@ -24,6 +24,11 @@ const LIVE_POLL_MS = 15000;
 const SCOREBOARD_POLL_MS = 5000;
 
 async function fetchLiveData() {
+  // ?demo forces the demo/mock bracket even when a real backend is live —
+  // for on-site testing/rehearsal against the actual production URL without
+  // touching real match data. Same effect as "no backend deployed": every
+  // caller already falls back to mock data when this returns null.
+  if (/[?&]demo\b/.test(location.search)) return null;
   try {
     const res = await fetch(LIVE_ENDPOINT, { cache: 'no-store' });
     if (!res.ok) return null;
