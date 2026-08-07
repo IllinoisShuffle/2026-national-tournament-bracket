@@ -8,9 +8,12 @@
   // Send phones straight to the mobile layout and everything else to the
   // desktop poster, so the same URL "just works" on any device. Visit with
   // ?choose on the end (e.g. from a QR code at the venue) to see this picker
-  // instead — that's also how to reach the print poster.
+  // instead. Add &staff (e.g. /?choose&staff, or just /?staff) for the
+  // volunteer-only cards — Print Poster, both kiosk modes, Live Score Admin,
+  // and Court Scorekeeping — which stay hidden from the public picker.
   (function () {
-    if (/[?&]choose\b/.test(location.search)) return;
+    if (/[?&]staff\b/.test(location.search)) document.documentElement.classList.add('staff');
+    if (/[?&](choose|staff)\b/.test(location.search)) return;
     var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
     location.replace(isNarrow ? '/mobile-bracket' : '/web-bracket');
   })();
@@ -32,6 +35,8 @@
   .card .kicker { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px; }
   .card .title { font-size: 19px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 8px; }
   .card .desc { font-size: 13px; line-height: 1.5; color: rgba(21,21,26,0.65); }
+  .card-staff { display: none; }
+  html.staff .card-staff { display: block; }
   @media (max-width: 560px) {
     .cards { grid-template-columns: minmax(0, 300px); }
   }
@@ -67,20 +72,30 @@
         <div class="title">Live Scoreboard</div>
         <div class="desc">What's on the courts right now, with scores, plus what's up next.</div>
       </a>
-      <a class="card" href="/print-poster">
+      <a class="card card-staff" href="/print-poster">
         <div class="kicker">Fill-in-by-hand</div>
         <div class="title">Print Poster</div>
         <div class="desc">Blank bracket sized for a large-format print &mdash; write in results as matches finish.</div>
       </a>
-      <a class="card" href="/web-bracket?kiosk&full">
+      <a class="card card-staff" href="/web-bracket?kiosk&full">
         <div class="kicker">Unattended Display</div>
         <div class="title">TV / Kiosk Mode</div>
         <div class="desc">No mouse needed &mdash; auto-cycles through the bracket on a timer. Built for a lobby TV or venue monitor.</div>
       </a>
-      <a class="card" href="/kiosk-scoreboard">
+      <a class="card card-staff" href="/kiosk-scoreboard">
         <div class="kicker">Single-Screen Combo</div>
         <div class="title">Kiosk + Scoreboard</div>
         <div class="desc">For one lobby TV instead of two &mdash; cycles the bracket kiosk, then holds on the live scoreboard, on repeat.</div>
+      </a>
+      <a class="card card-staff" href="/score">
+        <div class="kicker">Staff Only</div>
+        <div class="title">Court Scorekeeping</div>
+        <div class="desc">Court host tool for entering an in-progress match's score. PIN login required.</div>
+      </a>
+      <a class="card card-staff" href="/admin">
+        <div class="kicker">Staff Only</div>
+        <div class="title">Live Score Admin</div>
+        <div class="desc">Inspect and clear live in-progress scores across all courts. PIN login required.</div>
       </a>
       <a class="card" href="http://illinoisshuffleboard.org/l/national-info" target="_blank" rel="noopener">
         <div class="kicker">Schedule &amp; Rules</div>
