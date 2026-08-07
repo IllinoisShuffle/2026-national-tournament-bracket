@@ -1,8 +1,10 @@
 // app-scoreboard.jsx
 // Live scoreboard: shows matches currently on the court, plus what's up next,
 // pulled straight from the same Netlify Function / Google Sheet poll the
-// bracket pages use. Falls back to a small deterministic demo set (clearly
-// labeled) when the live-results backend isn't reachable.
+// bracket pages use. Shows a small deterministic demo set only when ?demo is
+// explicitly passed (on-site rehearsal); any other failure to reach the
+// live-results backend (bad venue wifi, backend down, etc.) shows a plain
+// "disconnected" message instead — never fake data on the live display.
 
 const SCOREBOARD_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "paper"
@@ -77,9 +79,18 @@ function buildDemoData() {
 function Scoreboard() {
   const [t, setTweak] = window.useTweaks(SCOREBOARD_TWEAK_DEFAULTS);
 
+  // ?demo explicitly requests the sample demo matches (on-site rehearsal
+  // against the real production URL). Venue wifi is unreliable, so a fetch
+  // failure must NOT also fall back to demo data — that would silently show
+  // fake scores on the club's live display instead of a clear "disconnected"
+  // state. Only an explicit ?demo shows fake data; anything else that fails
+  // to load shows nothing but the error (see `disconnected` below).
+  const isDemo = React.useMemo(() => /[?&]demo\b/.test(location.search), []);
+
   const [liveData, setLiveData] = React.useState(null);
   const [liveChecked, setLiveChecked] = React.useState(false);
   React.useEffect(() => {
+    if (isDemo) return;
     let cancelled = false;
     async function load() {
       const data = await window.LiveData.fetchLiveData();
@@ -88,16 +99,14 @@ function Scoreboard() {
     load();
     const interval = setInterval(load, window.LiveData.SCOREBOARD_POLL_MS);
     return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  }, [isDemo]);
 
   const isLive = !!liveData;
-  // Before the first fetch resolves, render an empty real shape instead of
-  // the demo matches, so a connected backend's real state (however sparse)
-  // never gets visibly overwritten by fake sample cards on every reload.
-  // Only fall back to demo data once we've confirmed there's genuinely no
-  // backend to talk to — same pattern as app.jsx/app-mobile.jsx.
-  const useLiveShape = isLive || !liveChecked;
-  const data = useLiveShape ? (liveData || { matches: {} }) : buildDemoData();
+  const data = isDemo ? buildDemoData() : (liveData || { matches: {} });
+  // Genuinely disconnected: not demo, first fetch has resolved, and it came
+  // back empty — show nothing but the error rather than an empty "no
+  // matches" board that reads as caught-up instead of offline.
+  const disconnected = !isDemo && liveChecked && !isLive;
 
   const allMatches = React.useMemo(
     () => Object.values(data.matches).map(describeMatch).filter(Boolean),
@@ -172,6 +181,17 @@ function Scoreboard() {
     ? new Date(data.updatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
     : null;
 
+  // Venue wifi is flaky — a dropped connection must read as "disconnected,"
+  // not as a caught-up board with zero matches. Show nothing but the error
+  // (no header, no empty-state sections) rather than fake/demo data.
+  if (disconnected) {
+    return (
+      <div className="sb-stage sb-disconnected-stage" style={themeStyle}>
+        <div className="sb-disconnected-msg">Live results aren't connected — check back shortly.</div>
+      </div>
+    );
+  }
+
   return (
     <div className="sb-stage" style={themeStyle}>
       <window.TweaksPanel>
@@ -201,8 +221,8 @@ function Scoreboard() {
           </div>
         </div>
 
-        {!isLive && liveChecked && (
-          <div className="sb-demo-banner">Live results aren't connected yet — showing sample demo matches.</div>
+        {isDemo && (
+          <div className="sb-demo-banner">Demo mode — showing sample matches, not live results.</div>
         )}
 
         <div className="sb-section-title"><span className="sb-pulse" />On the Courts</div>
