@@ -97,6 +97,15 @@ html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-famil
 .s-done-note{font-size:13px;color:var(--ink-dim);margin:0 0 16px}
 .s-reopen{appearance:none;border:1.5px solid var(--ink);border-radius:8px;background:none;color:var(--ink);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;font-family:inherit}
 .s-reopen:disabled{opacity:0.5;cursor:default}
+/* Below ~400px (iPhone SE/mini width and up) the two side-by-side stepper
+   grids get tight enough to feel smushed. Capping each button's size and
+   centering it in its grid cell shrinks the buttons just enough to give
+   them breathing room, without giving up the side-by-side layout that
+   wider phones already have room for. */
+@media (max-width: 400px){
+  .s-stepper-grid{gap:6px}
+  .s-stepper{max-width:60px;justify-self:center}
+}
 </style>
 </head>
 <body>
