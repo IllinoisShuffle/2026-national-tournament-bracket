@@ -55,10 +55,16 @@ Match Report Sheet, exactly as before.
 Once a match has no winner recorded in the sheet yet, its court-reported
 score becomes eligible to show up on **the Live Scoreboard** (`/scoreboard`)
 under **"On the Courts"** — with the running score, current frame
-("Playing Frame 9 of 16," etc.), and which team is which disc color. The
-bracket pages (`/web-bracket`, `/mobile-bracket`) don't show any of this —
-they just say "TBD" until you enter the official result, so they only ever
-reflect finalized results.
+("Playing Frame 9 of 16," etc.), and which team is which disc color. A
+match can also show up here *before* there's any score at all: a court host
+can tap "Start Match" as soon as they open a match, which puts it on the
+board labeled **"Warming Up"** ahead of Frame 1. And between Frames 8 and 9,
+while teams take practice shots after swapping disc colors, it briefly reads
+**"Switching Colors"** instead of a frame number. Neither is anything to act
+on — they're just more granular versions of "this court is active," the same
+unofficial status as a numbered frame. The bracket pages (`/web-bracket`,
+`/mobile-bracket`) don't show any of this — they just say "TBD" until you
+enter the official result, so they only ever reflect finalized results.
 
 This is explicitly labeled as unofficial, and behaves accordingly:
 
@@ -118,7 +124,8 @@ link somewhere private.
   already been finalized in the sheet (those stop showing on the public
   scoreboard, but still exist in storage until you clear them) — each row
   shows the match ID, court, who's scoring it, when it was last updated, its
-  status (In Progress / Complete), and the current score.
+  status (Warming Up / In Progress / Switching Colors / Complete), and the
+  current score.
 - **Delete a single entry** — use this for a bad/stale score on one match: a
   host mis-tapped and it's now confusing, a test entry from setup, or a match
   you've already handled and want off the list.

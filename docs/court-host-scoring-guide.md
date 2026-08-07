@@ -51,12 +51,26 @@ that isn't finished yet, across all courts.
   any match on any court if you need to — say, covering for someone, or your
   match got moved.
 - Each match card shows the match ID, court, scheduled time, and — if
-  someone's already got a score going — the current frame and running score.
+  someone's already opened it — the current frame and running score, or
+  **"Warming Up"** / **"Switching Colors"** if it's in one of those gaps
+  instead of an actual frame.
 - If another host is actively updating that match right now, you'll see
   **"Being scored by `<name>`"** under it. That's a heads-up, not a lock —
   see "If two people try to score the same match" below.
 
 Tap a match to open it.
+
+## Before Frame 1: Start Match
+
+Opening a match you haven't started yet shows a **"Start Match"** button
+instead of the scoring grid. Tap it to put the match on the Live
+Scoreboard as **"Warming Up"** — handy for letting spectators know a court
+has picked up before there's a score to show. Then tap **Start Frame 1**
+once play actually begins, which is when the scoring grid appears.
+
+**Catching up because play already started?** No problem — Start Match,
+then Start Frame 1, then score like normal. Two quick taps, and you're
+right where you'd otherwise be.
 
 ## Scoring the match
 
@@ -94,9 +108,10 @@ Tap **Reset Frame.**
 ### Ending the frame
 
 Tap the big button at the bottom when the frame's done. It's normally
-labeled **"Submit Frame N & Start Frame N+1."** On a frame that ends the
-match, it relabels to **"...& Complete Match"** and finishes the match in
-the same tap.
+labeled **"Submit Frame N & Start Frame N+1."** On Frame 8 specifically, it
+relabels to **"...& Switch Colors"** and moves to the Switching Colors gap
+instead (see below). On a frame that ends the match, it relabels to
+**"...& Complete Match"** and finishes the match in the same tap.
 
 Nothing landed for either team that frame (a "wash")? Submit still
 advances, with no score change.
@@ -114,6 +129,10 @@ can always double check before committing.
   color dot shows next to each team once you cross that line, so just keep
   tapping the same team's buttons regardless of which color disc they're
   currently shooting.
+- **Submitting Frame 8 moves the match to "Switching Colors"** instead of
+  straight into Frame 9 — this covers the practice shots teams take while
+  swapping disc colors. The Live Scoreboard shows "Switching Colors" during
+  this gap. Tap **Start Frame 9** once play resumes.
 
 ### If it goes to overtime
 
@@ -174,10 +193,13 @@ attention to before you start.
 |---|---|
 | Log in | Enter the name + PIN your ATD gave you |
 | Find your match | "Pick your match" list, filter by court if needed |
+| Put the match on the board before playing | "Start Match" (shows "Warming Up") |
+| Begin scoring Frame 1 | "Start Frame 1" — this is what reveals the scoring grid |
 | Score a point | Tap +8 / +7 / +10 / −10 (or +1/−1 to nudge) — stages it, doesn't save yet |
 | Undo a single tap | "Undo last pick" |
 | Clear the whole current frame | "Reset Frame" |
 | Move to the next frame | "Submit Frame N & Start Frame N+1" |
+| End Frame 8 (color swap) | "Submit Frame 8 & Switch Colors," then "Start Frame 9" once play resumes |
 | Fell behind a frame or two | Stage enough taps to match the current board, then Submit once to catch up |
 | Finish the match | "Complete Match" — **then bring the signed Match Report Sheet to the ATD in the DJ Booth** |
 | Fix a mis-tapped "Complete" | "Reopen (mis-tap)" |

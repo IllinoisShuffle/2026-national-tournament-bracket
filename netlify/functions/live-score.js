@@ -12,7 +12,10 @@
 //
 // Expected JSON body:
 //   { matchId, court, yellowScore, blackScore, status, frame, force }
-//   status is "in_progress" (default) or "complete".
+//   status is "in_progress" (default), "complete", "warming_up" (match
+//   added to the board before Frame 1 starts), or "switching_colors" (the
+//   practice-shots interlude between Frames 8 and 9 while teams swap disc
+//   colors).
 //   frame is host-advanced (an "End Frame" +/- control on score.html), not
 //   derived from the score — there's no reliable way to infer a frame
 //   boundary from point taps alone. Defaults to 1.
@@ -54,7 +57,7 @@ const LIVE_SCORES_STORE = 'live-scores';
 const MIN_SCORE = -999;
 const MAX_SCORE = 999;
 const MAX_COURT_LEN = 20;
-const VALID_STATUSES = new Set(['in_progress', 'complete']);
+const VALID_STATUSES = new Set(['in_progress', 'complete', 'warming_up', 'switching_colors']);
 // Regulation is 16 frames; a tie goes to extra frames in pairs with no fixed
 // cap, so this is a generous sanity bound rather than a real gameplay limit.
 const MIN_FRAME = 1;
@@ -142,7 +145,7 @@ exports.handler = async function (event) {
       !force &&
       existing &&
       existing.data &&
-      existing.data.status === 'in_progress' &&
+      existing.data.status !== 'complete' &&
       existing.data.scorer &&
       existing.data.scorer !== scorer &&
       Date.now() - existing.data.updatedAt < ACTIVE_THRESHOLD_MS

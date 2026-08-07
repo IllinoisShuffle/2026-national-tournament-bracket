@@ -180,7 +180,10 @@ function AdminApp() {
                 </div>
               </div>
               <div className={`a-row-status${e.status === 'complete' ? ' a-row-status-complete' : ''}`}>
-                {e.status === 'complete' ? 'Complete' : 'In progress'}
+                {e.status === 'complete' ? 'Complete'
+                  : e.status === 'warming_up' ? 'Warming up'
+                  : e.status === 'switching_colors' ? 'Switching colors'
+                  : 'In progress'}
               </div>
               <div className="a-row-score">{e.yellowScore}&ndash;{e.blackScore}</div>
               <button
