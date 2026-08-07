@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="manifest" href="/manifest.json" id="manifest-link" />
+<link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#15151A" />
 <style>
 :root{
@@ -99,12 +99,6 @@ html,body{margin:0;padding:0;min-height:100vh;font-family:'Helvetica Neue',Helve
 <script>
   if (/[?&]staff\b/.test(location.search)) {
     document.getElementById('all-views-link').setAttribute('href', '/?choose&staff');
-    // Point at the staff-only manifest (start_url "/?staff") so an
-    // "Add to Home Screen" done from this page still lands back in
-    // staff mode — see index.html for why localStorage alone isn't
-    // enough on iOS.
-    var manifestLink = document.getElementById('manifest-link');
-    if (manifestLink) manifestLink.setAttribute('href', '/manifest-staff.json');
   }
 </script>
 <div id="root"></div>
