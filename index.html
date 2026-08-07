@@ -18,7 +18,19 @@
   // volunteer-only cards — Print Poster, both kiosk modes, Live Score Admin,
   // and Court Scorekeeping — which stay hidden from the public picker.
   (function () {
-    var staff = /[?&]staff\b/.test(location.search);
+    // Staff status is remembered in localStorage, not just the URL, so it
+    // survives an installed PWA (Android's "Add to Home Screen" always
+    // launches manifest.json's start_url "/", dropping any query string) —
+    // the one path the &staff-carrying card/All-views links below can't
+    // reach, since there's no URL to carry it from on a cold app launch.
+    var urlHasStaff = /[?&]staff\b/.test(location.search);
+    if (urlHasStaff) {
+      try { localStorage.setItem('staff', '1'); } catch (e) {}
+    }
+    var staff = urlHasStaff;
+    if (!staff) {
+      try { staff = localStorage.getItem('staff') === '1'; } catch (e) {}
+    }
     if (staff) document.documentElement.classList.add('staff');
     if (/[?&](choose|staff)\b/.test(location.search)) {
       if (staff) {
