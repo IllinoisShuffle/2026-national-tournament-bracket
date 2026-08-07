@@ -349,6 +349,18 @@ function Poster() {
     ? `translate(${kioskCam.x}px, ${kioskCam.y}px) scale(${kioskCam.zoom})`
     : `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
 
+  // QR overlay: only on the zoomed-out "FULL BRACKET" stop, since that's the
+  // one moment there's screen room for it without covering results. Encoded
+  // once per origin — the mobile bracket URL never changes mid-lap.
+  const isFullBracketView = isKiosk && kioskViews[kioskIndex % kioskViews.length].label === 'FULL BRACKET';
+  const mobileBracketUrl = React.useMemo(() => `${location.origin}/mobile-bracket`, []);
+  const kioskQrDataUrl = React.useMemo(() => {
+    const qr = window.qrcode(0, 'M');
+    qr.addData(mobileBracketUrl);
+    qr.make();
+    return qr.createDataURL(8, 8);
+  }, [mobileBracketUrl]);
+
   return (
     <div className="poster-stage" onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerLeave={endDrag}>
       {!isKiosk && (
@@ -373,6 +385,16 @@ function Poster() {
         <div className="kiosk-caption">
           <span className="kiosk-dot" />
           {kioskViews[kioskIndex % kioskViews.length].label}
+        </div>
+      )}
+
+      {isFullBracketView && (
+        <div className="kiosk-qr">
+          <img src={kioskQrDataUrl} alt="QR code to the mobile bracket" width="96" height="96" />
+          <div className="kiosk-qr-text">
+            <div className="kiosk-qr-kicker">FOLLOW ALONG</div>
+            <div className="kiosk-qr-title">Scan for the bracket on your phone</div>
+          </div>
         </div>
       )}
 

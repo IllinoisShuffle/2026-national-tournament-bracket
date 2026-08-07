@@ -155,6 +155,45 @@
       70% { box-shadow: 0 0 0 10px rgba(46,204,113,0); }
       100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
     }
+    /* QR overlay: only shown during kiosk mode's zoomed-out "FULL BRACKET"
+       stop, pointing viewers to the mobile bracket on their own phone. Fixed
+       white card regardless of theme so the code stays scannable against
+       either poster background. */
+    .kiosk-qr {
+      position: fixed;
+      right: 22px;
+      top: 22px;
+      z-index: 2147483000;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #fff;
+      color: #15151A;
+      padding: 14px 20px 14px 14px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .kiosk-qr img {
+      display: block;
+      width: 96px;
+      height: 96px;
+    }
+    .kiosk-qr-text {
+      max-width: 150px;
+    }
+    .kiosk-qr-text .kiosk-qr-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: rgba(21,21,26,0.55);
+      margin-bottom: 4px;
+    }
+    .kiosk-qr-text .kiosk-qr-title {
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+      letter-spacing: 0.2px;
+    }
     @media print {
       html, body { background: white; }
       .poster-stage { padding: 0; }
@@ -170,6 +209,7 @@
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
 
   <!-- Data + layout helpers (plain JS — load before JSX scripts) -->
   <script src="data.js"></script>
