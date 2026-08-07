@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="manifest" href="/manifest.json" />
+<link rel="manifest" href="/manifest.json" id="manifest-link" />
 <meta name="theme-color" content="#15151A" />
 <script>
   // Send phones straight to the mobile layout and everything else to the
@@ -31,7 +31,18 @@
     if (!staff) {
       try { staff = localStorage.getItem('staff') === '1'; } catch (e) {}
     }
-    if (staff) document.documentElement.classList.add('staff');
+    if (staff) {
+      document.documentElement.classList.add('staff');
+      // iOS's "Add to Home Screen" ignores localStorage (the installed
+      // icon runs in its own isolated storage, cut off from Safari's) and,
+      // on newer iOS versions, launches whatever start_url is in the
+      // linked manifest rather than the URL that was on-screen when the
+      // icon was added. Point at a staff-only manifest whose start_url
+      // already bears &staff so the icon itself is permanently wired for
+      // staff mode, independent of both of those.
+      var manifestLink = document.getElementById('manifest-link');
+      if (manifestLink) manifestLink.setAttribute('href', '/manifest-staff.json');
+    }
     if (/[?&](choose|staff)\b/.test(location.search)) {
       if (staff) {
         // Carry the staff flag onto every card so the "All views" link on

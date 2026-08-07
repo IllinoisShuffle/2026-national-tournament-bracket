@@ -61,6 +61,21 @@ installing the site as a home-screen app on Android — that install always
 launches `manifest.json`'s `start_url` (`/`, no query string), which would
 otherwise silently drop the flag on every launch.
 
+`localStorage` doesn't help on iOS, though: an icon added via "Add to Home
+Screen" runs in its own storage, isolated from Safari's, so a flag written
+there never reaches it. Some iOS versions also launch the manifest's
+`start_url` on every open rather than the URL that was on-screen when the
+icon was added (others do the opposite and freeze on that URL — behavior
+varies by version), so neither the URL nor `localStorage` can be trusted to
+carry `&staff` into an installed icon. Instead, `index.html`,
+`mobile-bracket.html`, `web-bracket.html`, and `scoreboard.html` all swap
+their `<link rel="manifest">` over to `/manifest-staff.json` — a copy of
+`manifest.json` whose `start_url` is `/?staff` — the moment `&staff` is
+detected. An icon added while that swapped manifest is active always opens
+back into staff mode, regardless of iOS version or storage isolation.
+Volunteers installing on iOS should add the icon *after* `&staff` has
+already kicked in (e.g. from `/?staff`), not from the plain public link.
+
 `/web-bracket` also redirects narrow viewports (≤700px) straight to the
 mobile layout, the same way `/` does — so a direct link, bookmark,
 or QR code that happens to land there from a phone still gets the readable

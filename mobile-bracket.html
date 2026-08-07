@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="manifest" href="/manifest.json" />
+<link rel="manifest" href="/manifest.json" id="manifest-link" />
 <meta name="theme-color" content="#15151A" />
 <style>
 :root{--paper:#F4EEDF;--ink:#15151A;--ink-dim:rgba(21,21,26,0.55)}
@@ -65,6 +65,13 @@ a{color:var(--ink)}a:hover{color:var(--ink-dim)}
 <script>
   if (/[?&]staff\b/.test(location.search)) {
     document.getElementById('all-views-link').setAttribute('href', '/?choose&staff');
+    // Point at the staff-only manifest (start_url "/?staff") so an
+    // "Add to Home Screen" done from this page still lands back in staff
+    // mode, since iOS's installed-icon storage is isolated from Safari's
+    // and some iOS versions launch the manifest's start_url regardless of
+    // the URL that was on-screen when the icon was added.
+    var manifestLink = document.getElementById('manifest-link');
+    if (manifestLink) manifestLink.setAttribute('href', '/manifest-staff.json');
   }
 </script>
 <div id="root"></div>
