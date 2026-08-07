@@ -16,7 +16,12 @@ const LIVE_ENDPOINT = '/.netlify/functions/results';
 // results.js sets Netlify-CDN-Cache-Control: max-age=5, so Netlify's edge
 // absorbs concurrent polls at this interval without extra Sheets/function
 // invocations — safe to poll faster than the old 45s without added cost.
+// Bracket pages just show results (no live scores), so slower is fine.
 const LIVE_POLL_MS = 15000;
+// The scoreboard shows in-progress scores, where staleness is more visible —
+// polled at the edge cache's max-age floor for the freshest data possible
+// without adding backend load (see results.js).
+const SCOREBOARD_POLL_MS = 5000;
 
 async function fetchLiveData() {
   try {
@@ -75,4 +80,4 @@ function resolveRegion(liveData, prefix, sizes, quarterIndex) {
   return { leafNames, roundWinners, roundMatches };
 }
 
-window.LiveData = { fetchLiveData, regionMatchIds, resolveRegion, LIVE_POLL_MS };
+window.LiveData = { fetchLiveData, regionMatchIds, resolveRegion, LIVE_POLL_MS, SCOREBOARD_POLL_MS };

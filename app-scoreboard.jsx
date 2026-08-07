@@ -84,7 +84,7 @@ function Scoreboard() {
       if (!cancelled) { setLiveData(data); setLiveChecked(true); }
     }
     load();
-    const interval = setInterval(load, window.LiveData.LIVE_POLL_MS);
+    const interval = setInterval(load, window.LiveData.SCOREBOARD_POLL_MS);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 

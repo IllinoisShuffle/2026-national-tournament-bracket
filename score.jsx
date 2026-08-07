@@ -15,8 +15,9 @@
 
 const AUTH_ENDPOINT = '/.netlify/functions/score-auth';
 const SCORE_ENDPOINT = '/.netlify/functions/live-score';
-const SCORE_POLL_MS = 10000; // shorter than the bracket pages' 15s — a host
-// needs to notice a new match land on their court promptly.
+// Polled at the results endpoint's edge cache max-age floor (see results.js)
+// so a host notices a new match land on their court as fast as possible.
+const SCORE_POLL_MS = 5000;
 const COURT_FILTER_KEY = 'scoreCourtFilter';
 const AUTH_KEY = 'scoreAuth';
 
