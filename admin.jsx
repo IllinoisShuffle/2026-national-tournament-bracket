@@ -146,7 +146,10 @@ function AdminApp() {
   return (
     <div className="a-wrap">
       <div className="a-header">
-        <h1>Live Score Admin</h1>
+        <div className="a-title-group">
+          <h1>Live Score Admin</h1>
+          <span className="a-badge">TD / ATD Only</span>
+        </div>
         <div className="a-actions">
           <a className="a-guide-link" href="/td-guide">Guide</a>
           <button className="a-btn" onClick={() => load(auth)} disabled={busyId !== null}>Refresh</button>
@@ -234,6 +237,7 @@ function PinGate({ onSuccess }) {
     <div className="a-wrap">
       <div className="a-pin-wrap">
         <h1>Live Score Admin</h1>
+        <span className="a-badge">TD / ATD Only</span>
         <p className="a-pin-sub">Enter the admin PIN to continue.</p>
         <form onSubmit={submit}>
           <input
