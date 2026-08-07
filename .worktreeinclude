@@ -1,0 +1,7 @@
+# Gitignored files/dirs to copy into new git worktrees (Claude Code feature).
+# Lets a fresh worktree run `netlify dev` immediately without re-running
+# `netlify link`, `netlify env:pull`, or `npm install`.
+.env
+.env.*
+.netlify
+node_modules
