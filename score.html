@@ -56,14 +56,14 @@ html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-famil
 .s-match-score{font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;margin:3px 0}
 .s-back{appearance:none;border:none;background:none;color:var(--ink);font-size:14px;font-weight:700;padding:0 0 16px;cursor:pointer;font-family:inherit}
 .s-back:disabled{opacity:0.5;cursor:default}
-.s-score{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 24px}
-.s-side{flex:1;text-align:center;border:2px solid var(--ink);border-radius:14px;padding:16px 8px}
+.s-score{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:10px;margin:12px 0 24px}
+.s-side{text-align:center;border:2px solid var(--ink);border-radius:14px;padding:16px 8px;box-sizing:border-box}
 .s-disc{display:block;width:16px;height:16px;border-radius:50%;margin:0 auto 8px;border:1.5px solid var(--ink)}
 .s-disc-yellow{background:#F2C230}
 .s-disc-black{background:#1b1b1b}
 .s-side-label{font-size:13px;font-weight:800;margin-bottom:8px;min-height:34px;display:flex;align-items:center;justify-content:center}
 .s-score-value{font-size:48px;font-weight:900;font-variant-numeric:tabular-nums;margin-bottom:10px}
-.s-stepper-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.s-stepper-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:300px;margin:0 auto}
 .s-stepper{appearance:none;border:none;border-radius:8px;background:var(--ink);color:var(--paper);width:100%;aspect-ratio:1;min-height:44px;font-size:19px;font-weight:900;cursor:pointer}
 .s-stepper:active{opacity:0.7}
 .s-stepper-minus{background:var(--live);color:#fff}
@@ -73,7 +73,7 @@ html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-famil
 .s-stepper-count{font-size:12px;font-weight:700;opacity:0.85}
 .s-pending{font-size:12px;font-weight:800;color:var(--live);margin:-4px 0 8px}
 .s-pending-hidden{visibility:hidden}
-.s-dash{font-size:28px;font-weight:900;color:var(--ink-dim)}
+.s-dash{font-size:28px;font-weight:900;color:var(--ink-dim);text-align:center}
 .s-undo-bar{margin:0 0 14px}
 .s-undo{display:block;width:100%;appearance:none;border:1.5px solid var(--ink);border-radius:10px;background:none;color:var(--ink);font-size:13px;font-weight:700;padding:11px;cursor:pointer;font-family:inherit}
 .s-undo:active{opacity:0.7}
