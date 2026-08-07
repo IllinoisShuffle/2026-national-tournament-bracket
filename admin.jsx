@@ -151,7 +151,7 @@ function AdminApp() {
           <span className="a-badge">TD / ATD Only</span>
         </div>
         <div className="a-actions">
-          <a className="a-guide-link" href="/?choose&staff">All views</a>
+          <a className="a-guide-link" href="/staff">All views</a>
           <a className="a-guide-link" href="/td-guide">Guide</a>
           <button className="a-btn" onClick={() => load(auth)} disabled={busyId !== null}>Refresh</button>
           <button
@@ -258,7 +258,7 @@ function PinGate({ onSuccess }) {
         <div className="a-guide-link-block">
           <a className="a-guide-link" href="/td-guide">TD / ATD guide &rarr;</a>
           {' · '}
-          <a className="a-guide-link" href="/?choose&staff">All views</a>
+          <a className="a-guide-link" href="/staff">All views</a>
         </div>
       </div>
     </div>
