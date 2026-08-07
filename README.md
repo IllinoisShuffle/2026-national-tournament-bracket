@@ -370,6 +370,11 @@ the flags are the fix, not a config change.
    - `SHEETS_HOSTS_RANGE` (optional) — defaults to `Hosts!A:C`. Add a
      "Hosts" tab to the same spreadsheet with columns
      `Name | Default Filter | PIN` (see "Court host login" above).
+   - `SHEETS_CONFIG_RANGE` (optional) — defaults to `Config!A:B`. Add a
+     "Config" tab to the same spreadsheet with columns `Key | Value` for
+     feature toggles the TD/ATD can flip without a redeploy — e.g. a row
+     `SpeedShuffleSignupEnabled | TRUE` shows the Speed Shuffle Signup card
+     on the `/?choose` view picker (see `netlify/functions/config.js`).
    - `SCORE_AUTH_SECRET` — any long random string, used to sign court-host
      login tokens. Required for `/score` logins to work at all; treat it
      like a password (don't commit it).
@@ -403,6 +408,8 @@ the flags are the fix, not a config change.
 - `tweaks-panel.jsx` — shared floating settings-panel UI framework.
 - `netlify/functions/results.js` — reads the Matches sheet, merges in
   live scores from Blobs, returns normalized JSON.
+- `netlify/functions/config.js` — reads the Config sheet tab, returns a
+  key/value map of feature toggles (e.g. the Speed Shuffle signup card).
 - `netlify/functions/live-score.js` — write endpoint for in-progress court
   scores (Netlify Blobs), used by `score.html`. Requires a court-host auth
   token and hard-blocks conflicting writes (see "Concurrency" above).
