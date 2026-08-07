@@ -45,8 +45,6 @@
   .card .kicker { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px; }
   .card .title { font-size: 19px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 8px; }
   .card .desc { font-size: 13px; line-height: 1.5; color: rgba(21,21,26,0.65); }
-  .card-signup { display: none; }
-  html.speed-shuffle-signup .card-signup { display: block; }
   @media (max-width: 560px) {
     .cards { grid-template-columns: minmax(0, 300px); }
   }
@@ -82,7 +80,7 @@
         <div class="title">Live Scoreboard</div>
         <div class="desc">What's on the courts right now, with scores, plus what's up next.</div>
       </a>
-      <a class="card card-signup" href="https://illinoisshuffleboard.org/l/national-speed-shuffle" target="_blank" rel="noopener">
+      <a class="card" href="https://illinoisshuffleboard.org/l/national-speed-shuffle" target="_blank" rel="noopener">
         <div class="kicker">Sunday &middot; 11:00 AM</div>
         <div class="title">Speed Shuffle Signup</div>
         <div class="desc">Sign up to play in the Speed Shuffle side tournament, Sunday at 11am. Sponsored by Allen Shuffleboard.</div>
@@ -101,22 +99,5 @@
 
     <footer>ROYAL PALMS SHUFFLEBOARD CLUB · 1750 N. MILWAUKEE AVE · CHICAGO IL</footer>
   </div>
-  <script>
-    // Speed Shuffle Signup card is off by default and only appears once the
-    // TD/ATD flips "SpeedShuffleSignupEnabled" to TRUE on the Config tab of
-    // the tournament Google Sheet — no redeploy needed. Only fetch this on
-    // the picker itself (?choose or ?staff); the redirect path above never
-    // reaches here.
-    if (/[?&](choose|staff)\b/.test(location.search)) {
-      fetch('/.netlify/functions/config')
-        .then(function (res) { return res.ok ? res.json() : {}; })
-        .then(function (config) {
-          if (config && config.SpeedShuffleSignupEnabled) {
-            document.documentElement.classList.add('speed-shuffle-signup');
-          }
-        })
-        .catch(function () {});
-    }
-  </script>
 </body>
 </html>
