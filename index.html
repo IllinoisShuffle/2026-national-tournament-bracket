@@ -18,8 +18,22 @@
   // volunteer-only cards — Print Poster, both kiosk modes, Live Score Admin,
   // and Court Scorekeeping — which stay hidden from the public picker.
   (function () {
-    if (/[?&]staff\b/.test(location.search)) document.documentElement.classList.add('staff');
-    if (/[?&](choose|staff)\b/.test(location.search)) return;
+    var staff = /[?&]staff\b/.test(location.search);
+    if (staff) document.documentElement.classList.add('staff');
+    if (/[?&](choose|staff)\b/.test(location.search)) {
+      if (staff) {
+        // Carry the staff flag onto every card so the "All views" link on
+        // whichever page they land on can bring them back to this picker.
+        document.addEventListener('DOMContentLoaded', function () {
+          document.querySelectorAll('.cards a.card').forEach(function (a) {
+            var href = a.getAttribute('href');
+            if (href.charAt(0) !== '/') return;
+            a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'staff');
+          });
+        });
+      }
+      return;
+    }
     var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
     location.replace(isNarrow ? '/mobile-bracket' : '/web-bracket');
   })();

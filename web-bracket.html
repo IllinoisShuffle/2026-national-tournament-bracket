@@ -163,7 +163,12 @@
   </style>
 </head>
 <body>
-  <a class="all-views-link" href="/?choose">All views ↗</a>
+  <a class="all-views-link" href="/?choose" id="all-views-link">All views ↗</a>
+  <script>
+    if (/[?&]staff\b/.test(location.search)) {
+      document.getElementById('all-views-link').setAttribute('href', '/?choose&staff');
+    }
+  </script>
   <div id="root"></div>
 
   <!-- React + Babel -->
