@@ -390,7 +390,7 @@ function Poster() {
 
       {isFullBracketView && (
         <div className="kiosk-qr">
-          <img src={kioskQrDataUrl} alt="QR code to the mobile bracket" width="96" height="96" />
+          <img src={kioskQrDataUrl} alt="QR code to the mobile bracket" width="120" height="120" />
           <div className="kiosk-qr-text">
             <div className="kiosk-qr-kicker">FOLLOW ALONG</div>
             <div className="kiosk-qr-title">Scan for the bracket on your phone</div>
