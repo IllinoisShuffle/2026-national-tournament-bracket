@@ -189,6 +189,7 @@ function formatAgo(ts) {
 // `status` overrides the frame-number label for the two interstitial states
 // that aren't really "playing" a numbered frame at all.
 function frameLabel(frame, status) {
+  if (status === 'not_started') return 'Not Started';
   if (status === 'warming_up') return 'Warming Up';
   if (status === 'switching_colors') return 'Switching Colors';
   return frame <= REGULATION_FRAMES ? `Playing Frame ${frame} of ${REGULATION_FRAMES}` : `Playing Frame ${frame} · Overtime`;
@@ -530,17 +531,20 @@ function CourtToggle({ courts, value, onChange }) {
 function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
   // 'not_started' is local-only — it means nothing has ever been posted for
   // this match, so there's no liveScore entry yet. It's never sent to the
-  // server; the moment any scoring/start action fires, status moves to a
-  // real posted value ('warming_up' or 'in_progress').
+  // server; tapping "Start Match" is the only way out of it, into a real
+  // posted value ('warming_up'). Scoring is gated behind that tap — no
+  // shortcut straight into Frame 1 — so a match is never accidentally
+  // missing from the Live Scoreboard.
   const initial = match.liveScore || { yellowScore: 0, blackScore: 0, status: 'not_started', frame: 1 };
   const [yellowScore, setYellowScore] = React.useState(initial.yellowScore);
   const [blackScore, setBlackScore] = React.useState(initial.blackScore);
   const [status, setStatus] = React.useState(initial.status);
   const [frame, setFrame] = React.useState(initial.frame || 1);
-  // The scoring grid + frame actions are only meaningful in these two
-  // states — 'warming_up' and 'switching_colors' show an interstitial
-  // instead (see render below), and 'complete' shows the done screen.
-  const scoringActive = status === 'not_started' || status === 'in_progress';
+  // The scoring grid + frame actions only show once a frame is actually
+  // underway — 'not_started'/'warming_up'/'switching_colors' each show an
+  // interstitial instead (see render below), and 'complete' shows the done
+  // screen.
+  const scoringActive = status === 'in_progress';
   const [saveState, setSaveState] = React.useState('idle'); // idle | saving | saved | error | conflict
   const [conflict, setConflict] = React.useState(null);
   // Staged, not-yet-saved taps for the frame in progress. A shuffleboard
@@ -683,12 +687,7 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
       return;
     }
 
-    // A host who never tapped "Start Match" and just went straight to
-    // scoring lands here on their first submit — this is what makes that
-    // path behave exactly as it did before "Start Match" existed.
-    const nextStatus = status === 'not_started' ? 'in_progress' : status;
-    setStatus(nextStatus);
-    post(nextYellow, nextBlack, nextStatus, { frame: nextFrame });
+    post(nextYellow, nextBlack, status, { frame: nextFrame });
   }
 
   // Undo always reverts the most recent action. If there's a staged
@@ -733,10 +732,12 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
     post(yellowScore, blackScore, 'in_progress');
   }
 
-  // Puts the match on the Live Scoreboard as "Warming Up" ahead of Frame 1 —
-  // for hosts who open the match before play actually starts. Entirely
-  // optional: a host who skips this and just scores Frame 1 directly still
-  // works exactly as before (see the 'not_started' branch in commitFrame).
+  // Puts the match on the Live Scoreboard as "Warming Up" ahead of Frame 1.
+  // This is the only way out of 'not_started' — the scoring grid doesn't
+  // show until it's tapped, so a match can't quietly go unscored on the
+  // board. A host catching up after play's already begun just taps this,
+  // then "Start Frame 1" (see beginFrame), before scoring as normal — two
+  // taps, not a blocker.
   function startMatch() {
     if (locked) return;
     setStatus('warming_up');
@@ -837,6 +838,12 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
           <p className="s-done-note">Fill out the Match Report Sheet, get it signed by the winning team, and bring it to the ATD in the DJ Booth.</p>
           <button className="s-reopen" onClick={reopen} disabled={locked}>Reopen (mis-tap)</button>
         </div>
+      ) : status === 'not_started' ? (
+        <div className="s-done">
+          <p className="s-done-title">Not Started</p>
+          <p className="s-done-note">Tap Start Match to add {match.yellow || 'Yellow'} vs {match.black || 'Black'} to the Live Scoreboard before Frame 1 begins.</p>
+          <button className="s-submit-frame" onClick={startMatch} disabled={locked}>Start Match</button>
+        </div>
       ) : status === 'warming_up' || status === 'switching_colors' ? (
         <div className="s-done">
           <p className="s-done-title">{status === 'warming_up' ? 'Warming Up' : 'Switching Colors'}</p>
@@ -848,19 +855,11 @@ function ScoreKeeper({ match, auth, onBack, onAuthExpired, onSaved }) {
           <button className="s-submit-frame" onClick={beginFrame} disabled={locked}>Start Frame {frame}</button>
         </div>
       ) : (
-        <>
-          {status === 'not_started' && (
-            <div className="s-start-match-wrap">
-              <button className="s-submit-frame" onClick={startMatch} disabled={locked}>Start Match</button>
-              <p className="s-frame-hint">Marks this match "Warming Up" on the Live Scoreboard before Frame 1. Already playing? Just score below instead.</p>
-            </div>
-          )}
-          <div className="s-score">
-            <ScoreSide disc={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
-            <div className="s-dash">&ndash;</div>
-            <ScoreSide disc={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
-          </div>
-        </>
+        <div className="s-score">
+          <ScoreSide disc={colorsFlipped ? 'black' : 'yellow'} label={match.yellow || 'Yellow'} score={yellowScore} stagedTotal={stagedYellow} taps={yellowTaps} onTap={(d) => stageTap('yellow', d)} disabled={locked} />
+          <div className="s-dash">&ndash;</div>
+          <ScoreSide disc={colorsFlipped ? 'yellow' : 'black'} label={match.black || 'Black'} score={blackScore} stagedTotal={stagedBlack} taps={blackTaps} onTap={(d) => stageTap('black', d)} disabled={locked} />
+        </div>
       )}
 
       {status !== 'complete' && (pendingTaps.length > 0 || undoStack.length > 0) && (() => {

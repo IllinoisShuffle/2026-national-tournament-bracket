@@ -58,17 +58,17 @@ that isn't finished yet, across all courts.
 
 Tap a match to open it.
 
-## Before Frame 1: Start Match (optional)
+## Before Frame 1: Start Match
 
-If you open a match before play actually begins, you'll see a **"Start
-Match"** button above the scoring grid. Tapping it puts the match on the
-Live Scoreboard as **"Warming Up"** right away, instead of waiting for a
-score — handy for letting spectators know a court has picked up. From
-there, tap **Start Frame 1** once play actually begins.
+Opening a match you haven't started yet shows a **"Start Match"** button
+instead of the scoring grid. Tap it to put the match on the Live
+Scoreboard as **"Warming Up"** — handy for letting spectators know a court
+has picked up before there's a score to show. Then tap **Start Frame 1**
+once play actually begins, which is when the scoring grid appears.
 
-This step is entirely optional. If you don't get to it before the teams are
-already playing, just score Frame 1 like normal below — submitting it adds
-the match to the board exactly like it always has.
+**Catching up because play already started?** No problem — Start Match,
+then Start Frame 1, then score like normal. Two quick taps, and you're
+right where you'd otherwise be.
 
 ## Scoring the match
 

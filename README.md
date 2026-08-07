@@ -147,7 +147,8 @@ via `/score` and the `live-score` function:
   `{ matchId, court, yellowScore, blackScore, status, scorer, frame, updatedAt }`
   in the `live-scores` Blobs store, one entry per match ID. `status` is one
   of `in_progress`, `complete`, `warming_up` (match added to the board via
-  the optional "Start Match" button, before Frame 1 begins), or
+  the "Start Match" button, before Frame 1 begins — the scoring grid
+  doesn't appear until this is tapped, so a match can't skip the board), or
   `switching_colors` (the practice-shots interlude between Frames 8 and 9
   while teams swap disc colors). `scorer` always
   comes from the verified token, never from the request body. It never
