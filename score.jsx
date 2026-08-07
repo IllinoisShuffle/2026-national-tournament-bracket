@@ -515,7 +515,11 @@ function Login({ onSuccess }) {
           </button>
           {error && <p className="s-login-error">{error}</p>}
         </form>
-        <a className="s-guide-link s-guide-link-block" href="/court-host-guide">Scoring guide &rarr;</a>
+        <div className="s-guide-link-block">
+          <a className="s-guide-link" href="/court-host-guide">Scoring guide &rarr;</a>
+          {' · '}
+          <a className="s-guide-link" href="/?choose&staff">All views</a>
+        </div>
       </div>
     </div>
   );
@@ -525,6 +529,7 @@ function AuthBar({ name, onLogout }) {
   return (
     <div className="s-auth-bar">
       <span>Scoring as <strong>{name}</strong></span>
+      <a className="s-guide-link" href="/?choose&staff">All views</a>
       <a className="s-guide-link" href="/court-host-guide">Guide</a>
       <button className="s-auth-logout" onClick={onLogout}>Log out</button>
     </div>
