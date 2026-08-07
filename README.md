@@ -52,7 +52,8 @@ too) reveals all five. `/score` and `/admin` are still gated by their own
 PIN regardless — the flag only controls whether the card *shows up*, not
 whether the page is reachable, so this is about reducing clutter for
 attendees, not an access-control boundary. Give volunteers a bookmark or a
-separate QR code for `/?staff` rather than the public one.
+separate QR code for `/?staff` rather than the public one for regular
+browser use.
 
 The first time `&staff` shows up in the URL, it's remembered in
 `localStorage`, so it keeps working even after navigating to a plain
@@ -61,20 +62,21 @@ installing the site as a home-screen app on Android — that install always
 launches `manifest.json`'s `start_url` (`/`, no query string), which would
 otherwise silently drop the flag on every launch.
 
-`localStorage` doesn't help on iOS, though: an icon added via "Add to Home
-Screen" runs in its own storage, isolated from Safari's, so a flag written
-there never reaches it. Some iOS versions also launch the manifest's
-`start_url` on every open rather than the URL that was on-screen when the
-icon was added (others do the opposite and freeze on that URL — behavior
-varies by version), so neither the URL nor `localStorage` can be trusted to
-carry `&staff` into an installed icon. Instead, `index.html`,
-`mobile-bracket.html`, `web-bracket.html`, and `scoreboard.html` all swap
-their `<link rel="manifest">` over to `/manifest-staff.json` — a copy of
-`manifest.json` whose `start_url` is `/?staff` — the moment `&staff` is
-detected. An icon added while that swapped manifest is active always opens
-back into staff mode, regardless of iOS version or storage isolation.
-Volunteers installing on iOS should add the icon *after* `&staff` has
-already kicked in (e.g. from `/?staff`), not from the plain public link.
+**None of that works for "Add to Home Screen" on iOS**, so don't send iOS
+volunteers to `/?staff` for that. An installed icon there runs in its own
+storage, isolated from Safari's, so a `localStorage` flag written in the
+browser never reaches it — and iOS reads the manifest `<link>` (or, on
+versions that ignore the manifest, the URL to launch) from the page as
+originally served, not from anything JavaScript changes after the fact. A
+runtime swap of `&staff` into the URL or the manifest link is invisible to
+it; the correct references have to already be in the static HTML iOS reads.
+That's what `/staff` (`staff.html`) is for: a separate static page with
+`class="staff"` on `<html>` and `<link rel="manifest"
+href="/manifest-staff.json">` baked in from the start, where
+`manifest-staff.json`'s `start_url` is `/staff` itself. Have iOS volunteers
+add the home-screen icon from `/staff`, not `/` or `/?staff` — it always
+launches straight back into staff mode, regardless of iOS version or
+storage isolation.
 
 `/web-bracket` also redirects narrow viewports (≤700px) straight to the
 mobile layout, the same way `/` does — so a direct link, bookmark,

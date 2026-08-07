@@ -1,53 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="staff">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>2026 Chicago National · Tournament Bracket</title>
+<title>2026 Chicago National · Tournament Bracket (Staff)</title>
 <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<link rel="manifest" href="/manifest.json" />
+<link rel="manifest" href="/manifest-staff.json" />
 <meta name="theme-color" content="#15151A" />
 <script>
-  // Send phones straight to the mobile layout and everything else to the
-  // desktop poster, so the same URL "just works" on any device. Visit with
-  // ?choose on the end (e.g. from a QR code at the venue) to see this picker
-  // instead. Add &staff (e.g. /?choose&staff, or just /?staff) for the
-  // volunteer-only cards — Print Poster, both kiosk modes, Live Score Admin,
-  // and Court Scorekeeping — which stay hidden from the public picker.
+  // This page exists purely so "Add to Home Screen" has something correct
+  // to read on iOS. iOS's home-screen install reads the <link
+  // rel="manifest"> (and, on versions that ignore it, falls back to the
+  // literal URL on screen) from the page as originally served — not from
+  // any later JavaScript DOM changes. So unlike index.html's &staff flag
+  // (query string + localStorage, mutated at runtime), staff mode here is
+  // baked into the static markup itself: manifest-staff.json above, and
+  // class="staff" on <html>. Install the icon from this URL specifically,
+  // not from "/" or "/?staff", so it launches back here every time.
   (function () {
-    // Staff status is remembered in localStorage, not just the URL, so it
-    // survives an installed PWA (Android's "Add to Home Screen" always
-    // launches manifest.json's start_url "/", dropping any query string) —
-    // the one path the &staff-carrying card/All-views links below can't
-    // reach, since there's no URL to carry it from on a cold app launch.
-    var urlHasStaff = /[?&]staff\b/.test(location.search);
-    if (urlHasStaff) {
-      try { localStorage.setItem('staff', '1'); } catch (e) {}
-    }
-    var staff = urlHasStaff;
-    if (!staff) {
-      try { staff = localStorage.getItem('staff') === '1'; } catch (e) {}
-    }
-    if (staff) document.documentElement.classList.add('staff');
-    if (/[?&](choose|staff)\b/.test(location.search)) {
-      if (staff) {
-        // Carry the staff flag onto every card so the "All views" link on
-        // whichever page they land on can bring them back to this picker.
-        document.addEventListener('DOMContentLoaded', function () {
-          document.querySelectorAll('.cards a.card').forEach(function (a) {
-            var href = a.getAttribute('href');
-            if (href.charAt(0) !== '/') return;
-            a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'staff');
-          });
-        });
-      }
-      return;
-    }
-    var isNarrow = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-    location.replace(isNarrow ? '/mobile-bracket' : '/web-bracket');
+    try { localStorage.setItem('staff', '1'); } catch (e) {}
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.cards a.card').forEach(function (a) {
+        var href = a.getAttribute('href');
+        if (href.charAt(0) !== '/') return;
+        a.setAttribute('href', href + (href.indexOf('?') === -1 ? '?' : '&') + 'staff');
+      });
+    });
   })();
 </script>
 <style>
@@ -67,8 +48,6 @@
   .card .kicker { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px; }
   .card .title { font-size: 19px; font-weight: 900; letter-spacing: 0.3px; margin-bottom: 8px; }
   .card .desc { font-size: 13px; line-height: 1.5; color: rgba(21,21,26,0.65); }
-  .card-staff { display: none; }
-  html.staff .card-staff { display: block; }
   @media (max-width: 560px) {
     .cards { grid-template-columns: minmax(0, 300px); }
   }
@@ -104,27 +83,27 @@
         <div class="title">Live Scoreboard</div>
         <div class="desc">What's on the courts right now, with scores, plus what's up next.</div>
       </a>
-      <a class="card card-staff" href="/score">
+      <a class="card" href="/score">
         <div class="kicker">Staff Only</div>
         <div class="title">Court Scorekeeping</div>
         <div class="desc">Court host tool for entering an in-progress match's score. PIN login required.</div>
       </a>
-      <a class="card card-staff" href="/admin">
+      <a class="card" href="/admin">
         <div class="kicker">Staff Only</div>
         <div class="title">Live Score Admin</div>
         <div class="desc">Inspect and clear live in-progress scores across all courts. PIN login required.</div>
       </a>
-      <a class="card card-staff" href="/print-poster">
+      <a class="card" href="/print-poster">
         <div class="kicker">Fill-in-by-hand</div>
         <div class="title">Print Poster</div>
         <div class="desc">Blank bracket sized for a large-format print &mdash; write in results as matches finish.</div>
       </a>
-      <a class="card card-staff" href="/web-bracket?kiosk&full">
+      <a class="card" href="/web-bracket?kiosk&full">
         <div class="kicker">Unattended Display</div>
         <div class="title">TV / Kiosk Mode</div>
         <div class="desc">No mouse needed &mdash; auto-cycles through the bracket on a timer. Built for a lobby TV or venue monitor.</div>
       </a>
-      <a class="card card-staff" href="/kiosk-scoreboard">
+      <a class="card" href="/kiosk-scoreboard">
         <div class="kicker">Single-Screen Combo</div>
         <div class="title">Kiosk + Scoreboard</div>
         <div class="desc">For one lobby TV instead of two &mdash; cycles the bracket kiosk, then holds on the live scoreboard, on repeat.</div>
