@@ -108,6 +108,7 @@ footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(
     <a href="#golden">The Short Version</a>
     <a href="#login">Logging In</a>
     <a href="#pick">Picking a Match</a>
+    <a href="#start">Starting a Match</a>
     <a href="#score">Scoring</a>
     <a href="#finish">Finishing Up</a>
     <a href="#conflict">Two Hosts, One Match</a>
@@ -134,7 +135,17 @@ footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(
   <section id="pick">
     <h2><span class="dot"></span>Picking your match</h2>
     <p>After logging in you'll see every unfinished match, across all courts. If your login has a home court (or, for most court hosts, a pair of adjacent courts you score together), the list starts filtered to it — tap <strong>All / Courts 1&ndash;2 / Court 1 / …</strong> any time to change it. It's a convenience filter only: you can score any match on any court, say if you're covering for someone.</p>
+    <p>Each card shows the current frame and running score once someone's opened it — or <strong>“Warming Up”</strong> / <strong>“Switching Colors”</strong> if it's in one of those gaps instead of an actual frame.</p>
     <p>If another host is actively updating a match, you'll see <strong>“Being scored by &lt;name&gt;”</strong> under it — a heads-up, not a lock (see “Two hosts, one match” below).</p>
+  </section>
+
+  <section id="start">
+    <h2><span class="dot"></span>Before Frame 1: Start Match</h2>
+    <p>Opening a match you haven't started yet shows a <strong>“Start Match”</strong> button instead of the scoring grid. Tap it to put the match on the Live Scoreboard as <strong>“Warming Up”</strong> — handy for letting spectators know a court has picked up before there's a score to show. Then tap <strong>Start Frame 1</strong> once play actually begins, which is when the scoring grid appears.</p>
+    <div class="callout">
+      <div class="label">Catching up because play already started?</div>
+      No problem — Start Match, then Start Frame 1, then score like normal. Two quick taps, and you're right where you'd otherwise be.
+    </div>
   </section>
 
   <section id="score">
@@ -185,11 +196,16 @@ footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(
       The frames along the way are just there to help you keep pace — they don't each need to be right. Stage enough taps to bring the running score up to whatever the chalkboard actually shows right now, then hit Submit once to catch up in a single step. Matching the current score matters far more than getting every frame in between exactly right.
     </div>
 
-    <p>Tap the big button at the bottom when the frame's done — normally <strong>“Submit Frame N &amp; Start Frame N+1.”</strong> On a frame that ends the match, it relabels to <strong>“…&amp; Complete Match”</strong> and finishes the match in the same tap. Nothing landed for either team? Submit still advances — a scoreless “wash” frame is normal.</p>
+    <p>Tap the big button at the bottom when the frame's done — normally <strong>“Submit Frame N &amp; Start Frame N+1.”</strong> On Frame 8 specifically, it relabels to <strong>“…&amp; Switch Colors”</strong> and moves to the Switching Colors gap instead (see below). On a frame that ends the match, it relabels to <strong>“…&amp; Complete Match”</strong> and finishes the match in the same tap. Nothing landed for either team? Submit still advances — a scoreless “wash” frame is normal.</p>
 
     <div class="callout">
       <div class="label">Disc colors &amp; the frame counter</div>
       The header always reads “Playing Frame N of 16” — the score shown reflects everything <em>before</em> frame N, since it's still in progress. <strong>Disc colors swap at frame 9</strong>: the app updates the dot automatically once you cross that line, so just keep tapping the same team's buttons regardless of which color they're currently shooting.
+    </div>
+
+    <div class="callout">
+      <div class="label">Switching Colors (Frames 8 &rarr; 9)</div>
+      Submitting Frame 8 moves the match to <strong>“Switching Colors”</strong> instead of straight into Frame 9 — this covers the practice shots teams take while swapping disc colors. The Live Scoreboard shows “Switching Colors” during this gap. Tap <strong>Start Frame 9</strong> once play resumes.
     </div>
 
     <p>If the match is tied after frame 16, just keep scoring it the same way — the header switches to “Playing Frame N · Overtime,” and disc colors stay on whatever they swapped to at frame 9 (no swapping back).</p>
@@ -221,10 +237,13 @@ footer .tag{display:inline-block;margin-top:8px;background:var(--ink);color:var(
         <tbody>
           <tr><th>Log in</th><td>Name + PIN your ATD gave you</td></tr>
           <tr><th>Find your match</th><td>“Pick your match” list, filter by court if needed</td></tr>
+          <tr><th>Put the match on the board before playing</th><td>“Start Match” (shows “Warming Up”)</td></tr>
+          <tr><th>Begin scoring Frame 1</th><td>“Start Frame 1” — this is what reveals the scoring grid</td></tr>
           <tr><th>Score a point</th><td>Tap +8 / +7 / +10 / −10 (or ±1 to nudge) — stages, doesn't save yet</td></tr>
           <tr><th>Undo one tap</th><td>“Undo last pick”</td></tr>
           <tr><th>Clear the current frame</th><td>“Reset Frame”</td></tr>
           <tr><th>Move to the next frame</th><td>“Submit Frame N &amp; Start Frame N+1”</td></tr>
+          <tr><th>End Frame 8 (color swap)</th><td>“Submit Frame 8 &amp; Switch Colors,” then “Start Frame 9” once play resumes</td></tr>
           <tr><th>Fell behind a frame or two</th><td>Stage enough taps to match the current board, then Submit once to catch up</td></tr>
           <tr><th>Finish the match</th><td>“Complete Match” — <strong>then bring the signed Match Report Sheet to the ATD in the DJ Booth</strong></td></tr>
           <tr><th>Fix a mis-tapped Complete</th><td>“Reopen (mis-tap)”</td></tr>
