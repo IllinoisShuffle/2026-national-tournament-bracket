@@ -103,9 +103,9 @@ mis-scored match, or a match where the host never tapped "Complete" and it's
 stuck showing stale data — without needing any technical/CLI access.
 
 **It is unlinked from the public site on purpose.** It won't appear on the
-picker page (`/?choose`) or anywhere a spectator could stumble into
-it. Only reachable if you go to the URL directly — bookmark it, or keep the
-link somewhere private.
+public picker page (`/?choose`) or anywhere a spectator could stumble into
+it — it only shows up on the staff version, `/?choose&staff`. Bookmark
+that link (or the direct `/admin` URL), and keep it somewhere private.
 
 ### Getting in
 

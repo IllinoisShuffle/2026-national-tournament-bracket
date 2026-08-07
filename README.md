@@ -20,21 +20,39 @@ Both styled pages are deliberately not linked from the public view picker
 (`index.html`) — they're for the people running `/score` and `/admin`, not
 players/spectators.
 
+`/score` and `/admin` themselves are also on the picker, but only behind a
+`staff` flag (`/?choose&staff`, or just `/?staff`) — see "Staff-only views"
+below.
+
 ## Views
 
 | Page | URL | Purpose |
 |---|---|---|
 | Auto-redirect | `/` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
 | Web Bracket | `/web-bracket` | Full 64-team zoomable/pannable poster. |
-| TV / Kiosk Mode | `/web-bracket?kiosk` | Same poster, auto-cycling with no pointer needed — see below. |
+| TV / Kiosk Mode | `/web-bracket?kiosk` | Same poster, auto-cycling with no pointer needed — see below. Staff-only on the picker. |
 | Mobile Bracket | `/mobile-bracket` | Vertical, single-column layout for checking results on a phone. |
 | Live Scoreboard | `/scoreboard` | Matches currently on the court — scores, court number, and what's up next. |
-| Court Scorekeeping | `/score` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. |
-| Print Poster | `/print-poster` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. |
-| Kiosk + Scoreboard | `/kiosk-scoreboard` | Single-screen combo for one lobby TV — cycles the bracket kiosk, then holds on the live scoreboard. |
+| Court Scorekeeping | `/score` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. Staff-only on the picker. |
+| Print Poster | `/print-poster` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. Staff-only on the picker. |
+| Kiosk + Scoreboard | `/kiosk-scoreboard` | Single-screen combo for one lobby TV — cycles the bracket kiosk, then holds on the live scoreboard. Staff-only on the picker. |
+| Live Score Admin | `/admin` | Inspects and clears live in-progress scores across all courts. Staff-only on the picker. |
 
 Both `/web-bracket` and `/mobile-bracket` link back to the picker via
 an "All views" link in the corner.
+
+### Staff-only views
+
+Print Poster, both kiosk modes, `/score`, and `/admin` are hidden from the
+public picker (`/?choose`) by default — five cards attendees don't need and
+that would just add clutter (or, for `/score`/`/admin`, a PIN prompt they
+can't get past anyway). Adding `&staff` to the picker URL (`/?choose&staff`,
+or `/?staff` on its own — either bypasses the phone/desktop auto-redirect
+too) reveals all five. `/score` and `/admin` are still gated by their own
+PIN regardless — the flag only controls whether the card *shows up*, not
+whether the page is reachable, so this is about reducing clutter for
+attendees, not an access-control boundary. Give volunteers a bookmark or a
+separate QR code for `/?staff` rather than the public one.
 
 `/web-bracket` also redirects narrow viewports (≤700px) straight to the
 mobile layout, the same way `/` does — so a direct link, bookmark,
@@ -225,10 +243,11 @@ read-then-blind-write, so a genuine race between two near-simultaneous
 writes is also caught rather than silently letting the second one win.
 
 `/score` is deliberately **not** linked from the public `/?choose`
-picker — share the single link directly (text message, printed QR code)
-rather than publishing it.
+picker (only from the staff-flagged `/?choose&staff` — see "Staff-only
+views" above) — share the `staff` link directly (text message, printed QR
+code) rather than publishing the public one.
 
-**`/admin`** is a companion page (also unlinked, direct-URL-only) for
+**`/admin`** is a companion page (same staff-only picker treatment) for
 inspecting and purging the `live-scores` store itself — the in-app
 replacement for running `netlify blobs:list`/`netlify blobs:delete` by hand
 to clean up test entries. It reads/writes via a new
