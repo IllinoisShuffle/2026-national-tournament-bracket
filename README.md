@@ -20,63 +20,54 @@ Both styled pages are deliberately not linked from the public view picker
 (`index.html`) — they're for the people running `/score` and `/admin`, not
 players/spectators.
 
-`/score` and `/admin` themselves are also on the picker, but only behind a
-`staff` flag (`/?choose&staff`, or just `/?staff`) — see "Staff-only views"
-below.
+`/score` and `/admin` themselves are also linked from `/staff`, the
+staff-only picker — see "Staff-only views" below.
 
 ## Views
 
 | Page | URL | Purpose |
 |---|---|---|
 | Auto-redirect | `/` | Sends phones to the mobile layout and everything else to the desktop poster. Add `?choose` to see the manual picker instead. |
+| Staff picker | `/staff` | Same picker as `/`, plus the staff-only cards below. See "Staff-only views". |
 | Web Bracket | `/web-bracket` | Full 64-team zoomable/pannable poster. |
-| TV / Kiosk Mode | `/web-bracket?kiosk` | Same poster, auto-cycling with no pointer needed — see below. Staff-only on the picker. |
+| TV / Kiosk Mode | `/web-bracket?kiosk` | Same poster, auto-cycling with no pointer needed — see below. Staff-only card. |
 | Mobile Bracket | `/mobile-bracket` | Vertical, single-column layout for checking results on a phone. |
 | Live Scoreboard | `/scoreboard` | Matches currently on the court — scores, court number, and what's up next. |
-| Court Scorekeeping | `/score` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. Staff-only on the picker. |
-| Print Poster | `/print-poster` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. Staff-only on the picker. |
-| Kiosk + Scoreboard | `/kiosk-scoreboard` | Single-screen combo for one lobby TV — cycles the bracket kiosk, then holds on the live scoreboard. Staff-only on the picker. |
-| Live Score Admin | `/admin` | Inspects and clears live in-progress scores across all courts. Staff-only on the picker. |
+| Court Scorekeeping | `/score` | Court host tool for entering an in-progress match's score. One link for everyone, with an on-page court filter — see "In-progress court scores" below. Staff-only card. |
+| Print Poster | `/print-poster` | Blank bracket sized for a large-format print — fill in by hand. Not wired to live data. Staff-only card. |
+| Kiosk + Scoreboard | `/kiosk-scoreboard` | Single-screen combo for one lobby TV — cycles the bracket kiosk, then holds on the live scoreboard. Staff-only card. |
+| Live Score Admin | `/admin` | Inspects and clears live in-progress scores across all courts. Staff-only card. |
 
 Both `/web-bracket` and `/mobile-bracket` link back to the picker via
 an "All views" link in the corner.
 
 ### Staff-only views
 
-Print Poster, both kiosk modes, `/score`, and `/admin` are hidden from the
-public picker (`/?choose`) by default — five cards attendees don't need and
-that would just add clutter (or, for `/score`/`/admin`, a PIN prompt they
-can't get past anyway). Adding `&staff` to the picker URL (`/?choose&staff`,
-or `/?staff` on its own — either bypasses the phone/desktop auto-redirect
-too) reveals all five. `/score` and `/admin` are still gated by their own
-PIN regardless — the flag only controls whether the card *shows up*, not
+Print Poster, both kiosk modes, `/score`, and `/admin` aren't on the public
+picker (`/` or `/?choose`) — five cards attendees don't need and that would
+just add clutter (or, for `/score`/`/admin`, a PIN prompt they can't get
+past anyway). They live on `/staff` (`staff.html`) instead: a separate,
+static duplicate of the picker with all ten cards always present, no flag
+or toggle involved. `/score` and `/admin` are still gated by their own PIN
+regardless — `/staff` only controls whether the card *shows up*, not
 whether the page is reachable, so this is about reducing clutter for
-attendees, not an access-control boundary. Give volunteers a bookmark or a
-separate QR code for `/?staff` rather than the public one for regular
-browser use.
+attendees, not an access-control boundary. Give volunteers a bookmark, a
+separate QR code, or a shared home-screen icon for `/staff` rather than the
+public one.
 
-The first time `&staff` shows up in the URL, it's remembered in
-`localStorage`, so it keeps working even after navigating to a plain
-`/?choose` (e.g. the "All views" link on the bracket pages) and even after
-installing the site as a home-screen app on Android — that install always
-launches `manifest.json`'s `start_url` (`/`, no query string), which would
-otherwise silently drop the flag on every launch.
+`/staff` being fully static (not `/?staff` toggling something at runtime)
+matters specifically for installing it as a home-screen app: on iOS,
+"Add to Home Screen" reads the `<link rel="manifest">` (and, on versions
+that ignore the manifest, falls back to the URL on screen) from the page
+as originally served, not from anything JavaScript changes afterward — a
+flag detected and applied at runtime is invisible to it. `staff.html` links
+`manifest-staff.json` (`start_url: "/staff"`) directly in its markup, so
+there's nothing for the install step to miss, on iOS or Android. Have
+volunteers add the icon from `/staff` specifically, not `/`.
 
-**None of that works for "Add to Home Screen" on iOS**, so don't send iOS
-volunteers to `/?staff` for that. An installed icon there runs in its own
-storage, isolated from Safari's, so a `localStorage` flag written in the
-browser never reaches it — and iOS reads the manifest `<link>` (or, on
-versions that ignore the manifest, the URL to launch) from the page as
-originally served, not from anything JavaScript changes after the fact. A
-runtime swap of `&staff` into the URL or the manifest link is invisible to
-it; the correct references have to already be in the static HTML iOS reads.
-That's what `/staff` (`staff.html`) is for: a separate static page with
-`class="staff"` on `<html>` and `<link rel="manifest"
-href="/manifest-staff.json">` baked in from the start, where
-`manifest-staff.json`'s `start_url` is `/staff` itself. Have iOS volunteers
-add the home-screen icon from `/staff`, not `/` or `/?staff` — it always
-launches straight back into staff mode, regardless of iOS version or
-storage isolation.
+Any old `/?staff` links, bookmarks, or QR codes still work — `/` redirects
+`&staff` straight to `/staff` — but new ones should point at `/staff`
+directly.
 
 `/web-bracket` also redirects narrow viewports (≤700px) straight to the
 mobile layout, the same way `/` does — so a direct link, bookmark,
@@ -266,10 +257,10 @@ primitives (`getWithMetadata`/`setJSON`'s `onlyIfMatch`) rather than a
 read-then-blind-write, so a genuine race between two near-simultaneous
 writes is also caught rather than silently letting the second one win.
 
-`/score` is deliberately **not** linked from the public `/?choose`
-picker (only from the staff-flagged `/?choose&staff` — see "Staff-only
-views" above) — share the `staff` link directly (text message, printed QR
-code) rather than publishing the public one.
+`/score` is deliberately **not** linked from the public `/` picker (only
+from `/staff` — see "Staff-only views" above) — share the `/staff` link
+directly (text message, printed QR code) rather than publishing the public
+one.
 
 **`/admin`** is a companion page (same staff-only picker treatment) for
 inspecting and purging the `live-scores` store itself — the in-app

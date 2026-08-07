@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="staff">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,13 +15,12 @@
   // to read on iOS. iOS's home-screen install reads the <link
   // rel="manifest"> (and, on versions that ignore it, falls back to the
   // literal URL on screen) from the page as originally served — not from
-  // any later JavaScript DOM changes. So unlike index.html's &staff flag
-  // (query string + localStorage, mutated at runtime), staff mode here is
-  // baked into the static markup itself: manifest-staff.json above, and
-  // class="staff" on <html>. Install the icon from this URL specifically,
-  // not from "/" or "/?staff", so it launches back here every time.
+  // any later JavaScript DOM changes. This page's manifest link
+  // (manifest-staff.json) is correct from the start, and all the
+  // staff-only cards below are just always present in the markup — no
+  // runtime toggle needed. Install the icon from this URL specifically,
+  // not from "/", so it launches back here every time.
   (function () {
-    try { localStorage.setItem('staff', '1'); } catch (e) {}
     document.addEventListener('DOMContentLoaded', function () {
       document.querySelectorAll('.cards a.card').forEach(function (a) {
         var href = a.getAttribute('href');
