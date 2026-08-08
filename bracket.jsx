@@ -199,7 +199,10 @@ function buildRegion({ key, quarter, teams, x0, gaps, dir, y0, y1, style, showLa
     </g>
   );
 
-  return { element: el, champX: xs[S], champY: roundYs[S][0], champTeam: roundTeams[S][0] };
+  // round1X: the x position Round 1's winners land at (xs[1]) — lets a
+  // caller (e.g. kiosk mode) crop to just Round 1 while later rounds are
+  // still empty, instead of the region's full x0..champX span.
+  return { element: el, champX: xs[S], champY: roundYs[S][0], champTeam: roundTeams[S][0], round1X: xs[1] };
 }
 
 // Connect two champion points with a bend path (used for half-champ + final merges)
