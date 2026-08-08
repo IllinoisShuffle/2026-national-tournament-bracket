@@ -260,6 +260,13 @@ function Poster() {
   const mainRankingsReady = !useLiveShape || [mainChampion, runnerUp, thirdPlace, fourthPlace].every((t) => t !== 'TBD');
   const consolFinalFourReady = !useLiveShape || [cLT, cLB, cRT, cRB].some((r) => r.champTeam !== '');
   const consolRankingsReady = !useLiveShape || [consolChampion, consolRunnerUp, consolThird, consolFourth].every((t) => t !== 'TBD');
+  // A quadrant's consolation bracket stays empty until someone actually
+  // loses into it, which can take a while early in the tournament — don't
+  // cycle kiosk mode through a crop of blank placeholder slots for it.
+  const cLTReady = !useLiveShape || quarterConsolTeams[qLT.id].some((n) => n !== '');
+  const cLBReady = !useLiveShape || quarterConsolTeams[qLB.id].some((n) => n !== '');
+  const cRTReady = !useLiveShape || quarterConsolTeams[qRT.id].some((n) => n !== '');
+  const cRBReady = !useLiveShape || quarterConsolTeams[qRB.id].some((n) => n !== '');
 
   const kioskViews = [
     { label: 'FULL BRACKET', x0: 0, y0: 0, x1: POSTER_W, y1: POSTER_H },
@@ -276,10 +283,10 @@ function Poster() {
     ...(mainLoopReady ? [{ label: 'MAIN · THE LOOP', x0: loopBounds.x0, y0: Math.min(loopBounds.y0, champY - 150), x1: loopBounds.x1, y1: loopBounds.y1 }] : []),
     // The FinalRanking block sits just below the loop, centered on CHAMPION_X.
     ...(mainRankingsReady ? [{ label: 'MAIN · FINAL RANKINGS', x0: CHAMPION_X - 380, y0: loopBounds.y1 - 20, x1: CHAMPION_X + 380, y1: loopBounds.y1 + 380 }] : []),
-    { label: `CONSOLATION · ${busLabel(qLT)}`, x0: 70, y0: CONSOL_Y0 - 40, x1: cLT.champX + 150, y1: consolMidY + 30 },
-    { label: `CONSOLATION · ${busLabel(qLB)}`, x0: 70, y0: consolMidY - 30, x1: cLB.champX + 150, y1: CONSOL_Y1 + 20 },
-    { label: `CONSOLATION · ${busLabel(qRT)}`, x0: cRT.champX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 70, y1: consolMidY + 30 },
-    { label: `CONSOLATION · ${busLabel(qRB)}`, x0: cRB.champX - 150, y0: consolMidY - 30, x1: POSTER_W - 70, y1: CONSOL_Y1 + 20 },
+    ...(cLTReady ? [{ label: `CONSOLATION · ${busLabel(qLT)}`, x0: 70, y0: CONSOL_Y0 - 40, x1: cLT.champX + 150, y1: consolMidY + 30 }] : []),
+    ...(cLBReady ? [{ label: `CONSOLATION · ${busLabel(qLB)}`, x0: 70, y0: consolMidY - 30, x1: cLB.champX + 150, y1: CONSOL_Y1 + 20 }] : []),
+    ...(cRTReady ? [{ label: `CONSOLATION · ${busLabel(qRT)}`, x0: cRT.champX - 150, y0: CONSOL_Y0 - 40, x1: POSTER_W - 70, y1: consolMidY + 30 }] : []),
+    ...(cRBReady ? [{ label: `CONSOLATION · ${busLabel(qRB)}`, x0: cRB.champX - 150, y0: consolMidY - 30, x1: POSTER_W - 70, y1: CONSOL_Y1 + 20 }] : []),
     ...(consolFinalFourReady ? [{ label: 'CONSOLATION · FINAL FOUR', x0: consolLoopBounds.x0, y0: Math.min(consolLoopBounds.y0, cChampY - 120), x1: consolLoopBounds.x1, y1: consolLoopBounds.y1 }] : []),
     ...(consolRankingsReady ? [{ label: 'CONSOLATION · FINAL RANKINGS', x0: CHAMPION_X - 320, y0: cThirdY + 20, x1: CHAMPION_X + 320, y1: cThirdY + 340 }] : []),
   ];
@@ -330,9 +337,10 @@ function Poster() {
     };
   }, [isKiosk]);
 
-  // Reserve room at the bottom of the screen for the fixed kiosk-caption
-  // pill (bottom: 26px, ~40px tall) so a bottom-row quadrant's champion
-  // marker never renders directly underneath it.
+  // Zoom each stop out slightly so its content doesn't stretch all the way
+  // to the bottom screen edge, leaving comfortable room for the fixed
+  // kiosk-caption pill (bottom: 26px, ~40px tall) instead of a bottom-row
+  // quadrant's champion marker landing directly underneath it.
   const KIOSK_CAPTION_SAFE_PX = 100;
 
   React.useEffect(() => {
@@ -363,9 +371,24 @@ function Poster() {
       // baseline fit of the 3300x3000 viewBox into the (now real-screen-
       // shaped) poster box, which our transform builds on top of.
       const meetK = Math.min(frameW / POSTER_W, frameH / POSTER_H);
-      const z = F * frameW / (meetK * w);
+      // "More paper" only stays seamless while z >= 1: below that, the CSS
+      // transform doesn't grow the .poster box to show more background — it
+      // shrinks the whole box (paper background included), leaving the page's
+      // dark backdrop visible as letterboxing all around. Only the wide-open
+      // FULL BRACKET stop is squat enough to hit this (its own aspect ratio
+      // is far from a widescreen TV's), so clamp to the poster's natural
+      // (already screen-filling) size instead of zooming out further.
+      const z = Math.max(1, F * frameW / (meetK * w));
       const x = -z * meetK * (cx - POSTER_W / 2);
-      const y = -KIOSK_CAPTION_SAFE_PX / 2 - z * meetK * (cy - POSTER_H / 2);
+      // Center vertically in the *real* frame rather than shifting further
+      // up toward the caption-safe band: the zoomed-out targetH above
+      // already keeps a stop's own content well clear of the caption pill,
+      // and this crop has no hard edge past y0/y1 — nothing stops the
+      // poster's next section from showing through the reserved band. An
+      // extra upward shift here just traded that (mostly harmless) sliver
+      // for chewing into the crop's own top margin, clipping labels that
+      // were supposed to be safely inside the view.
+      const y = -z * meetK * (cy - POSTER_H / 2);
       setKioskCam({ zoom: z, x, y });
     }
     applyCamera();
@@ -409,6 +432,8 @@ function Poster() {
           <button onClick={resetView} className="zoom-reset">Reset</button>
         </div>
       )}
+
+      {isKiosk && <div className="kiosk-caption-scrim" />}
 
       {isKiosk && (
         <div className="kiosk-caption">
