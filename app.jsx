@@ -290,19 +290,25 @@ function Poster() {
     // projector crop reads clearly — cropping to each region's own champX
     // (where its train lines converge) instead of the full half-bracket
     // width roughly doubles the effective zoom vs. the old paired view.
+    // Top/bottom quadrants get the same outer-edge padding (50, matching
+    // the top quadrants' headroom above MAIN_Y0) so all four crop to the
+    // exact same height — otherwise a slightly shorter box zooms in more to
+    // fill the frame, and since that zoom is centered on the *box*, not the
+    // screen, the top-of-frame content visibly shifts between stops even
+    // though champX (the horizontal anchor) hasn't moved.
     { label: `MAIN · ${qLT.name}`, ...quadCrop(regLT, mainResolved[qLT.id], 1, 50, 170, MAIN_Y0 - 50, mainMidY + 30) },
-    { label: `MAIN · ${qLB.name}`, ...quadCrop(regLB, mainResolved[qLB.id], 1, 50, 170, mainMidY - 30, MAIN_Y1 + 20) },
+    { label: `MAIN · ${qLB.name}`, ...quadCrop(regLB, mainResolved[qLB.id], 1, 50, 170, mainMidY - 30, MAIN_Y1 + 50) },
     { label: `MAIN · ${qRT.name}`, ...quadCrop(regRT, mainResolved[qRT.id], -1, POSTER_W - 50, 170, MAIN_Y0 - 50, mainMidY + 30) },
-    { label: `MAIN · ${qRB.name}`, ...quadCrop(regRB, mainResolved[qRB.id], -1, POSTER_W - 50, 170, mainMidY - 30, MAIN_Y1 + 20) },
+    { label: `MAIN · ${qRB.name}`, ...quadCrop(regRB, mainResolved[qRB.id], -1, POSTER_W - 50, 170, mainMidY - 30, MAIN_Y1 + 50) },
     // Semifinals + final + 3rd place game, matching the drawn "loop" rect
     // plus room above for the championship matchup label, which sits above it.
     ...(mainLoopReady ? [{ label: 'MAIN · THE LOOP', x0: loopBounds.x0, y0: Math.min(loopBounds.y0, champY - 150), x1: loopBounds.x1, y1: loopBounds.y1 }] : []),
     // The FinalRanking block sits just below the loop, centered on CHAMPION_X.
     ...(mainRankingsReady ? [{ label: 'MAIN · FINAL RANKINGS', x0: CHAMPION_X - 380, y0: loopBounds.y1 - 20, x1: CHAMPION_X + 380, y1: loopBounds.y1 + 380 }] : []),
     ...(cLTReady ? [{ label: `CONSOLATION · ${busLabel(qLT)}`, ...quadCrop(cLT, consolResolved[qLT.id], 1, 70, 150, CONSOL_Y0 - 40, consolMidY + 30) }] : []),
-    ...(cLBReady ? [{ label: `CONSOLATION · ${busLabel(qLB)}`, ...quadCrop(cLB, consolResolved[qLB.id], 1, 70, 150, consolMidY - 30, CONSOL_Y1 + 20) }] : []),
+    ...(cLBReady ? [{ label: `CONSOLATION · ${busLabel(qLB)}`, ...quadCrop(cLB, consolResolved[qLB.id], 1, 70, 150, consolMidY - 30, CONSOL_Y1 + 40) }] : []),
     ...(cRTReady ? [{ label: `CONSOLATION · ${busLabel(qRT)}`, ...quadCrop(cRT, consolResolved[qRT.id], -1, POSTER_W - 70, 150, CONSOL_Y0 - 40, consolMidY + 30) }] : []),
-    ...(cRBReady ? [{ label: `CONSOLATION · ${busLabel(qRB)}`, ...quadCrop(cRB, consolResolved[qRB.id], -1, POSTER_W - 70, 150, consolMidY - 30, CONSOL_Y1 + 20) }] : []),
+    ...(cRBReady ? [{ label: `CONSOLATION · ${busLabel(qRB)}`, ...quadCrop(cRB, consolResolved[qRB.id], -1, POSTER_W - 70, 150, consolMidY - 30, CONSOL_Y1 + 40) }] : []),
     ...(consolFinalFourReady ? [{ label: 'CONSOLATION · FINAL FOUR', x0: consolLoopBounds.x0, y0: Math.min(consolLoopBounds.y0, cChampY - 120), x1: consolLoopBounds.x1, y1: consolLoopBounds.y1 }] : []),
     ...(consolRankingsReady ? [{ label: 'CONSOLATION · FINAL RANKINGS', x0: CHAMPION_X - 320, y0: cThirdY + 20, x1: CHAMPION_X + 320, y1: cThirdY + 340 }] : []),
   ];
