@@ -130,6 +130,23 @@
        ratio before applying one uniform zoom, so every stop fills the
        screen edge-to-edge with no letterboxing *and* no distortion. */
     .kiosk-mode .poster { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+    /* The auto-pan camera crops to a stop's region by panning/zooming a
+       fixed-size poster — it has no hard clip at the crop edge, so whatever
+       poster content sits just past it (start of the next section) can show
+       through in the strip behind the caption pill. This fixed (untransformed)
+       gradient sits on top of the poster and fades that strip out, so the
+       transition into the caption always reads as deliberate empty space
+       rather than a stray sliver of the next section's text. */
+    .kiosk-caption-scrim {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 130px;
+      z-index: 2147482999;
+      pointer-events: none;
+      background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    }
     .kiosk-caption {
       position: fixed;
       left: 50%;
